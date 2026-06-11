@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workarounds · Decentraland Community Status</title>
+<meta name="description" content="Temporary solutions for active Decentraland issues you can use right now.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dcl.css">
+</head>
+<body data-page="workarounds">
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="index.html"><span class="logo-mark" aria-hidden="true"></span>Decentraland · Status</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" data-nav="overview">Overview</a>
+      <a href="issues.html" data-nav="issues">Known issues</a>
+      <a href="features.html" data-nav="features">Feature requests</a>
+      <a href="fixed.html" data-nav="fixed">Recently fixed</a>
+      <a href="workarounds.html" data-nav="workarounds">Workarounds</a>
+    </div>
+    <a class="nav-report" href="report.html">Report an issue</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
+  <div class="hero-inner compact">
+    <div class="hero-eyebrow">Workarounds</div>
+    <h1>Unblock yourself <span class="grad">right now</span></h1>
+    <p class="hero-sub">Temporary solutions for active issues while a permanent fix is on the way. If an issue has no entry here, there is no confirmed workaround yet.</p>
+    <div class="hero-meta"><span class="sync-note" id="syncNote">Syncing with GitHub…</span></div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="sec-head"><h2>Available workarounds</h2><span class="sec-count" id="wkCount"></span></div>
+      <div class="toolbar">
+        <input class="search" id="wkSearch" type="search" placeholder="Search workarounds…" aria-label="Search workarounds">
+        <select class="repo-select sort-select" id="wkSort" aria-label="Sort by"><option value="default">Sort: Impact</option><option value="newest">Sort: Newest</option><option value="updated">Sort: Recently updated</option></select>
+        <div class="chips" id="wkAreaChips" role="group" aria-label="Filter by area"></div>
+      </div>
+      <div class="cards" id="wkGrid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+      <button class="show-more" id="wkMore" hidden>Show more</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Community-run status board · Not an official Decentraland Foundation service</span>
+    <span id="footSync"></span>
+  </div>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/dcl.js"></script>
+</body>
+</html>

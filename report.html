@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report an issue · Decentraland Community Status</title>
+<meta name="description" content="Report a Decentraland bug or submit a feature request directly to the public trackers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dcl.css">
+</head>
+<body data-page="report">
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="index.html"><span class="logo-mark" aria-hidden="true"></span>Decentraland · Status</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" data-nav="overview">Overview</a>
+      <a href="issues.html" data-nav="issues">Known issues</a>
+      <a href="features.html" data-nav="features">Feature requests</a>
+      <a href="fixed.html" data-nav="fixed">Recently fixed</a>
+      <a href="workarounds.html" data-nav="workarounds">Workarounds</a>
+    </div>
+    <a class="nav-report" href="report.html">Report an issue</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
+  <div class="hero-inner compact">
+    <div class="hero-eyebrow">Report & feedback</div>
+    <h1>Found something? <span class="grad">Tell the team.</span></h1>
+    <p class="hero-sub">Every report goes straight to the public Decentraland trackers on GitHub. A free GitHub account is required.</p>
+    
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="report-grid">
+        <div class="report-card">
+          <h3>🐛 Report a bug</h3>
+          <p>Something broken, crashing or not behaving as expected? Tell us where it happened.</p>
+          <select class="repo-select" id="bugRepo" aria-label="Where did the bug happen?"></select>
+          <a class="report-btn" id="bugBtn" href="#" target="_blank" rel="noopener">Report bug on GitHub</a>
+          <p class="report-tips">Tip: include what you did, what you expected, and what happened instead. Screenshots help a lot.</p>
+        </div>
+        <div class="report-card">
+          <h3>💡 Submit a feature request</h3>
+          <p>Have an idea that would make Decentraland better? Suggest it to the team.</p>
+          <select class="repo-select" id="featRepo" aria-label="What is your idea about?"></select>
+          <a class="report-btn ghost" id="featBtn" href="#" target="_blank" rel="noopener">Submit request on GitHub</a>
+          <p class="report-tips">Tip: explain the problem your idea solves — it helps the team prioritize.</p>
+        </div>
+      </div>
+      <div class="guide">
+        <h3>Before you report</h3>
+        <ol>
+          <li>Check the <a href="issues.html">Known issues</a> page — your bug may already be tracked, and adding a 👍 reaction there helps more than a duplicate report.</li>
+          <li>Try the <a href="workarounds.html">Workarounds</a> page if you are blocked right now.</li>
+          <li>For account-specific problems (purchases, bans, lost items), contact official Decentraland support instead — public trackers are not the right place for personal account data.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Community-run status board · Not an official Decentraland Foundation service</span>
+    <span id="footSync"></span>
+  </div>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/dcl.js"></script>
+</body>
+</html>
