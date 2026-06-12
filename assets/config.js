@@ -55,10 +55,68 @@ const DCL_CONFIG = {
     link: '',                // optional "More details" URL
   },
 
+  // Derive service status from open GitHub issues?
+  // false (recommended): services always show Operational unless the official
+  //   status page or a manual override says otherwise. Open bugs never turn
+  //   a service yellow/red — a crash report is not an outage.
+  // true: issues with an explicit critical/blocker/P0 label can mark a
+  //   service Degraded (1+) or Partial Outage (3+).
+  deriveServiceStatus: false,
+
   // Manual overrides during verified incidents, e.g.:
   // statusOverrides: { 'Worlds': 'Partial Outage', 'Events': 'Degraded' }
   // Valid values: 'Operational' | 'Degraded' | 'Partial Outage' | 'Outage'
   statusOverrides: {},
+
+  // Admin panel (admin.html). The passphrase only hides the panel UI — real
+  // write access requires a GitHub token entered at save time (never stored).
+  // To change the passphrase: open admin.html, use the hash generator at the
+  // bottom of the login box, and paste the new hash here.
+  admin: {
+    passHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // default passphrase: admin
+  },
+
+  // Issues pinned to "Top known issues" on the overview (GitHub issue URLs,
+  // shown first, in this order). Manage them easily from admin.html.
+  pinnedIssues: [],
+
+  // Per-issue editorial overrides, keyed by GitHub issue URL. Managed from
+  // admin.html. Each entry may set any of:
+  //   title, summary, status, impact, area, workaround (strings)
+  //   hidden (true to remove from the public dashboard)
+  // Anything omitted falls back to the value derived from GitHub.
+  issueOverrides: {},
+
+  // Patch notes shown on the overview. Newest first. Each entry:
+  //   { version, date, body }  — body is the raw text you paste (markdown-ish).
+  patchNotes: [],
+
+  // Where the "Report a bug" / "Request a feature" buttons send people.
+  // Uses GitHub issue templates so the form matches the repo's QA workflow.
+  reporting: {
+    primaryRepo: 'decentraland/unity-explorer',
+    bugTemplate: 'bug_report.md',          // pre-fills the QA bug form + labels
+    featureTemplate: 'feature_request.md',  // pre-fills the feature form + 'suggestion' label
+  },
+
+  // Asset bundle conversion queue (read-only). Mirrors deployments.lastslice.co:
+  // reads pending jobs from a registry/queue endpoint and resolves entity IDs to
+  // scene names + parcels via the catalyst content server. No write access and
+  // no secret token — submitting jobs stays on the infra side.
+  //
+  // The registry is public (no auth) and CORS-open. /queues/status returns
+  // { webglPendingJobs: [cid...], windowsPendingJobs: [...], macPendingJobs: [...] }.
+  assetBundles: {
+    enabled: true,
+    // Confirmed public, no-auth endpoint (returns {webglPendingJobs:[],windowsPendingJobs:[],macPendingJobs:[]})
+    queueUrl: 'https://asset-bundle-registry.decentraland.org/queues/status',
+    // Base for per-entity lookups: GET {registryUrl}/entities/status/{entityCID}
+    registryUrl: 'https://asset-bundle-registry.decentraland.org',
+    contentServer: 'https://peer.decentraland.org/content',
+    platforms: ['webgl', 'windows', 'mac'],
+    refreshSeconds: 60,
+    maxRowsPerPlatform: 25,
+  },
 
   recentFixDays: 45,     // window for the "Recently fixed" page
   pageSize: 12,          // cards per "Show more" step on list pages

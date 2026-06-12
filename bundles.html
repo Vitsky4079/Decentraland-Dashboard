@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asset bundles · Decentraland Community Status</title>
+<meta name="description" content="Live asset-bundle conversion queue for Decentraland — pending WebGL, Windows and macOS jobs with scene names and parcels.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dcl.css">
+</head>
+<body data-page="bundles">
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="index.html"><span class="logo-mark" aria-hidden="true"></span>Decentraland · Status</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" data-nav="overview">Overview</a>
+      <a href="issues.html" data-nav="issues">Known issues</a>
+      <a href="features.html" data-nav="features">Feature requests</a>
+      <a href="fixed.html" data-nav="fixed">Recently fixed</a>
+      <a href="workarounds.html" data-nav="workarounds">Workarounds</a>
+      <a href="bundles.html" data-nav="bundles">Asset bundles</a>
+      <a href="report.html" data-nav="report">Report</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
+  <div class="hero-inner compact">
+    <div class="hero-eyebrow">Asset bundle pipeline</div>
+    <h1>Conversion <span class="grad">queue</span></h1>
+    <p class="hero-sub">Pending asset-bundle conversion jobs per platform. When a scene is deployed, it's optimized into platform-specific bundles before players load it — this is what's waiting in line.</p>
+    <div class="hero-meta"><span class="sync-note" id="queueSync">Syncing queue…</span></div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="sec-head"><h2>Pending jobs</h2><span class="sec-count" id="queueTotal"></span><a class="sec-link" id="contentServerLink" href="https://peer.decentraland.org/content" target="_blank" rel="noopener">Content server →</a></div>
+      <p class="sec-desc">Grouped by build target. Entity IDs are resolved to scene names and parcels where available. Click any job to inspect the entity on the content server.</p>
+      <div class="queue-grid" id="queueGrid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="sec-head"><h2>Check a deployment</h2></div>
+      <p class="sec-desc">Deployed a scene and wondering if its optimized bundles are ready? Paste the entity ID (CID) to check conversion status per platform.</p>
+      <div class="lookup-bar">
+        <input class="search" id="lookupInput" style="max-width:520px;font-family:var(--mono);font-size:13px" placeholder="bafkrei…" aria-label="Entity ID">
+        <button class="report-btn" id="lookupBtn" style="padding:11px 24px">Check status</button>
+      </div>
+      <div id="lookupResult"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Community-run status board · Not an official Decentraland Foundation service</span>
+    <span id="footSync"></span>
+  </div>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/dcl.js"></script>
+</body>
+</html>

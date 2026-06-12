@@ -205,3 +205,82 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
 /* ---------- Sort select ---------- */
 .sort-select{width:auto;min-width:170px;margin:0;background:var(--surface);border:1px solid var(--line);color:var(--text-dim);border-radius:11px;padding:10px 13px;font-size:14px;font-family:var(--body);cursor:pointer}
 .sort-select:hover{border-color:var(--line-strong);color:var(--text)}
+
+/* ---------- Section-head action button ---------- */
+.sec-btn{margin-left:auto;font-size:12px;padding:9px 18px}
+.sec-head .sec-link + .sec-btn{margin-left:14px}
+
+/* ---------- Expandable card description ---------- */
+.card-expl.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.more-link{align-self:flex-start;background:none;border:none;color:var(--peach);font-family:var(--body);font-size:13px;font-weight:600;padding:0;margin-top:-4px;cursor:pointer}
+.more-link:hover{text-decoration:underline}
+button.card-title{background:none;border:none;text-align:left;padding:0;cursor:pointer;color:var(--text)}
+button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- Preview modal ---------- */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(5,4,8,.74);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{position:relative;background:var(--surface);border:1px solid var(--line-strong);border-radius:18px;max-width:760px;width:100%;padding:30px;animation:modalIn .22s ease both;box-shadow:0 30px 80px -20px rgba(0,0,0,.8)}
+@keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:none}}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--surface-2);border:1px solid var(--line-strong);color:var(--text-dim);width:34px;height:34px;border-radius:9px;font-size:14px;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-title{font-family:var(--display);font-size:24px;line-height:1.25;margin:4px 0 8px;overflow-wrap:anywhere;padding-right:40px}
+.modal-meta{font-family:var(--mono);font-size:12px;color:var(--text-faint);margin-bottom:6px}
+.modal-md{font-size:15px;color:var(--text-dim);line-height:1.65;max-height:46vh;overflow-y:auto;margin:18px 0;padding-right:6px;overflow-wrap:anywhere}
+.modal-md h3{font-family:var(--display);font-size:17px;color:var(--text);margin:18px 0 6px}
+.modal-md h4{font-family:var(--display);font-size:15px;color:var(--text);margin:14px 0 4px}
+.modal-md p{margin:8px 0}
+.modal-md ul{margin:8px 0 8px 20px}
+.modal-md li{margin:3px 0}
+.modal-md code{background:var(--surface-2);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:13px}
+.modal-md pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;margin:10px 0}
+.modal-md pre code{background:none;padding:0}
+.modal-md a{color:var(--peach)}
+.modal-empty{color:var(--text-faint);font-style:italic}
+.modal-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--line)}
+
+/* ---------- Feature card copy button row (features now use div cards) ---------- */
+.card .card-meta .copy-btn{margin-left:auto}
+
+/* ---------- Patch notes ---------- */
+.pn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.pn-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;position:relative;overflow:hidden}
+.pn-card.latest{border-color:rgba(255,45,85,.35)}
+.pn-card.latest::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad)}
+.pn-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.pn-version{font-family:var(--display);font-weight:700;font-size:18px}
+.pn-date{font-family:var(--mono);font-size:12px;color:var(--text-faint)}
+.pn-badge{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#1A0710;background:var(--grad);padding:3px 9px;border-radius:99px;font-weight:700}
+.pn-body{font-size:14.5px;color:var(--text-dim);line-height:1.6}
+.pn-sub{font-family:var(--display);font-weight:600;font-size:14.5px;color:var(--text);margin:14px 0 6px}
+.pn-sub:first-child{margin-top:0}
+.pn-line{margin:6px 0}
+.pn-list{list-style:none;margin:4px 0 8px;padding:0}
+.pn-list li{position:relative;padding-left:18px;margin:4px 0}
+.pn-list li::before{content:"";position:absolute;left:2px;top:9px;width:5px;height:5px;border-radius:50%;background:var(--peach)}
+.pn-body a{color:var(--peach)}
+
+/* ---------- Asset bundle queue ---------- */
+.queue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.queue-col{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden}
+.queue-col::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--qcolor,var(--info))}
+.queue-col-head{display:flex;align-items:baseline;gap:10px}
+.queue-plat{font-family:var(--display);font-weight:700;font-size:18px}
+.queue-num{margin-left:auto;font-family:var(--mono);font-size:15px;font-weight:500;color:var(--qcolor,var(--info))}
+.queue-col-desc{font-size:12.5px;color:var(--text-faint);margin-bottom:14px}
+.queue-items{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto}
+.queue-item{display:block;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;text-decoration:none;transition:border-color .15s,transform .15s}
+.queue-item:hover{border-color:var(--line-strong);transform:translateX(2px)}
+.queue-scene{font-size:14px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-loc{font-family:var(--mono);font-size:11px;color:var(--text-faint);font-weight:400}
+.queue-meta{display:flex;gap:12px;margin-top:5px;font-family:var(--mono);font-size:11px;color:var(--text-faint);flex-wrap:wrap}
+.queue-status{text-transform:uppercase;letter-spacing:.04em}
+.queue-empty{padding:24px;text-align:center;color:var(--ok);font-size:13.5px;font-family:var(--mono)}
+
+/* ---------- Queue extras + entity lookup ---------- */
+.queue-more{padding:10px;text-align:center;color:var(--text-faint);font-family:var(--mono);font-size:12px;border:1px dashed var(--line);border-radius:10px}
+.lookup-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.lookup-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;max-width:520px;font-size:14.5px;color:var(--text-dim)}
+.lookup-head{font-family:var(--display);font-weight:600;font-size:16px;margin-bottom:12px}
+.lookup-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px;color:var(--text)}
+.lookup-row:last-child{border-bottom:none}

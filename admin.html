@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Decentraland Community Status</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dcl.css">
+<style>
+.admin-wrap{max-width:880px;margin:0 auto;padding:48px 24px}
+.panel-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px;margin-bottom:18px}
+.panel-card h2{font-family:var(--display);font-size:21px;margin-bottom:6px}
+.panel-card .hint{font-size:13.5px;color:var(--text-faint);margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--surface-2);border:1px solid var(--line-strong);color:var(--text);border-radius:10px;padding:11px 13px;font-size:14.5px;font-family:var(--body)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:12px 22px;border-radius:99px;border:none;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
+.btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.svc-row{display:grid;grid-template-columns:1fr 200px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.svc-row:last-child{border-bottom:none}
+.svc-row span{font-size:14.5px;font-weight:500}
+.pin-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.pin-row{display:flex;align-items:center;gap:10px;padding:10px 13px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:13.5px}
+.pin-row:last-child{border-bottom:none}
+.pin-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pin-row .a{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);text-transform:uppercase;flex:none}
+.mini{background:var(--surface);border:1px solid var(--line-strong);color:var(--text-dim);font-size:12px;padding:4px 10px;border-radius:7px;flex:none}
+.mini:hover{color:var(--text)}
+.mini.pin{color:#FFBC5B;border-color:rgba(255,188,91,.4)}
+.issue-pick{max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:10px}
+.issue-pick .pin-row{background:var(--surface)}
+.statusline{font-family:var(--mono);font-size:12.5px;margin-top:12px;min-height:18px}
+.statusline.ok{color:#9ADFB4}.statusline.err{color:#FF8AA0}
+.hidden{display:none}
+#hashOut{font-family:var(--mono);font-size:11px;word-break:break-all;color:var(--text-dim);margin-top:8px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-dim);text-transform:none;letter-spacing:0;font-family:var(--body)}
+.chk input{width:auto}
+.edit-head{font-family:var(--mono);font-size:12px;color:var(--text-faint);margin-bottom:12px;word-break:break-all}
+.edit-head a{color:var(--peach)}
+.field textarea{resize:vertical;font-family:var(--mono);font-size:13px;line-height:1.5}
+.tag{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:9px;padding:8px 12px;margin:0 8px 8px 0;font-size:13px}
+.tag .x{color:var(--text-faint);cursor:pointer;font-size:14px}
+.tag .x:hover{color:#FF8AA0}
+@media(max-width:640px){.row2,.row3{grid-template-columns:1fr}.svc-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body data-page="admin">
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="index.html"><span class="logo-mark" aria-hidden="true"></span>Decentraland · Status</a>
+    <div class="nav-links" style="display:flex"><a href="index.html">← Back to dashboard</a></div>
+  </div>
+</nav>
+
+<main>
+  <!-- ===== Curtain ===== -->
+  <div class="admin-wrap" id="gate">
+    <div class="panel-card" style="max-width:460px;margin:60px auto">
+      <h2>Admin access</h2>
+      <p class="hint">Maintainers only. Enter the passphrase to open the panel.</p>
+      <div class="field"><label for="passInput">Passphrase</label><input type="password" id="passInput" autocomplete="off"></div>
+      <div class="btn-row"><button class="btn" id="unlockBtn">Unlock</button></div>
+      <div class="statusline" id="gateStatus"></div>
+      <details style="margin-top:18px"><summary style="font-size:12.5px;color:var(--text-faint);cursor:pointer">Change passphrase (hash generator)</summary>
+        <div class="field" style="margin-top:10px"><label for="hashInput">New passphrase</label><input id="hashInput" autocomplete="off"></div>
+        <button class="btn ghost" id="hashBtn" style="font-size:12px;padding:9px 16px">Generate hash</button>
+        <div id="hashOut"></div>
+        <p class="hint" style="margin-top:8px">Paste the hash into <code>admin.passHash</code> in assets/config.js.</p>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===== Panel ===== -->
+  <div class="admin-wrap hidden" id="panel">
+
+    <div class="panel-card">
+      <h2>Announcement banner</h2>
+      <p class="hint">Shown at the top of every page. Leave the text empty to hide it.</p>
+      <div class="field"><label for="annText">Text</label><input id="annText" placeholder="e.g. Marketplace maintenance tonight 20:00–21:00 CET"></div>
+      <div class="row2">
+        <div class="field"><label for="annLevel">Level</label>
+          <select id="annLevel"><option>Info</option><option>Degraded</option><option>Partial Outage</option><option>Outage</option></select></div>
+        <div class="field"><label for="annLink">"More details" link (optional)</label><input id="annLink" placeholder="https://…"></div>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Service status overrides</h2>
+      <p class="hint">"Auto" follows the normal logic (official page / green by default). Set a manual status during verified incidents.</p>
+      <div id="svcRows"></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Pinned issues · Top known issues</h2>
+      <p class="hint">Pinned issues appear first on the overview (max 6 shown). Order = order in this list.</p>
+      <div class="pin-list" id="pinnedList"></div>
+      <div class="field"><label for="pinSearch">Find an open issue to pin</label><input id="pinSearch" placeholder="Search by title…"></div>
+      <div class="issue-pick" id="issuePick"><div class="loading" style="border:none">Loading open issues…</div></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Issue editor</h2>
+      <p class="hint">Search an open issue, then override its public title, summary, status, impact, area, or workaround — or hide it from the dashboard entirely. Blank fields fall back to the GitHub value.</p>
+      <div class="field"><label for="editSearch">Find an issue</label><input id="editSearch" placeholder="Search by title…"></div>
+      <div class="issue-pick" id="editPick"><div class="loading" style="border:none">Loading issues…</div></div>
+      <div id="editForm" class="hidden">
+        <div class="edit-head" id="editHead"></div>
+        <div class="row2">
+          <div class="field"><label for="edTitle">Public title</label><input id="edTitle"></div>
+          <div class="field"><label for="edArea">Affected area</label><input id="edArea"></div>
+        </div>
+        <div class="field"><label for="edSummary">Public summary</label><input id="edSummary"></div>
+        <div class="row2">
+          <div class="field"><label for="edStatus">Status</label>
+            <select id="edStatus"><option value="">— Auto —</option></select></div>
+          <div class="field"><label for="edImpact">Impact / priority</label>
+            <select id="edImpact"><option value="">— Auto —</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+        </div>
+        <div class="field"><label for="edWorkaround">Workaround (shown on the issue + Workarounds page)</label><input id="edWorkaround" placeholder="Leave blank for &quot;No confirmed workaround yet.&quot;"></div>
+        <div class="field"><label class="chk"><input type="checkbox" id="edHidden"> Hide this issue from the public dashboard</label></div>
+        <div class="btn-row">
+          <button class="btn" id="edApply">Apply override</button>
+          <button class="btn ghost" id="edClear">Remove override</button>
+          <label class="chk" style="margin-left:auto"><input type="checkbox" id="edPin"> Pinned to overview</label>
+        </div>
+      </div>
+      <div id="editedList" style="margin-top:16px"></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Patch notes</h2>
+      <p class="hint">Paste release notes exactly as you have them — version line, emoji headers, and dash bullets all render. Newest appears first on the overview.</p>
+      <div class="row2">
+        <div class="field"><label for="pnVersion">Version</label><input id="pnVersion" placeholder="v0.151.0"></div>
+        <div class="field"><label for="pnDate">Date</label><input id="pnDate" placeholder="10/6/2026"></div>
+      </div>
+      <div class="field"><label for="pnBody">Notes</label><textarea id="pnBody" rows="9" placeholder="🎮 Features:&#10;- ...&#10;🛠️ Fixes:&#10;- ..."></textarea></div>
+      <div class="btn-row"><button class="btn" id="pnAdd">Add release</button></div>
+      <div id="pnList" style="margin-top:16px"></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Settings</h2>
+      <div class="row3">
+        <div class="field"><label for="setFixDays">Recent fixes window (days)</label><input id="setFixDays" type="number" min="7" max="365"></div>
+        <div class="field"><label for="setPageSize">Cards per page</label><input id="setPageSize" type="number" min="6" max="60"></div>
+        <div class="field"><label for="setCache">Cache (minutes)</label><input id="setCache" type="number" min="1" max="120"></div>
+      </div>
+      <div class="field"><label for="setDerive">Derive service status from critical issues</label>
+        <select id="setDerive"><option value="false">Off — always green unless official/override (recommended)</option><option value="true">On — explicit critical labels can mark Degraded</option></select></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Save &amp; publish</h2>
+      <p class="hint">Changes are written into <code>assets/config.js</code>. Publish by committing that file to the repo — GitHub Pages redeploys in about a minute.</p>
+      <div class="btn-row">
+        <button class="btn ghost" id="copyBtn">Copy new config.js</button>
+        <button class="btn ghost" id="dlBtn">Download config.js</button>
+      </div>
+      <details style="margin-top:18px"><summary style="font-size:13px;color:var(--text-dim);cursor:pointer">Publish directly to GitHub (optional)</summary>
+        <p class="hint" style="margin-top:10px">Uses a fine-grained personal access token with <b>Contents: Read &amp; write</b> on this repo only. The token stays in this tab's memory and is never saved anywhere.</p>
+        <div class="row3">
+          <div class="field"><label for="ghOwner">Owner</label><input id="ghOwner" autocomplete="off"></div>
+          <div class="field"><label for="ghRepo">Repository</label><input id="ghRepo" autocomplete="off"></div>
+          <div class="field"><label for="ghBranch">Branch</label><input id="ghBranch" value="main" autocomplete="off"></div>
+        </div>
+        <div class="field"><label for="ghToken">GitHub token</label><input id="ghToken" type="password" autocomplete="off" placeholder="github_pat_…"></div>
+        <button class="btn" id="publishBtn">Commit to GitHub</button>
+      </details>
+      <div class="statusline" id="saveStatus"></div>
+    </div>
+
+  </div>
+</main>
+
+<footer><div class="wrap"><span>Admin panel · passphrase gate is cosmetic — write access requires repo permissions</span></div></footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/dcl.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
