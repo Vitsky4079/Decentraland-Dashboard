@@ -1,123 +1,86 @@
 # Decentraland Community Status
 
-A community-run status board for Decentraland: known issues, feature requests,
-recent fixes, workarounds and service health — pulled live from Decentraland's
-public GitHub issue trackers and translated into plain, user-friendly language.
+Community status board for Decentraland: known issues, feature requests,
+fixes, workarounds, patch notes, service health and the asset-bundle
+conversion queue — live from public APIs, curated through a real admin panel.
 
-No backend, no build step, no API keys. Pure static site.
-
-## Structure
+**Architecture:** static frontend (vanilla JS, no build step) + Supabase
+(database + admin login) + Vercel (hosting, auto-deploys from GitHub).
+Content edits happen in the admin panel and are live instantly — no commits,
+no redeploys. Code changes go through the GitHub repo and deploy automatically.
 
 ```
-index.html          Overview — service status, stats, top issues/requests, latest fixes
-issues.html         All known issues with search + area filters
-features.html       All feature requests with search + category filters
-fixed.html          Recently resolved issues
-workarounds.html    Active issues that have a confirmed workaround
-report.html         Report a bug / submit a feature request (links to GitHub forms)
-assets/
-  config.js         ← the only file you normally edit (repos, services, overrides)
-  dcl.css           Shared styles
-  dcl.js            Shared logic (fetch, cache, classification, rendering)
+index.html / issues.html / features.html / fixed.html /
+workarounds.html / bundles.html / report.html / admin.html
+assets/config.js     project configuration (Supabase keys, repos, endpoints)
+assets/dcl.js        site logic (GitHub data + Supabase content merge)
+assets/admin.js      admin panel (Supabase Auth + instant saves)
+assets/dcl.css       styles
+supabase/schema.sql  database schema — paste once into Supabase
 ```
 
-## Deploy to GitHub Pages
+## One-time setup (~20 minutes)
 
-1. Create a repo and push all files (keep the folder structure).
-2. Repo → Settings → Pages → Source: `Deploy from a branch` → branch `main`, folder `/ (root)`.
-3. Done — the site is live at `https://<user>.github.io/<repo>/`.
+### 1. Supabase (database + login)
+1. Create a free project at supabase.com.
+2. **SQL Editor → New query** → paste the entire `supabase/schema.sql` → Run.
+   You should see "Success". This creates the tables, the security rules
+   (public read / admin-only write) and the content API.
+3. **Project Settings → API**: copy the **Project URL** and the **anon public
+   key** into `assets/config.js` → `supabase: { url, anonKey }`.
+   The anon key is safe to publish — Row Level Security blocks all writes
+   without login.
+4. **Authentication → Sign In / Up**: disable new user signups.
+5. **Authentication → Users → Add user**: create your admin account
+   (email + strong password). This is your admin panel login.
 
-## How data works
+### 2. GitHub + Vercel (hosting)
+1. Push this folder to a GitHub repository.
+2. At vercel.com: **Add New → Project → Import** that repository.
+   Framework preset: **Other**. No build command, no env vars. Deploy.
+3. Done — the site is live at `your-project.vercel.app`. Every future push
+   to the repo auto-deploys in ~30 seconds. Optional: add a custom domain
+   under Project → Settings → Domains.
 
-- Each visitor's browser fetches open + recently closed issues from the
-  configured repos via the public GitHub API (10 requests per fresh load).
-- Results are cached in the browser for `cacheMinutes` (default 15), so
-  navigating between pages costs **zero** extra API calls.
-- Unauthenticated GitHub API allows 60 requests/hour per visitor IP. If a
-  visitor hits the limit, the site shows cached data or a friendly retry
-  message — it never breaks.
+### 3. Verify
+Open `/admin.html` on the live site, sign in with your Supabase user, set a
+test announcement — it should appear on the homepage immediately in another
+tab. Remove it the same way.
 
-## Official status page integration
+## Day-to-day
 
-The dashboard links to https://status.decentraland.org/ and can consume it:
-open the official page with DevTools → Network, find the JSON request it makes,
-and paste that URL into `officialStatus.summaryUrl` in `assets/config.js`.
-Once set, official component statuses **override** the GitHub-derived ones
-(marked "· official" in the UI) and unresolved official incidents show as a
-site-wide banner. If the endpoint is unreachable or blocked by CORS, the site
-silently falls back to derived statuses — nothing breaks.
+- **Content** (announcements, pins, issue edits, hiding issues, workarounds,
+  service status, patch notes): admin panel → saves instantly. Works from
+  your phone. No GitHub involved.
+- **Code** (new features, design, tracked repos, endpoints): edit the repo —
+  or have Claude prepare and push the change — and Vercel deploys it
+  automatically. For Claude-pushed changes, use a **fine-grained GitHub
+  token scoped to this single repo only** (Contents: Read & write), treat it
+  as disposable, and revoke it anytime under GitHub → Settings → Developer
+  settings.
 
-Priority order for a service's status:
-`statusOverrides` (manual) → official status page → derived from GitHub issues.
+## How data flows
 
-## Announcements
+- Issues/features/fixes: fetched in the visitor's browser from the GitHub
+  API (paginated, cached 15 min in sessionStorage).
+- Editorial content: one call to the Supabase RPC `get_site_content()`
+  (announcement, service overrides, pins, issue overrides, patch notes),
+  merged over the GitHub data. If Supabase is unreachable, the site falls
+  back to the values in `config.js` and keeps working.
+- Asset bundles: public registry endpoint
+  `https://asset-bundle-registry.decentraland.org/queues/status` +
+  batched scene-name resolution via the catalyst content server.
+- Official status page: linked; can override service tiles once its JSON
+  endpoint is set in `officialStatus.summaryUrl`.
 
-Set `announcement` in `assets/config.js` to show a banner on every page:
+## Security model
 
-```js
-announcement: { text: 'Marketplace maintenance tonight 20:00–21:00 CET.', level: 'Degraded', link: '' }
-```
-
-## Copy for Discord
-
-Every known-issue card has a "Copy for Discord" button that copies a formatted
-snippet (title, status, impact, workaround, tracking link) — handy for support
-replies.
-
-## Asset bundles tab (bundles.html)
-
-Read-only view of the asset-bundle conversion pipeline, in the spirit of
-deployments.lastslice.co. It reads the **public, no-auth** registry endpoint
-`GET https://asset-bundle-registry.decentraland.org/queues/status` (shape:
-`{ webglPendingJobs: [cid...], windowsPendingJobs: [...], macPendingJobs: [...] }`)
-and shows one column per platform with live counts, the first 25 queued
-entities each (configurable via `assetBundles.maxRowsPerPlatform`), and a
-"+N more" indicator. Visible entity CIDs are resolved to scene names and
-parcels with a single batched `POST {contentServer}/entities/active` call.
-The page auto-refreshes every `assetBundles.refreshSeconds` (default 60s).
-
-There's also a "Check a deployment" box: paste an entity CID and it queries
-`GET {registryUrl}/entities/status/{cid}` to show per-platform conversion
-status (complete / pending / failed).
-
-Note: submitting or prioritizing conversions is intentionally NOT part of this
-site — that's the asset-bundle-converter's authenticated `POST /queue-task`
-endpoint, which requires an infra-provisioned secret that must never live in a
-public static site.
-
-## Admin panel (admin.html)
-
-A maintainer panel for day-to-day changes without touching code. Open
-`admin.html` directly (it is intentionally unlinked from the site nav).
-
-- **Login is a curtain, not a lock.** The passphrase (default: `admin`)
-  only hides the panel UI — it is checked in the browser, so treat it as
-  cosmetic. Change it with the hash generator on the login screen, then paste
-  the new hash into `admin.passHash` in `config.js`. Real write protection
-  comes from GitHub repo permissions (below).
-- **What you can edit:** announcement banner; per-service status overrides;
-  pinned issues; **per-issue overrides** (public title, summary, status,
-  impact/priority, affected area, manual workaround, or hide an issue from the
-  dashboard); **patch notes** (paste release notes — they render on the
-  overview); and settings (fix window, page size, cache, status-derivation).
-- **Pinned issues:** search open issues, click Pin, reorder with ↑/↓. Pinned
-  issues show first on the overview (6 cards total), each with a "Pinned" badge.
-- **Saving:** the panel regenerates `config.js`. Either *Copy* / *Download* it
-  and commit via the GitHub web UI, or expand "Publish directly to GitHub",
-  paste a fine-grained token (Contents: Read & write on this repo only), and
-  commit in one click. The token lives only in that browser tab and is never
-  written to any file. GitHub Pages redeploys about a minute after the commit.
-
-## Maintenance
-
-- **Add/remove a tracked repo:** edit `repos` in `assets/config.js`.
-- **Declare an incident manually:** set `statusOverrides`, e.g.
-  `statusOverrides: { 'Worlds': 'Partial Outage' }`, commit, done.
-- **Tune behavior:** `recentFixDays`, `pageSize`, `cacheMinutes` in config.
-
-Issue titles are automatically cleaned of internal ticket IDs (e.g. `ABC-1234`)
-and `[Bug]:` prefixes; bodies are summarized; statuses, impact and community
-interest are derived from labels, assignees, comments and reactions.
+- Supabase Auth (email/password) with signups disabled = only your account exists.
+- Row Level Security: `select` for everyone, `insert/update/delete` only for
+  authenticated users. Enforced by the database, not by the frontend.
+- No secrets in the repo: the anon key is public by design; the
+  asset-bundle-converter's write API (`POST /queue-task`, needs an infra
+  token) is intentionally not integrated.
 
 ---
 Community project — not an official Decentraland Foundation service.

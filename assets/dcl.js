@@ -145,6 +145,37 @@ function interest(i) {
   return score >= 15 ? 'Very High' : score >= 6 ? 'High' : score >= 2 ? 'Medium' : 'Low';
 }
 
+/* ---------- Editorial content (Supabase with config fallback) ---------- */
+let CONTENT = {
+  announcement: C.announcement || {},
+  statusOverrides: C.statusOverrides || {},
+  pinnedIssues: C.pinnedIssues || [],
+  issueOverrides: C.issueOverrides || {},
+  patchNotes: C.patchNotes || [],
+};
+
+async function loadContent() {
+  const sb = C.supabase || {};
+  if (!sb.url || !sb.anonKey) return CONTENT;
+  try {
+    const res = await fetch(`${sb.url}/rest/v1/rpc/get_site_content`, {
+      method: 'POST',
+      headers: { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey, 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    CONTENT = {
+      announcement: d.announcement || {},
+      statusOverrides: d.service_status || {},
+      pinnedIssues: d.pins || [],
+      issueOverrides: d.issue_overrides || {},
+      patchNotes: d.patch_notes || [],
+    };
+  } catch (e) { /* fall back to config values */ }
+  return CONTENT;
+}
+
 /* ---------- Cache (sessionStorage with in-memory fallback) ---------- */
 let memCache = null;
 function cacheGet() {
@@ -278,7 +309,7 @@ function showBanner(text, level, link) {
 }
 
 function initBanners(official) {
-  const a = C.announcement || {};
+  const a = CONTENT.announcement || {};
   if (a.text) showBanner(a.text, a.level, a.link);
   if (official && official.incidents && official.incidents.length) {
     const inc = official.incidents[0];
@@ -291,7 +322,7 @@ function initBanners(official) {
 function classify(issues) {
   const heat = (a, b) => (b.reactionsTotal + b.comments) - (a.reactionsTotal + a.comments) || (new Date(b.updated) - new Date(a.updated));
 
-  const OV = C.issueOverrides || {};
+  const OV = CONTENT.issueOverrides || {};
   function applyOverride(item) {
     const o = OV[item.url];
     if (!o) return item;
@@ -345,7 +376,7 @@ function classify(issues) {
 
 function computeServices(bugs, official) {
   return C.services.map(svc => {
-    if (C.statusOverrides[svc.name]) return { ...svc, level: C.statusOverrides[svc.name] };
+    if (CONTENT.statusOverrides[svc.name]) return { ...svc, level: CONTENT.statusOverrides[svc.name] };
     if (official && official.components[svc.name]) return { ...svc, level: official.components[svc.name], official: true };
     if (!C.deriveServiceStatus) return { ...svc, level: 'Operational' };
     // Opt-in derivation: only explicitly labeled critical issues count — heat,
@@ -794,7 +825,7 @@ function patchNotesToHtml(body) {
 function renderPatchNotes() {
   const sec = $('patchNotesSec'), wrap = $('patchNotes');
   if (!wrap) return;
-  const notes = C.patchNotes || [];
+  const notes = CONTENT.patchNotes || [];
   if (!notes.length) { if (sec) sec.style.display = 'none'; return; }
   if (sec) sec.style.display = '';
   wrap.innerHTML = notes.map((n, i) => `
@@ -839,7 +870,7 @@ const PAGES = {
     countUp($('statFixed'), fixed.length);
     countUp($('statWk'), wkCount);
 
-    const pinned = (C.pinnedIssues || []).map(u => bugs.find(b => b.url === u)).filter(Boolean).map(b => ({ ...b, pinned: true }));
+    const pinned = (CONTENT.pinnedIssues || []).map(u => bugs.find(b => b.url === u)).filter(Boolean).map(b => ({ ...b, pinned: true }));
     const rest = bugs.filter(b => !pinned.some(p => p.url === b.url));
     const topPool = [...pinned, ...rest.filter(b => !b.sentry), ...rest.filter(b => b.sentry)];
     $('topIssues').innerHTML = topPool.slice(0, 6).map(b => bugCard(b)).join('') || '<div class="empty" style="grid-column:1/-1">No active issues right now.</div>';
@@ -953,11 +984,11 @@ async function boot() {
   const page = document.body.dataset.page;
   if (!PAGES[page]) return;
 
-  if (page === 'report') { initBanners(null); PAGES.report(); return; }
-  if (page === 'bundles') { initBanners(null); await PAGES.bundles(); return; }
+  if (page === 'report') { await loadContent(); initBanners(null); PAGES.report(); return; }
+  if (page === 'bundles') { await loadContent(); initBanners(null); await PAGES.bundles(); return; }
 
   try {
-    const [{ issues, partial, fromCache, syncedAt }, official] = await Promise.all([loadData(), loadOfficial()]);
+    const [{ issues, partial, fromCache, syncedAt }, official] = await Promise.all([loadData(), loadOfficial(), loadContent()]);
     const data = classify(issues);
     setSync(syncedAt, fromCache, partial);
     initBanners(official);
@@ -977,5 +1008,5 @@ async function boot() {
 document.addEventListener('DOMContentLoaded', boot);
 
 // Minimal API for admin.html
-window.DCL = { loadData, classify };
+window.DCL = { loadData, classify, loadContent };
 })();
