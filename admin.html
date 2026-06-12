@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta name="theme-color" content="#08070C">
 <link rel="stylesheet" href="assets/dcl.css">
 <style>
 .admin-wrap{max-width:880px;margin:0 auto;padding:48px 24px}
@@ -39,6 +41,7 @@
 .issue-pick .pin-row{background:var(--surface)}
 .statusline{font-family:var(--mono);font-size:12.5px;margin-top:12px;min-height:18px}
 .statusline.ok{color:#9ADFB4}.statusline.err{color:#FF8AA0}
+.dirty{font-family:var(--mono);font-size:12px;color:#FFBC5B}
 .hidden{display:none}
 .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-dim)}
 .chk input{width:auto}
@@ -104,14 +107,16 @@
 
     <div class="panel-card">
       <h2>Service status overrides</h2>
-      <p class="hint">"Auto" follows normal logic (official page / green by default). Changes apply instantly.</p>
+      <p class="hint">"Auto" follows normal logic (official page / green by default). Set the dropdowns, then save.</p>
       <div id="svcRows"></div>
+      <div class="btn-row" style="margin-top:14px"><button class="btn" id="svcSave">Save statuses</button><span class="dirty hidden" id="svcDirty">Unsaved changes</span></div>
     </div>
 
     <div class="panel-card">
       <h2>Pinned issues · Top known issues</h2>
-      <p class="hint">Pinned issues appear first on the overview (6 shown). Order = order in this list. Saves instantly.</p>
+      <p class="hint">Pinned issues appear first on the overview (6 shown). Order = order in this list. Arrange, then save.</p>
       <div class="pin-list" id="pinnedList"></div>
+      <div class="btn-row" style="margin-bottom:14px"><button class="btn" id="pinsSave">Save pins</button><span class="dirty hidden" id="pinsDirty">Unsaved changes</span></div>
       <div class="field"><label for="pinSearch">Find an open issue to pin</label><input id="pinSearch" placeholder="Search by title…"></div>
       <div class="issue-pick" id="issuePick"><div class="loading" style="border:none">Loading open issues…</div></div>
     </div>
@@ -137,7 +142,7 @@
         <div class="field"><label for="edWorkaround">Workaround (shown on the issue + Workarounds page)</label><input id="edWorkaround" placeholder="Leave blank for &quot;No confirmed workaround yet.&quot;"></div>
         <div class="field"><label class="chk"><input type="checkbox" id="edHidden"> Hide this issue from the public dashboard</label></div>
         <div class="btn-row">
-          <button class="btn" id="edApply">Apply (saves now)</button>
+          <button class="btn" id="edApply">Save this issue</button>
           <button class="btn ghost" id="edClear">Remove override</button>
           <label class="chk" style="margin-left:auto"><input type="checkbox" id="edPin"> Pinned to overview</label>
         </div>
@@ -147,13 +152,9 @@
 
     <div class="panel-card">
       <h2>Patch notes</h2>
-      <p class="hint">Paste release notes exactly as you have them — version line, emoji headers, and dash bullets all render. Newest first on the overview.</p>
-      <div class="row2">
-        <div class="field"><label for="pnVersion">Version</label><input id="pnVersion" placeholder="v0.151.0"></div>
-        <div class="field"><label for="pnDate">Date</label><input id="pnDate" placeholder="10/6/2026"></div>
-      </div>
-      <div class="field"><label for="pnBody">Notes</label><textarea id="pnBody" rows="9" placeholder="🎮 Features:&#10;- ...&#10;🛠️ Fixes:&#10;- ..."></textarea></div>
-      <div class="btn-row"><button class="btn" id="pnAdd">Add release (saves now)</button></div>
+      <p class="hint">Paste the whole release-notes block in one go — the version and date are read automatically from the first line (e.g. <code>**Release Notes** v0.151.0 (10/6/2026) 🚀</code>).</p>
+      <div class="field"><label for="pnBody">Release notes</label><textarea id="pnBody" rows="11" placeholder="**Release Notes** v0.151.0 (10/6/2026)  🚀&#10;🎮 Features:&#10;- ...&#10;🛠️ Fixes:&#10;- ..."></textarea></div>
+      <div class="btn-row"><button class="btn ghost" id="pnAdd">Add to list</button><button class="btn" id="pnSave">Save patch notes</button><span class="dirty hidden" id="pnDirty">Unsaved changes</span></div>
       <div id="pnList" style="margin-top:16px"></div>
     </div>
 
