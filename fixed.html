@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recently fixed · Decentraland Community Status</title>
+<meta name="description" content="Recently resolved Decentraland issues — your reports lead to real improvements.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dcl.css">
+</head>
+<body data-page="fixed">
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="index.html"><span class="logo-mark" aria-hidden="true"></span>Decentraland · Status</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" data-nav="overview">Overview</a>
+      <a href="issues.html" data-nav="issues">Known issues</a>
+      <a href="features.html" data-nav="features">Feature requests</a>
+      <a href="fixed.html" data-nav="fixed">Recently fixed</a>
+      <a href="workarounds.html" data-nav="workarounds">Workarounds</a>
+      <a href="bundles.html" data-nav="bundles">Asset bundles</a>
+      <a href="report.html" data-nav="report">Report</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
+  <div class="hero-inner compact">
+    <div class="hero-eyebrow">Recently fixed</div>
+    <h1>Reports lead to <span class="grad">real fixes</span></h1>
+    <p class="hero-sub">Issues resolved recently across Decentraland services. Thank you for reporting — it works.</p>
+    <div class="hero-meta"><span class="sync-note" id="syncNote">Syncing with GitHub…</span></div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="sec-head"><h2>Resolved issues</h2><span class="sec-count" id="fixedCount"></span></div>
+      <div class="fixed-list" id="fixedList"><div class="loading">Loading recent fixes…</div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Community-run status board · Not an official Decentraland Foundation service</span>
+    <span id="footSync"></span>
+  </div>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/dcl.js"></script>
+</body>
+</html>

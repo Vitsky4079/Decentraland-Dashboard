@@ -1,0 +1,104 @@
+-- =============================================================
+-- Decentraland Community Status — Supabase schema
+-- Paste this whole file into Supabase: SQL Editor → New query → Run
+-- Safe to re-run (idempotent).
+-- =============================================================
+
+-- ---------- Tables ----------
+
+create table if not exists public.issue_overrides (
+  url         text primary key,           -- GitHub issue URL
+  title       text,
+  summary     text,
+  status      text,
+  impact      text,
+  area        text,
+  workaround  text,
+  hidden      boolean not null default false,
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.pins (
+  url       text primary key,             -- GitHub issue URL
+  position  integer not null default 0
+);
+
+create table if not exists public.patch_notes (
+  id         bigint generated always as identity primary key,
+  version    text,
+  date_label text,
+  body       text not null,
+  position   integer not null default 0
+);
+
+create table if not exists public.service_status (
+  name   text primary key,                -- e.g. 'Worlds'
+  level  text not null                    -- Operational | Degraded | Partial Outage | Outage
+);
+
+create table if not exists public.announcements (
+  id     integer primary key default 1 check (id = 1),  -- single-row table
+  text   text not null default '',
+  level  text not null default 'Info',
+  link   text not null default '',
+  active boolean not null default false
+);
+
+insert into public.announcements (id) values (1) on conflict (id) do nothing;
+
+-- ---------- Row Level Security ----------
+-- Public (anon) may READ everything; only authenticated users (you) may WRITE.
+
+alter table public.issue_overrides enable row level security;
+alter table public.pins            enable row level security;
+alter table public.patch_notes     enable row level security;
+alter table public.service_status  enable row level security;
+alter table public.announcements   enable row level security;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['issue_overrides','pins','patch_notes','service_status','announcements'] loop
+    execute format('drop policy if exists "public read"  on public.%I', t);
+    execute format('drop policy if exists "admin write" on public.%I', t);
+    execute format('create policy "public read"  on public.%I for select using (true)', t);
+    execute format('create policy "admin write" on public.%I for all to authenticated using (true) with check (true)', t);
+  end loop;
+end $$;
+
+-- ---------- One-call content RPC for the public site ----------
+-- Returns all editorial content in a single request.
+
+create or replace function public.get_site_content()
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'announcement', coalesce(
+      (select jsonb_build_object('text', a.text, 'level', a.level, 'link', a.link)
+         from public.announcements a where a.active and a.text <> '' limit 1),
+      '{}'::jsonb),
+    'service_status', coalesce(
+      (select jsonb_object_agg(s.name, s.level) from public.service_status s),
+      '{}'::jsonb),
+    'pins', coalesce(
+      (select jsonb_agg(p.url order by p.position) from public.pins p),
+      '[]'::jsonb),
+    'issue_overrides', coalesce(
+      (select jsonb_object_agg(i.url, jsonb_strip_nulls(jsonb_build_object(
+         'title', i.title, 'summary', i.summary, 'status', i.status,
+         'impact', i.impact, 'area', i.area, 'workaround', i.workaround,
+         'hidden', case when i.hidden then true else null end)))
+         from public.issue_overrides i),
+      '{}'::jsonb),
+    'patch_notes', coalesce(
+      (select jsonb_agg(jsonb_build_object(
+         'version', n.version, 'date', n.date_label, 'body', n.body)
+         order by n.position)
+         from public.patch_notes n),
+      '[]'::jsonb)
+  );
+$$;
+
+grant execute on function public.get_site_content() to anon, authenticated;
