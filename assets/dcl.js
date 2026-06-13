@@ -519,9 +519,15 @@ function featCard(f) {
 function fixedRow(f) {
   return `<a class="fixed-row" href="${esc(f.url)}" target="_blank" rel="noopener">
     <span class="fixed-check">✓</span>
-    <span class="fixed-title">${esc(f.title)}</span>
-    <span class="fixed-area">${esc(f.area)}</span>
-    <span class="fixed-date">Fixed ${esc(fmtDate(f.closed))}</span>
+    <span class="fixed-body">
+      <span class="fixed-title">${esc(f.title)}</span>
+      <span class="fixed-meta">
+        <span class="fixed-area">${esc(f.area)}</span>
+        <span class="fixed-dot">·</span>
+        <span class="fixed-date">Fixed ${esc(fmtDate(f.closed))}</span>
+      </span>
+    </span>
+    <span class="fixed-arrow" aria-hidden="true">→</span>
   </a>`;
 }
 
