@@ -100,7 +100,7 @@ section{padding:48px 0 8px;scroll-margin-top:72px}
 .chip.on{background:rgba(255,45,85,.13);border-color:rgba(255,45,85,.5);color:#FF8AA0}
 
 /* ---------- Cards ---------- */
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(365px,1fr));gap:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(365px,100%),1fr));gap:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0;transition:border-color .2s,transform .2s;text-decoration:none}
 .card:hover{border-color:rgba(255,45,85,.4);transform:translateY(-3px);box-shadow:0 14px 40px -18px rgba(255,45,85,.35)}
 .card-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -161,6 +161,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
   .report-grid{grid-template-columns:1fr}
   .hero-inner{padding:52px 20px 44px}
   section{padding:40px 0 8px}
+  .wrap{padding:0 20px}
 }
 
 /* ---------- Banner ---------- */
@@ -243,7 +244,7 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .card .card-meta .copy-btn{margin-left:auto}
 
 /* ---------- Patch notes ---------- */
-.pn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.pn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:16px}
 .pn-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;position:relative;overflow:hidden}
 .pn-card.latest{border-color:rgba(255,45,85,.35)}
 .pn-card.latest::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad)}
@@ -261,7 +262,7 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .pn-body a{color:var(--peach)}
 
 /* ---------- Asset bundle queue ---------- */
-.queue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.queue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:16px;align-items:start}
 .queue-col{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden}
 .queue-col::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--qcolor,var(--info))}
 .queue-col-head{display:flex;align-items:baseline;gap:10px}
