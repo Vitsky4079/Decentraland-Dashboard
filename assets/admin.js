@@ -282,11 +282,12 @@ function drawWkList() {
   const el = $('wkList');
   const keys = Object.keys(overrides).filter(u => overrides[u] && overrides[u].workaround);
   if (!keys.length) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="hint" style="margin-bottom:8px">Issues with a workaround set:</div>' + keys.map(u => {
+  el.innerHTML = '<div class="hint" style="margin-bottom:8px">Issues with a workaround set — click to edit:</div>' + keys.map(u => {
     const b = itemByUrl(u), o = overrides[u];
     const label = (o.title || (b && b.title) || u);
-    return `<span class="tag">${esc(String(label).slice(0, 50))} <span class="x" data-rmwk="${esc(u)}">✕</span></span>`;
+    return `<span class="tag wk-tag"><span class="wk-tag-label" data-editwk="${esc(u)}">${esc(String(label).slice(0, 50))}</span> <span class="x" data-rmwk="${esc(u)}">✕</span></span>`;
   }).join('');
+  el.querySelectorAll('[data-editwk]').forEach(s => s.onclick = () => openWk(s.dataset.editwk));
   el.querySelectorAll('[data-rmwk]').forEach(x => x.onclick = async () => {
     const u = x.dataset.rmwk;
     const existing = overrides[u] || {};
