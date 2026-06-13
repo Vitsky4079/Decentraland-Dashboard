@@ -629,7 +629,12 @@ function miniMarkdown(md) {
     // Bare image URLs on their own (GitHub/S3 user-attachment assets, or any
     // .png/.jpg/.gif/.webp link) become inline images too.
     .replace(/(^|\s)(https?:\/\/[^\s<]+?\.(?:png|jpe?g|gif|webp)(?:\?[^\s<]*)?)(?=\s|$)/gim, '$1<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="" loading="lazy"></a>')
-    .replace(/(^|\s)(https?:\/\/github-production-user-asset[^\s<]+)(?=\s|$)/gi, '$1<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="" loading="lazy"></a>')
+    .replace(/(^|\s)(https?:\/\/github-production-user-asset[^\s<]+)(?=\s|$)/gi, '$1<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img md-img-maybe" src="$2" alt="" loading="lazy"></a>')
+    // GitHub's modern attachment URLs have no file extension
+    // (github.com/user-attachments/assets/<uuid>). Render as an image; a JS
+    // onerror fallback (attached after render) swaps it for a link if it's a
+    // video or other non-image asset.
+    .replace(/(^|\s)(https?:\/\/github\.com\/user-attachments\/assets\/[^\s<)]+)(?=\s|$)/gi, '$1<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img md-img-maybe" src="$2" alt="" loading="lazy"></a>')
     .replace(/&lt;!--[\s\S]*?--&gt;/g, '')
     .replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>')
     .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
@@ -658,17 +663,34 @@ async function openPreview(b) {
   bindCopyButtons(m);
   // lazy-load body
   const md = m.querySelector('#modalMd');
-  if (b.fullBody !== undefined) { md.innerHTML = b.fullBody ? miniMarkdown(b.fullBody) : '<p class="modal-empty">No description provided.</p>'; return; }
+  if (b.fullBody !== undefined) { renderModalBody(md, b.fullBody); return; }
   try {
     const api = b.url.replace('https://github.com/', 'https://api.github.com/repos/').replace('/issues/', '/issues/');
     const res = await fetch(api, { headers: { Accept: 'application/vnd.github+json' } });
     if (!res.ok) throw new Error();
     const data = await res.json();
     b.fullBody = (data.body || '').slice(0, 6000);
-    md.innerHTML = b.fullBody ? miniMarkdown(b.fullBody) : '<p class="modal-empty">No description provided.</p>';
+    renderModalBody(md, b.fullBody);
   } catch (e) {
     md.innerHTML = '<p class="modal-empty">Could not load the description here. Use “Open on GitHub” for the full ticket.</p>';
   }
+}
+
+// Render the issue body markdown and wire a fallback for extensionless GitHub
+// attachment URLs that turn out to be videos/non-images: if the <img> fails to
+// load, replace it with a plain link instead of a broken image icon.
+function renderModalBody(md, body) {
+  md.innerHTML = body ? miniMarkdown(body) : '<p class="modal-empty">No description provided.</p>';
+  md.querySelectorAll('img.md-img-maybe').forEach(img => {
+    img.onerror = () => {
+      const url = img.getAttribute('src');
+      const link = document.createElement('a');
+      link.href = url; link.target = '_blank'; link.rel = 'noopener';
+      link.textContent = 'View attachment on GitHub →';
+      const wrap = img.closest('.md-img-link') || img;
+      wrap.replaceWith(link);
+    };
+  });
 }
 
 /* ---------- Generic filterable card list ---------- */
