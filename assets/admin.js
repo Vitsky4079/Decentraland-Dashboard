@@ -473,6 +473,7 @@ async function removeAdminNote(id) {
 
 /* ---------- Live visitors (owner-only presence observer) ---------- */
 let _liveChannel = null;
+let _liveTimer = null;
 
 function relTime(sinceMs) {
   if (!sinceMs) return '';
@@ -520,8 +521,10 @@ function startLiveVisitors() {
       .on('presence', { event: 'join' }, renderLiveVisitors)
       .on('presence', { event: 'leave' }, renderLiveVisitors)
       .subscribe();
-    // Refresh the "time on page" labels every 15s even without presence events.
-    setInterval(() => { if (_liveChannel) renderLiveVisitors(); }, 15000);
+    // Refresh the "time on page" labels every second so elapsed time ticks
+    // smoothly (presence join/leave/sync events update the roster instantly on
+    // their own — this interval is only for the relative-time text).
+    if (!_liveTimer) _liveTimer = setInterval(() => { if (_liveChannel) renderLiveVisitors(); }, 1000);
   } catch (e) { /* best-effort */ }
 }
 
