@@ -1031,8 +1031,10 @@ function renderPatchNotes() {
 // controls (the nav is display:none on desktop via CSS) and keep them in sync
 // with swipe scrolling.
 function setupPatchCarousel(wrap) {
+  const parent = wrap.parentNode;
+  if (!parent) return;
   // Remove any stale nav from a previous render.
-  const existing = wrap.parentNode.querySelector('.pn-carousel-nav');
+  const existing = parent.querySelector('.pn-carousel-nav');
   if (existing) existing.remove();
 
   const cols = Array.from(wrap.children);
@@ -1045,7 +1047,7 @@ function setupPatchCarousel(wrap) {
      <div class="pn-carousel-dots">${cols.map((c, i) =>
        `<button class="pn-carousel-dot${i === 0 ? ' active' : ''}" data-pncardot="${i}" aria-label="Go to ${i + 1}"></button>`).join('')}</div>
      <button class="pn-carousel-btn" data-pncar="next" aria-label="Next">›</button>`;
-  wrap.parentNode.insertBefore(nav, wrap.nextSibling);
+  parent.insertBefore(nav, wrap.nextSibling);
 
   const dots = Array.from(nav.querySelectorAll('[data-pncardot]'));
   const prevBtn = nav.querySelector('[data-pncar="prev"]');
