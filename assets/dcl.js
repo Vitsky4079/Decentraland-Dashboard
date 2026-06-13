@@ -834,28 +834,49 @@ async function fetchEntities(server, ids) {
 }
 
 // Batch-resolve entity CIDs to scene names + parcels (or World names).
-// Genesis City scenes live on the catalyst; Worlds live on the worlds server.
-// We try the catalyst first, then ask the worlds server about whatever's left.
+// Preferred: the Supabase edge function (?action=resolve) — server-side, so it
+// bypasses browser CORS against the content servers and caches results for all
+// visitors. Falls back to direct dual-server fetching if the proxy is absent.
 async function resolveScenes(ids) {
-  const cfg = C.assetBundles || {};
-  const catalyst = cfg.contentServer || 'https://peer.decentraland.org/content';
-  const worlds = cfg.worldsServer || 'https://worlds-content-server.decentraland.org';
   const todo = ids.filter(id => !(id in SCENE_CACHE));
 
   if (todo.length) {
-    const fromCatalyst = await fetchEntities(catalyst, todo);
-    Object.assign(SCENE_CACHE, fromCatalyst);
+    let resolved = null;
 
-    const stillMissing = todo.filter(id => !(id in SCENE_CACHE));
-    if (stillMissing.length) {
-      const fromWorlds = await fetchEntities(worlds, stillMissing);
-      // Anything the worlds server returns is, by definition, a World.
-      for (const [id, rec] of Object.entries(fromWorlds)) {
-        SCENE_CACHE[id] = rec.type === 'world' ? rec : { ...rec, type: 'world', world: rec.world || rec.name };
-      }
+    // Try the edge function first.
+    const sb = C.supabase || {};
+    if (sb.url && sb.anonKey && C.github && C.github.useProxy) {
+      try {
+        const res = await fetch(`${sb.url}/functions/v1/github-issues?action=resolve`, {
+          method: 'POST',
+          headers: { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey, 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ ids: todo }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.scenes) resolved = data.scenes;
+        }
+      } catch (e) { /* fall through to direct */ }
     }
-    // Mark anything still unresolved so we don't refetch every cycle.
-    todo.forEach(id => { if (!(id in SCENE_CACHE)) SCENE_CACHE[id] = null; });
+
+    if (resolved) {
+      for (const id of todo) SCENE_CACHE[id] = resolved[id] || null;
+    } else {
+      // Fallback: query the content servers directly from the browser. This may
+      // be blocked by CORS in some browsers — hence the proxy above is preferred.
+      const catalyst = (C.assetBundles && C.assetBundles.contentServer) || 'https://peer.decentraland.org/content';
+      const worlds = (C.assetBundles && C.assetBundles.worldsServer) || 'https://worlds-content-server.decentraland.org';
+      const fromCatalyst = await fetchEntities(catalyst, todo);
+      Object.assign(SCENE_CACHE, fromCatalyst);
+      const stillMissing = todo.filter(id => !(id in SCENE_CACHE));
+      if (stillMissing.length) {
+        const fromWorlds = await fetchEntities(worlds, stillMissing);
+        for (const [id, rec] of Object.entries(fromWorlds)) {
+          SCENE_CACHE[id] = rec.type === 'world' ? rec : { ...rec, type: 'world', world: rec.world || rec.name };
+        }
+      }
+      todo.forEach(id => { if (!(id in SCENE_CACHE)) SCENE_CACHE[id] = null; });
+    }
   }
 
   const out = {};
