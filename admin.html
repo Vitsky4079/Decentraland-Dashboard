@@ -61,9 +61,20 @@ select option{background:var(--surface-2);color:var(--text)}
 .wk-tag-label{cursor:pointer}
 .wk-tag-label:hover{color:var(--peach)}
 .an-note{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px}
-.an-note-body{font-size:14px;color:var(--text);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.an-note.current{border-color:rgba(255,188,91,.35)}
+.an-note-date{font-family:var(--mono);font-size:12px;color:var(--peach);font-weight:600}
+.an-note-current-badge{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#08070C;background:var(--grad);padding:2px 8px;border-radius:20px;margin-left:8px}
+.an-note-body{font-size:14px;color:var(--text);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px}
+.an-note-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.an-note-photos img{max-width:160px;max-height:120px;border-radius:8px;border:1px solid var(--line);cursor:pointer;object-fit:cover}
 .an-note-meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text-faint)}
 .an-note-actions{display:flex;gap:8px;margin-left:auto}
+.an-collapsed{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer}
+.an-collapsed:hover{border-color:var(--line-strong)}
+.an-collapsed .an-note-date{flex:none}
+.an-collapsed-preview{color:var(--text-dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.an-collapsed .chev{color:var(--text-faint);flex:none}
+.an-prev-head{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin:18px 0 10px}
 .an-empty{color:var(--text-faint);font-size:13.5px}
 .session-bar{display:flex;align-items:center;gap:14px;margin-bottom:22px;font-size:13.5px;color:var(--text-dim)}
 .session-bar .mini{margin-left:auto}
@@ -111,6 +122,20 @@ select option{background:var(--surface-2);color:var(--text)}
     <div class="session-bar">
       <span>Signed in as <strong id="whoami"></strong> — changes save to the database instantly.</span>
       <button class="mini" id="logoutBtn">Sign out</button>
+    </div>
+
+    <div class="panel-card">
+      <h2>Admin Patch Notes</h2>
+      <p class="hint" id="anHint">Internal release log for the admin team. The newest release shows expanded; older ones collapse into a list below. Visible to all signed-in admins; not shown on the public site.</p>
+      <div id="anEditor" class="hidden">
+        <div class="row2">
+          <div class="field"><label for="anDate">Release date</label><input type="date" id="anDate"></div>
+          <div class="field"><label for="anImages">Photos (image URLs, one per line — optional)</label><input id="anImages" placeholder="https://… .png"></div>
+        </div>
+        <div class="field"><label for="anText">What was added / changed</label><textarea id="anText" rows="4" placeholder="Describe the updates in this release…"></textarea></div>
+        <div class="btn-row"><button class="btn" id="anAdd">Add release</button><button class="btn ghost hidden" id="anCancel">Cancel edit</button></div>
+      </div>
+      <div id="anList" style="margin-top:16px"><div class="loading" style="border:none">Loading releases…</div></div>
     </div>
 
     <div class="panel-card">
@@ -185,16 +210,6 @@ select option{background:var(--surface-2);color:var(--text)}
       </div>
 
       <div class="btn-row" style="margin-top:18px"><button class="btn" id="pnSave">Save patch notes</button><span class="dirty hidden" id="pnDirty">Unsaved changes</span></div>
-    </div>
-
-    <div class="panel-card">
-      <h2>Admin notes</h2>
-      <p class="hint" id="anHint">Internal notes for the admin team about platform updates. Visible to all signed-in admins; not shown on the public site.</p>
-      <div id="anEditor" class="hidden">
-        <div class="field"><label for="anText">New note</label><textarea id="anText" rows="3" placeholder="What changed on the platform…"></textarea></div>
-        <div class="btn-row"><button class="btn" id="anAdd">Add note</button></div>
-      </div>
-      <div id="anList" style="margin-top:16px"><div class="loading" style="border:none">Loading notes…</div></div>
     </div>
 
     <div class="statusline" id="saveStatus"></div>

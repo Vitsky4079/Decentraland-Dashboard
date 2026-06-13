@@ -144,6 +144,7 @@ function wireEditors() {
   $('wkClear').onclick = clearWk;
   PN_STREAMS.forEach(s => { const b = $('pnAdd_' + s.key); if (b) b.onclick = () => addPatchNote(s.key); });
   { const b = $('anAdd'); if (b) b.onclick = addAdminNote; }
+  { const b = $('anCancel'); if (b) b.onclick = resetAdminNoteForm; }
   $('pnSave').onclick = savePatchNotes;
   $('svcSave').onclick = saveServices;
   $('pinsSave').onclick = savePins;
@@ -326,52 +327,121 @@ function drawWkList() {
   });
 }
 
-/* ---------- Admin-to-admin notes ---------- */
+/* ---------- Admin Patch Notes (internal release log) ---------- */
+let anEditingId = null;          // id being edited, or null for "add new"
+let anExpanded = {};             // id -> true when a previous release is expanded
+
 function fmtNoteDate(s) {
   if (!s) return '';
+  // release_date is 'YYYY-MM-DD'; render nicely. Fall back to timestamp.
   const d = new Date(s);
+  if (isNaN(d)) return s;
   return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Sort releases newest-first by release_date, then by created_at.
+function sortedAdminNotes() {
+  return [...adminNotes].sort((a, b) => {
+    const da = a.release_date || (a.created_at || '').slice(0, 10);
+    const db = b.release_date || (b.created_at || '').slice(0, 10);
+    if (da !== db) return db.localeCompare(da);
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+  });
+}
+
+function imageUrls(images) {
+  return (images || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+}
+function photosHtml(images) {
+  const urls = imageUrls(images);
+  if (!urls.length) return '';
+  return `<div class="an-note-photos">${urls.map(u =>
+    `<img src="${esc(u)}" alt="" loading="lazy" onclick="window.open('${esc(u)}','_blank')">`).join('')}</div>`;
+}
+
+function fullNoteHtml(n, isCurrent, owner) {
+  const actions = owner
+    ? `<div class="an-note-actions">
+         <button class="mini" data-anedit="${n.id}">Edit</button>
+         <button class="mini" data-anrm="${n.id}">Delete</button>
+       </div>`
+    : '';
+  return `<div class="an-note${isCurrent ? ' current' : ''}">
+    <div><span class="an-note-date">${esc(fmtNoteDate(n.release_date) || fmtNoteDate(n.created_at))}</span>${isCurrent ? '<span class="an-note-current-badge">Current</span>' : ''}</div>
+    <div class="an-note-body">${esc(n.body)}</div>
+    ${photosHtml(n.images)}
+    <div class="an-note-meta"><span>${esc(n.author || 'admin')}</span>${actions}</div>
+  </div>`;
 }
 
 function drawAdminNotes() {
   const el = $('anList');
   if (!el) return;
   const owner = isNotesOwner();
-  if (!adminNotes.length) {
-    el.innerHTML = '<div class="an-empty">No admin notes yet.</div>';
-    return;
-  }
-  el.innerHTML = adminNotes.map(n => {
-    const actions = owner
-      ? `<div class="an-note-actions">
-           <button class="mini" data-anedit="${n.id}">Edit</button>
-           <button class="mini" data-anrm="${n.id}">Delete</button>
-         </div>`
-      : '';
-    return `<div class="an-note">
-      <div class="an-note-body" data-anbody="${n.id}">${esc(n.body)}</div>
-      <div class="an-note-meta"><span>${esc(n.author || 'admin')}</span><span>·</span><span>${esc(fmtNoteDate(n.updated_at || n.created_at))}</span>${actions}</div>
-    </div>`;
-  }).join('');
+  const list = sortedAdminNotes();
+  if (!list.length) { el.innerHTML = '<div class="an-empty">No releases posted yet.</div>'; return; }
 
+  const [current, ...previous] = list;
+  let html = fullNoteHtml(current, true, owner);
+
+  if (previous.length) {
+    html += '<div class="an-prev-head">Previous releases</div>';
+    html += previous.map(n => {
+      if (anExpanded[n.id]) return fullNoteHtml(n, false, owner);
+      const firstLine = (n.body || '').split(/\r?\n/)[0] || '';
+      return `<div class="an-collapsed" data-anexpand="${n.id}">
+        <span class="an-note-date">${esc(fmtNoteDate(n.release_date) || fmtNoteDate(n.created_at))}</span>
+        <span class="an-collapsed-preview">${esc(firstLine)}</span>
+        <span class="chev">▸</span>
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
+
+  el.querySelectorAll('[data-anexpand]').forEach(d => d.onclick = () => { anExpanded[+d.dataset.anexpand] = true; drawAdminNotes(); });
   if (owner) {
     el.querySelectorAll('[data-anedit]').forEach(b => b.onclick = () => editAdminNote(+b.dataset.anedit));
     el.querySelectorAll('[data-anrm]').forEach(b => b.onclick = () => removeAdminNote(+b.dataset.anrm));
   }
 }
 
+function resetAdminNoteForm() {
+  anEditingId = null;
+  $('anDate').value = '';
+  $('anText').value = '';
+  $('anImages').value = '';
+  $('anAdd').textContent = 'Add release';
+  $('anCancel').classList.add('hidden');
+}
+
 async function addAdminNote() {
   if (!isNotesOwner()) return;
-  const ta = $('anText');
-  const body = ta.value.trim();
-  if (!body) { setStatus('Write a note first.', false); return; }
+  const body = $('anText').value.trim();
+  const release_date = $('anDate').value.trim();
+  const images = $('anImages').value.trim();
+  if (!body) { setStatus('Describe what was added first.', false); return; }
+  if (!release_date) { setStatus('Pick a release date.', false); return; }
+
+  if (anEditingId != null) {
+    const { error } = await sb.from('admin_notes')
+      .update({ body, release_date, images, updated_at: new Date().toISOString() })
+      .eq('id', anEditingId);
+    if (error) { setStatus('Save failed: ' + error.message, false); return; }
+    const n = adminNotes.find(x => x.id === anEditingId);
+    if (n) { n.body = body; n.release_date = release_date; n.images = images; }
+    setStatus('Release updated.', true);
+    resetAdminNoteForm();
+    drawAdminNotes();
+    return;
+  }
+
   const position = adminNotes.length ? Math.max(...adminNotes.map(n => n.position || 0)) + 1 : 0;
-  const row = { body, author: currentEmail || 'admin', position, updated_at: new Date().toISOString() };
+  const row = { body, release_date, images, author: currentEmail || 'admin', position, updated_at: new Date().toISOString() };
   const { data, error } = await sb.from('admin_notes').insert(row).select();
   if (error) { setStatus('Save failed: ' + error.message, false); return; }
   if (data && data[0]) adminNotes.push(data[0]);
-  ta.value = '';
-  setStatus('Admin note added.', true);
+  resetAdminNoteForm();
+  setStatus('Release added.', true);
   drawAdminNotes();
 }
 
@@ -379,22 +449,15 @@ function editAdminNote(id) {
   if (!isNotesOwner()) return;
   const n = adminNotes.find(x => x.id === id);
   if (!n) return;
-  // Inline-edit: swap the body for a textarea with Save/Cancel.
-  const bodyEl = $('anList').querySelector(`[data-anbody="${id}"]`);
-  if (!bodyEl) return;
-  const wrap = bodyEl.parentNode;
-  bodyEl.outerHTML = `<textarea class="an-edit-ta" rows="3" style="width:100%">${esc(n.body)}</textarea>
-    <div class="btn-row" style="margin-top:8px"><button class="mini pin" data-ansave="${id}">Save</button><button class="mini" data-ancancel="${id}">Cancel</button></div>`;
-  wrap.querySelector(`[data-ansave="${id}"]`).onclick = async () => {
-    const text = wrap.querySelector('.an-edit-ta').value.trim();
-    if (!text) { setStatus('Note cannot be empty.', false); return; }
-    const { error } = await sb.from('admin_notes').update({ body: text, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) { setStatus('Save failed: ' + error.message, false); return; }
-    n.body = text; n.updated_at = new Date().toISOString();
-    setStatus('Admin note updated.', true);
-    drawAdminNotes();
-  };
-  wrap.querySelector(`[data-ancancel="${id}"]`).onclick = () => drawAdminNotes();
+  anEditingId = id;
+  $('anDate').value = n.release_date || '';
+  $('anText').value = n.body || '';
+  $('anImages').value = n.images || '';
+  $('anAdd').textContent = 'Update release';
+  $('anCancel').classList.remove('hidden');
+  $('anEditor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('anText').focus();
+  setStatus('Editing release — change the fields, then click Update release.', true);
 }
 
 async function removeAdminNote(id) {
@@ -402,7 +465,8 @@ async function removeAdminNote(id) {
   const { error } = await sb.from('admin_notes').delete().eq('id', id);
   if (error) { setStatus('Delete failed: ' + error.message, false); return; }
   adminNotes = adminNotes.filter(n => n.id !== id);
-  setStatus('Admin note deleted.', true);
+  if (anEditingId === id) resetAdminNoteForm();
+  setStatus('Release deleted.', true);
   drawAdminNotes();
 }
 
