@@ -603,7 +603,16 @@ function ensureModal() {
     <div class="modal-body"></div>
   </div>`;
   document.body.appendChild(_modalEl);
-  const close = () => { _modalEl.classList.remove('open'); document.body.style.overflow = ''; };
+  const close = () => {
+    _modalEl.classList.remove('open');
+    document.body.style.overflow = '';
+    // Stop any playing media so audio doesn't continue after closing.
+    _modalEl.querySelectorAll('video, audio').forEach(v => { try { v.pause(); v.currentTime = 0; } catch (e) {} });
+    // Iframes (e.g. Google Drive preview) keep playing when hidden; blanking
+    // the src halts their audio. The modal body is rebuilt on next open, so a
+    // fresh iframe is created then — no need to restore it here.
+    _modalEl.querySelectorAll('iframe').forEach(f => { try { f.src = 'about:blank'; } catch (e) {} });
+  };
   _modalEl.addEventListener('click', e => { if (e.target === _modalEl) close(); });
   _modalEl.querySelector('.modal-close').onclick = close;
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
