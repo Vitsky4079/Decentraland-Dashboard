@@ -97,7 +97,7 @@ const DCL_CONFIG = {
     // Admin-to-admin notes are visible to every logged-in admin but the editor
     // is shown only to this account email (UI gate). Set to your Supabase Auth
     // login email. Leave '' to let any admin edit. Case-insensitive.
-    ownerEmail: '',
+    ownerEmail: 'dawid.krajewski@decentraland.org',
   },
 
   // Issues pinned to "Top known issues" on the overview (GitHub issue URLs,
