@@ -306,3 +306,8 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .qt-plat{text-align:center;width:64px}
 .qt-check{color:var(--ok);font-weight:700}
 .qt-dash{color:var(--line-strong)}
+
+/* Asset bundle queue: load-more control */
+.qt-more-wrap{display:flex;justify-content:center;margin-top:16px}
+.qt-more-wrap .btn{cursor:pointer}
+.qt-more-wrap .queue-more{border:none}

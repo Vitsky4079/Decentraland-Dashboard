@@ -1033,90 +1033,101 @@ const PAGES = {
       return;
     }
 
-    // Collapse the per-platform job lists into one row per unique entity, with a
-    // set of which platforms each is queued for (mirrors deployments.lastslice.co).
+    // One row per unique entity, tracking which platforms each is queued for.
     const platforms = (cfg.platforms || ['webgl', 'windows', 'mac']);
     const byEntity = new Map();
     for (const j of queueState.jobs) {
       if (!byEntity.has(j.entityId)) byEntity.set(j.entityId, { entityId: j.entityId, platforms: new Set() });
       byEntity.get(j.entityId).platforms.add(j.platform);
     }
-    const rows = [...byEntity.values()];
+    const allRows = [...byEntity.values()];
     const counts = platforms.map(p => queueState.jobs.filter(j => j.platform === p).length);
-
-    if (totalEl) totalEl.textContent = `${rows.length} unique ${rows.length === 1 ? 'entity' : 'entities'}`;
+    if (totalEl) totalEl.textContent = `${allRows.length} unique ${allRows.length === 1 ? 'entity' : 'entities'}`;
     if (sync) sync.textContent = `${platforms.map((p, i) => `${PLATFORM_META[p] ? PLATFORM_META[p].label : p} ${counts[i]}`).join(' · ')} · synced ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
 
-    const maxRows = cfg.maxRows || 200;
-    const shown = rows.slice(0, maxRows);
-    const platHead = platforms.map(p => `<th class="qt-plat">${esc(PLATFORM_META[p] ? PLATFORM_META[p].label : p)}</th>`).join('');
+    // Resolve a working set so we can sort by deployment time. Resolving every
+    // entity would be hundreds of lookups; instead we resolve a capped pool
+    // (newest-deployed bubble to the top), then page through it 20 at a time.
+    const POOL = cfg.resolvePool || 150;
+    const PAGE = cfg.pageSize || 20;
+    const pool = allRows.slice(0, POOL);
+    const registry = cfg.registryUrl || 'https://asset-bundle-registry.decentraland.org';
 
+    wrap.innerHTML = `<div class="loading">Resolving recent deployments…</div>`;
+    const resolved = await resolveScenes(pool.map(r => r.entityId));
+
+    // Attach scene records; sort by deployment timestamp (newest first),
+    // unresolved/timestamp-less entities sink to the bottom.
+    pool.forEach(r => { r.scene = resolved[r.entityId] || null; r.ts = (r.scene && r.scene.timestamp) || 0; });
+    pool.sort((a, b) => b.ts - a.ts);
+
+    const platHead = platforms.map(p => `<th class="qt-plat">${esc(PLATFORM_META[p] ? PLATFORM_META[p].label : p)}</th>`).join('');
     wrap.innerHTML = `
       <div class="qtable-scroll">
         <table class="qtable">
           <thead><tr>
             <th>Scene</th><th>Base parcel</th><th>Deployed</th><th>Waiting</th>${platHead}
           </tr></thead>
-          <tbody>
-            ${shown.map(r => {
-              const checks = platforms.map(p => `<td class="qt-plat">${r.platforms.has(p) ? '<span class="qt-check">✓</span>' : '<span class="qt-dash">—</span>'}</td>`).join('');
-              return `<tr data-entity="${esc(r.entityId)}">
-                <td class="qt-scene"><span class="qt-name">${esc(shortCid(r.entityId))}</span></td>
-                <td class="qt-parcel">—</td>
-                <td class="qt-deployed">…</td>
-                <td class="qt-elapsed">…</td>
-                ${checks}
-              </tr>`;
-            }).join('')}
-          </tbody>
+          <tbody id="qtBody"></tbody>
         </table>
-        ${rows.length > shown.length ? `<div class="queue-more">+ ${rows.length - shown.length} more entities in queue</div>` : ''}
-      </div>`;
+      </div>
+      <div class="qt-more-wrap" id="qtMoreWrap"></div>`;
 
-    // Resolve scene names/parcels/timestamps for the visible rows and fill the cells.
-    const visible = shown.map(r => r.entityId);
-    if (visible.length) {
-      const resolved = await resolveScenes(visible);
-      const registry = cfg.registryUrl || 'https://asset-bundle-registry.decentraland.org';
-      wrap.querySelectorAll('tr[data-entity]').forEach(tr => {
-        const sc = resolved[tr.dataset.entity];
-        const nameEl = tr.querySelector('.qt-name');
-        const parcelEl = tr.querySelector('.qt-parcel');
-        const depEl = tr.querySelector('.qt-deployed');
-        const elapEl = tr.querySelector('.qt-elapsed');
+    const body = $('qtBody');
+    let rendered = 0;
 
-        if (!sc) {
-          if (depEl) depEl.textContent = '—';
-          if (elapEl) elapEl.textContent = '—';
-          return;
+    const renderRows = (count) => {
+      const slice = pool.slice(rendered, rendered + count);
+      const rowsHtml = slice.map(r => {
+        const sc = r.scene;
+        const checks = platforms.map(p => `<td class="qt-plat">${r.platforms.has(p) ? '<span class="qt-check">✓</span>' : '<span class="qt-dash">—</span>'}</td>`).join('');
+        let name = esc(shortCid(r.entityId)), parcel = '—', deployed = '—', waiting = '—';
+        if (sc) {
+          if (sc.type === 'world') {
+            name = `${esc(sc.name || sc.world || 'Unnamed World')} <span class="queue-kind kind-world" title="${esc(sc.world || '')}">World</span>`;
+            parcel = esc(sc.world || '—');
+          } else if (sc.name || (sc.parcels && sc.parcels.length)) {
+            const n = (sc.parcels && sc.parcels.length) || 0;
+            name = `${esc(sc.name || 'Unnamed scene')}${n ? ` <span class="queue-kind kind-parcel" title="${esc((sc.parcels || []).join('  '))}">${n} parcel${n > 1 ? 's' : ''}</span>` : ''}`;
+            parcel = esc(sc.base || (sc.parcels && sc.parcels[0]) || '—');
+          }
+          if (sc.timestamp) {
+            deployed = new Date(sc.timestamp).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            waiting = rel(sc.timestamp).replace(' ago', '');
+          }
         }
+        return `<tr data-entity="${esc(r.entityId)}" style="cursor:pointer">
+          <td class="qt-scene"><span class="qt-name">${name}</span></td>
+          <td class="qt-parcel">${parcel}</td>
+          <td class="qt-deployed">${deployed}</td>
+          <td class="qt-elapsed">${waiting}</td>
+          ${checks}
+        </tr>`;
+      }).join('');
+      body.insertAdjacentHTML('beforeend', rowsHtml);
+      rendered += slice.length;
 
-        // Scene name + type badge
-        if (sc.type === 'world') {
-          nameEl.innerHTML = `${esc(sc.name || sc.world || 'Unnamed World')} <span class="queue-kind kind-world" title="${esc(sc.world || '')}">World</span>`;
-          if (parcelEl) parcelEl.textContent = sc.world || '—';
-        } else {
-          const nm = sc.name || 'Unnamed scene';
-          const n = (sc.parcels && sc.parcels.length) || 0;
-          nameEl.innerHTML = `${esc(nm)}${n ? ` <span class="queue-kind kind-parcel" title="${esc((sc.parcels || []).join('  '))}">${n} parcel${n > 1 ? 's' : ''}</span>` : ''}`;
-          if (parcelEl) parcelEl.textContent = sc.base || (sc.parcels && sc.parcels[0]) || '—';
-        }
-
-        // Deployed date + waiting time from the entity timestamp
-        if (sc.timestamp) {
-          const d = new Date(sc.timestamp);
-          if (depEl) depEl.textContent = d.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-          if (elapEl) elapEl.textContent = rel(sc.timestamp).replace(' ago', '');
-        } else {
-          if (depEl) depEl.textContent = '—';
-          if (elapEl) elapEl.textContent = '—';
-        }
-
-        // Make the row link to the registry status for that entity
-        tr.style.cursor = 'pointer';
+      // Wire row clicks for the newly added rows
+      body.querySelectorAll('tr[data-entity]:not([data-wired])').forEach(tr => {
+        tr.setAttribute('data-wired', '1');
         tr.onclick = () => window.open(`${registry}/entities/status/${encodeURIComponent(tr.dataset.entity)}`, '_blank', 'noopener');
       });
-    }
+
+      // Update the "Load more" control
+      const moreWrap = $('qtMoreWrap');
+      const remainingInPool = pool.length - rendered;
+      const beyondPool = allRows.length - pool.length;
+      if (remainingInPool > 0) {
+        moreWrap.innerHTML = `<button class="btn ghost" id="qtMoreBtn">Load ${Math.min(PAGE, remainingInPool)} more</button>`;
+        $('qtMoreBtn').onclick = () => renderRows(PAGE);
+      } else if (beyondPool > 0) {
+        moreWrap.innerHTML = `<div class="queue-more">Showing the ${pool.length} most recent of ${allRows.length} pending entities.</div>`;
+      } else {
+        moreWrap.innerHTML = '';
+      }
+    };
+
+    renderRows(PAGE);
 
     if (cfg.refreshSeconds && !window.__queueTimer) {
       window.__queueTimer = setInterval(() => { if (document.body.dataset.page === 'bundles') PAGES.bundles(); }, Math.max(20, cfg.refreshSeconds) * 1000);
