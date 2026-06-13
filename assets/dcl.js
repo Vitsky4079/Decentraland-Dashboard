@@ -611,6 +611,7 @@ function ensureModal() {
   const close = () => {
     _modalEl.classList.remove('open');
     document.body.style.overflow = '';
+    presenceSetAction('');  // back to just the page in the live roster
     // Stop any playing media so audio doesn't continue after closing.
     _modalEl.querySelectorAll('video, audio').forEach(v => { try { v.pause(); v.currentTime = 0; } catch (e) {} });
     // Iframes (e.g. Google Drive preview) keep playing when hidden; blanking
@@ -665,6 +666,7 @@ function miniMarkdown(md) {
 
 async function openPreview(b) {
   const m = ensureModal();
+  presenceSetAction('Viewing: ' + (b.title || 'an item'));
   const colors = b.status in BUG_STATUS_COLORS ? BUG_STATUS_COLORS : FEAT_STATUS_COLORS;
   const tags = (b.pinned ? badge('Pinned', '#FFBC5B') : '') + (b.qa ? badge('QA priority', '#F0883E') : '') +
     badge(b.status, colors[b.status]) + (b.impact ? badge(b.impact + ' impact', IMPACT_COLORS[b.impact]) : '') +
@@ -1332,6 +1334,60 @@ async function boot() {
 }
 
 document.addEventListener('DOMContentLoaded', boot);
+
+/* ---------- Live presence (anonymous; broadcasts current page/action) -------
+   Each open tab joins a Supabase Realtime channel and reports an anonymous
+   session id, a friendly label, the current page, and the current action
+   (e.g. which issue modal is open). The owner-only admin view subscribes to
+   the same channel to see who's currently on the site. No personal data, no
+   storage — presence is ephemeral and auto-drops when a tab closes. */
+const PRESENCE_CHANNEL = 'live-presence';
+let _presence = { channel: null, state: { page: '', action: '' } };
+
+function friendlyLabel() {
+  const adj = ['Calm', 'Swift', 'Brave', 'Lucky', 'Clever', 'Mellow', 'Bright', 'Quiet', 'Bold', 'Cosmic', 'Pixel', 'Neon'];
+  const animal = ['Otter', 'Fox', 'Llama', 'Falcon', 'Panda', 'Koala', 'Heron', 'Lynx', 'Tapir', 'Gecko', 'Moth', 'Yak'];
+  return adj[Math.floor(Math.random() * adj.length)] + ' ' + animal[Math.floor(Math.random() * animal.length)];
+}
+
+// Map a pathname to a human page name shown in the admin roster.
+function pageName(path) {
+  const p = (path || location.pathname).replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+  const map = { '/': 'Overview', '/issues': 'Known issues', '/features': 'Feature requests', '/fixed': 'Recently fixed', '/workarounds': 'Workarounds', '/bundles': 'Asset bundles', '/report': 'Report' };
+  return map[p] || (p === '' ? 'Overview' : p);
+}
+
+function initPresence() {
+  try {
+    const cfg = (window.DCL_CONFIG && window.DCL_CONFIG.supabase) || {};
+    if (!window.supabase || !cfg.url || !cfg.anonKey) return; // library/config missing → skip silently
+    if (/\/admin(\.html)?$/.test(location.pathname)) return;  // don't broadcast from the admin panel
+
+    const client = window.supabase.createClient(cfg.url, cfg.anonKey);
+    const id = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'sess-' + Math.random().toString(36).slice(2));
+    const label = friendlyLabel();
+    const since = Date.now();
+    _presence.state = { id, label, page: pageName(), action: '', since };
+
+    const channel = client.channel(PRESENCE_CHANNEL, { config: { presence: { key: id } } });
+    _presence.channel = channel;
+
+    const push = () => { try { channel.track(_presence.state); } catch (e) {} };
+    channel.subscribe((status) => { if (status === 'SUBSCRIBED') push(); });
+
+    setInterval(push, 25000);  // keep the connection warm
+    window.addEventListener('beforeunload', () => { try { channel.untrack(); } catch (e) {} });
+  } catch (e) { /* presence is best-effort; never break the page */ }
+}
+
+// Called by openPreview / modal close to update the action shown in the roster.
+function presenceSetAction(action) {
+  if (!_presence.channel) return;
+  _presence.state = { ..._presence.state, action: action || '' };
+  try { _presence.channel.track(_presence.state); } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', initPresence);
 
 // Minimal API for admin.html
 window.DCL = { loadData, classify, loadContent };

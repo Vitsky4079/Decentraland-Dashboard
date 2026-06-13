@@ -97,6 +97,7 @@ function applyAdminNotesGate() {
   if (editor) editor.classList.toggle('hidden', !isNotesOwner());
   const hint = $('anHint');
   if (hint && !isNotesOwner()) hint.textContent = 'Internal notes from the admin team about platform updates (read-only for your account).';
+  if (isNotesOwner()) startLiveVisitors();
 }
 
 /* ---------- Load state ---------- */
@@ -468,6 +469,60 @@ async function removeAdminNote(id) {
   if (anEditingId === id) resetAdminNoteForm();
   setStatus('Release deleted.', true);
   drawAdminNotes();
+}
+
+/* ---------- Live visitors (owner-only presence observer) ---------- */
+let _liveChannel = null;
+
+function relTime(sinceMs) {
+  if (!sinceMs) return '';
+  const s = Math.max(0, Math.floor((Date.now() - sinceMs) / 1000));
+  if (s < 60) return s + 's';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + 'm';
+  return Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
+}
+
+function renderLiveVisitors() {
+  if (!_liveChannel) return;
+  const state = _liveChannel.presenceState();   // { key: [ {payload...} ] }
+  const sessions = [];
+  Object.values(state).forEach(arr => { if (arr && arr[0]) sessions.push(arr[0]); });
+  // Don't count the owner's own admin tab (it never broadcasts, but be safe).
+  sessions.sort((a, b) => (a.since || 0) - (b.since || 0));
+
+  $('liveCount').textContent = String(sessions.length);
+  const el = $('liveList');
+  if (!sessions.length) { el.innerHTML = '<div class="an-empty">No one on the site right now.</div>'; return; }
+  el.innerHTML = sessions.map(s => {
+    const where = s.action
+      ? `${esc(s.page || 'Site')} — <b>${esc(s.action)}</b>`
+      : `On <b>${esc(s.page || 'Site')}</b>`;
+    return `<div class="live-row">
+      <span class="live-dot"></span>
+      <span class="live-name">${esc(s.label || 'Visitor')}</span>
+      <span class="live-where">${where}</span>
+      <span class="live-time">${esc(relTime(s.since))}</span>
+    </div>`;
+  }).join('');
+}
+
+function startLiveVisitors() {
+  // Owner-only; needs the realtime library + config. Safe to call repeatedly.
+  if (_liveChannel || !isNotesOwner()) return;
+  const card = $('liveCard');
+  if (card) card.classList.remove('hidden');
+  try {
+    const channel = sb.channel('live-presence');
+    _liveChannel = channel;
+    channel
+      .on('presence', { event: 'sync' }, renderLiveVisitors)
+      .on('presence', { event: 'join' }, renderLiveVisitors)
+      .on('presence', { event: 'leave' }, renderLiveVisitors)
+      .subscribe();
+    // Refresh the "time on page" labels every 15s even without presence events.
+    setInterval(() => { if (_liveChannel) renderLiveVisitors(); }, 15000);
+  } catch (e) { /* best-effort */ }
 }
 
 /* ---------- Patch notes (per stream: explorer / creator-hub / sdk) ---------- */

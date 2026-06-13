@@ -76,6 +76,13 @@ select option{background:var(--surface-2);color:var(--text)}
 .an-collapsed .chev{color:var(--text-faint);flex:none}
 .an-prev-head{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin:18px 0 10px}
 .an-empty{color:var(--text-faint);font-size:13.5px}
+.live-count{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;padding:0 8px;border-radius:13px;background:var(--grad);color:#08070C;font-family:var(--mono);font-size:13px;font-weight:700;vertical-align:middle;margin-left:6px}
+.live-row{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin-bottom:8px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#3FCB6E;flex:none;box-shadow:0 0 0 3px rgba(63,203,110,.15)}
+.live-name{font-weight:600;color:var(--text);font-size:14px;flex:none;min-width:120px}
+.live-where{color:var(--text-dim);font-size:13.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live-where b{color:var(--peach);font-weight:600}
+.live-time{font-family:var(--mono);font-size:11px;color:var(--text-faint);flex:none}
 .session-bar{display:flex;align-items:center;gap:14px;margin-bottom:22px;font-size:13.5px;color:var(--text-dim)}
 .session-bar .mini{margin-left:auto}
 @media(max-width:640px){.row2,.row3{grid-template-columns:1fr}.svc-row{grid-template-columns:1fr}}
@@ -136,6 +143,12 @@ select option{background:var(--surface-2);color:var(--text)}
         <div class="btn-row"><button class="btn" id="anAdd">Add release</button><button class="btn ghost hidden" id="anCancel">Cancel edit</button></div>
       </div>
       <div id="anList" style="margin-top:16px"><div class="loading" style="border:none">Loading releases…</div></div>
+    </div>
+
+    <div class="panel-card hidden" id="liveCard">
+      <h2>Live visitors <span id="liveCount" class="live-count">0</span></h2>
+      <p class="hint">Anonymous, real-time view of who's currently on the public site and what page or item they're looking at. Sessions disappear when their tab closes. No personal data is collected.</p>
+      <div id="liveList"><div class="an-empty">No one on the site right now.</div></div>
     </div>
 
     <div class="panel-card">
