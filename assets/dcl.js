@@ -530,6 +530,7 @@ function jobRow(j) {
   return `<a class="queue-item" data-entity="${esc(j.entityId)}" href="${esc(base)}/entities/status/${encodeURIComponent(j.entityId)}" target="_blank" rel="noopener" title="${esc(j.entityId)}">
     <div class="queue-scene">${esc(shortCid(j.entityId))}</div>
     <div class="queue-meta">
+      <span class="queue-kind" data-kind-for="${esc(j.entityId)}"></span>
       <span class="queue-status" style="color:${statusColor}">${esc(j.status)}</span>
       ${j.retries != null ? `<span class="queue-retry">${esc(String(j.retries))} retries</span>` : ''}
       ${j.createdAt ? `<span class="queue-age">${esc(rel(j.createdAt))}</span>` : ''}
@@ -760,29 +761,64 @@ function normalizeQueue(data) {
   return jobs;
 }
 
-// Batch-resolve entity CIDs to scene names + parcels via POST /entities/active.
+// Turn an entity manifest into a normalized scene record, classifying it as a
+// World (named, e.g. "myworld.dcl.eth") or a Genesis City scene (parcel coords).
+function sceneFromEntity(e) {
+  const md = e.metadata || {};
+  const worldName = md.worldConfiguration && (md.worldConfiguration.name || md.worldConfiguration.dclName);
+  const title = (md.display && md.display.title) || (md.scene && md.scene.name) || md.name || null;
+  if (worldName) {
+    return { type: 'world', name: title && title !== 'interactive-text' ? title : worldName, world: worldName, parcels: [] };
+  }
+  const parcels = (md.scene && md.scene.parcels) || e.pointers || [];
+  let base = (md.scene && md.scene.base) || (parcels.length ? parcels[0] : null);
+  return { type: 'parcel', name: title, parcels, base };
+}
+
+// POST a batch of ids to a content server's /entities/active, return id->record.
+async function fetchEntities(server, ids) {
+  const out = {};
+  if (!ids.length) return out;
+  try {
+    const res = await fetch(`${server}/entities/active`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) throw new Error('http ' + res.status);
+    const arr = await res.json();
+    for (const e of (Array.isArray(arr) ? arr : [])) {
+      if (e && e.id) out[e.id] = sceneFromEntity(e);
+    }
+  } catch (e) { /* best-effort */ }
+  return out;
+}
+
+// Batch-resolve entity CIDs to scene names + parcels (or World names).
+// Genesis City scenes live on the catalyst; Worlds live on the worlds server.
+// We try the catalyst first, then ask the worlds server about whatever's left.
 async function resolveScenes(ids) {
+  const cfg = C.assetBundles || {};
+  const catalyst = cfg.contentServer || 'https://peer.decentraland.org/content';
+  const worlds = cfg.worldsServer || 'https://worlds-content-server.decentraland.org';
   const todo = ids.filter(id => !(id in SCENE_CACHE));
+
   if (todo.length) {
-    const cs = (C.assetBundles && C.assetBundles.contentServer) || 'https://peer.decentraland.org/content';
-    try {
-      const res = await fetch(`${cs}/entities/active`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ ids: todo }),
-      });
-      if (!res.ok) throw new Error();
-      const arr = await res.json();
-      for (const e of (Array.isArray(arr) ? arr : [])) {
-        const md = e.metadata || {};
-        SCENE_CACHE[e.id] = {
-          name: (md.display && md.display.title) || (md.scene && md.scene.name) || md.name || null,
-          parcels: (md.scene && md.scene.parcels) || e.pointers || [],
-        };
+    const fromCatalyst = await fetchEntities(catalyst, todo);
+    Object.assign(SCENE_CACHE, fromCatalyst);
+
+    const stillMissing = todo.filter(id => !(id in SCENE_CACHE));
+    if (stillMissing.length) {
+      const fromWorlds = await fetchEntities(worlds, stillMissing);
+      // Anything the worlds server returns is, by definition, a World.
+      for (const [id, rec] of Object.entries(fromWorlds)) {
+        SCENE_CACHE[id] = rec.type === 'world' ? rec : { ...rec, type: 'world', world: rec.world || rec.name };
       }
-    } catch (e) { /* resolution is best-effort */ }
+    }
+    // Mark anything still unresolved so we don't refetch every cycle.
     todo.forEach(id => { if (!(id in SCENE_CACHE)) SCENE_CACHE[id] = null; });
   }
+
   const out = {};
   ids.forEach(id => out[id] = SCENE_CACHE[id]);
   return out;
@@ -964,10 +1000,24 @@ const PAGES = {
       grid.querySelectorAll('[data-entity]').forEach(el => {
         const sc = resolved[el.dataset.entity];
         const target = el.querySelector('.queue-scene');
+        const kindEl = el.querySelector('.queue-kind');
         if (!target) return;
-        if (sc && (sc.name || (sc.parcels && sc.parcels.length))) {
-          const loc = sc.parcels && sc.parcels.length ? `<span class="queue-loc"> · ${esc(sc.parcels[0])}${sc.parcels.length > 1 ? ` +${sc.parcels.length - 1}` : ''}</span>` : '';
+        if (!sc) { if (kindEl) kindEl.textContent = ''; return; }
+        if (sc.type === 'world') {
+          // Worlds: show the scene/World name and a "World" badge with the dcl name.
+          target.innerHTML = esc(sc.name || sc.world || 'Unnamed World');
+          if (kindEl) { kindEl.textContent = 'World'; kindEl.className = 'queue-kind kind-world'; kindEl.title = sc.world || ''; }
+        } else if (sc.name || (sc.parcels && sc.parcels.length)) {
+          // Genesis City: show scene name + base/first parcel and a "Parcel" badge.
+          const coord = sc.base || (sc.parcels && sc.parcels[0]);
+          const extra = sc.parcels && sc.parcels.length > 1 ? ` +${sc.parcels.length - 1}` : '';
+          const loc = coord ? `<span class="queue-loc"> · ${esc(coord)}${extra}</span>` : '';
           target.innerHTML = esc(sc.name || 'Unnamed scene') + loc;
+          if (kindEl) {
+            kindEl.textContent = sc.parcels && sc.parcels.length ? `${sc.parcels.length} parcel${sc.parcels.length > 1 ? 's' : ''}` : 'Parcel';
+            kindEl.className = 'queue-kind kind-parcel';
+            kindEl.title = (sc.parcels || []).join('  ');
+          }
         }
       });
     }

@@ -284,3 +284,9 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .lookup-head{font-family:var(--display);font-weight:600;font-size:16px;margin-bottom:12px}
 .lookup-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px;color:var(--text)}
 .lookup-row:last-child{border-bottom:none}
+
+/* Asset-bundle queue: World vs Parcel badges */
+.queue-kind{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.queue-kind:empty{display:none}
+.kind-world{color:#C77CF8;background:rgba(199,124,248,.12);border:1px solid rgba(199,124,248,.3)}
+.kind-parcel{color:#5BC8F5;background:rgba(91,200,245,.12);border:1px solid rgba(91,200,245,.3)}

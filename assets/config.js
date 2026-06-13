@@ -124,6 +124,7 @@ const DCL_CONFIG = {
     // Base for per-entity lookups: GET {registryUrl}/entities/status/{entityCID}
     registryUrl: 'https://asset-bundle-registry.decentraland.org',
     contentServer: 'https://peer.decentraland.org/content',
+    worldsServer: 'https://worlds-content-server.decentraland.org',
     platforms: ['webgl', 'windows', 'mac'],
     refreshSeconds: 60,
     maxRowsPerPlatform: 25,
