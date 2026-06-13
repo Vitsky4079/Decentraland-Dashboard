@@ -1121,6 +1121,145 @@ function mountReportButton(elId, kind) {
   if (el) el.href = reportUrl(kind);
 }
 
+/* ---------- Report form (structured → Intercom via edge function) ---------- */
+const REPORT_BUCKET = 'reports';
+let _reportFiles = [];   // [{ url, name, type }]
+
+function initReportForm() {
+  const form = $('reportForm');
+  if (!form) return;
+  _reportFiles = [];
+
+  const uploadBtn = $('rfUploadBtn');
+  const fileInput = $('rfFiles');
+  if (uploadBtn && fileInput) {
+    uploadBtn.onclick = () => fileInput.click();
+    fileInput.onchange = () => { uploadReportFiles(fileInput.files); fileInput.value = ''; };
+  }
+
+  $('rfAnother') && ($('rfAnother').onclick = () => {
+    $('reportDone').classList.add('hidden');
+    form.classList.remove('hidden');
+    form.reset();
+    $('rfSTR').value = '1. \n2. \n3. ';
+    _reportFiles = []; renderReportAttachments();
+  });
+
+  form.onsubmit = (e) => { e.preventDefault(); submitReport(); };
+}
+
+async function uploadReportFiles(files) {
+  if (!files || !files.length) return;
+  const sb = C.supabase || {};
+  if (!window.supabase || !sb.url || !sb.anonKey) { setReportStatus('Uploads are unavailable right now — you can still send the report without evidence.', 'err'); return; }
+  const client = (initReportForm._sb = initReportForm._sb || window.supabase.createClient(sb.url, sb.anonKey));
+  const note = $('rfUploadNote');
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (file.size > 25 * 1024 * 1024) { setReportNote(`"${file.name}" is over 25 MB — skipped.`, true); continue; }
+    setReportNote(`Uploading ${i + 1} of ${files.length}…`, true);
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    try {
+      const { error } = await client.storage.from(REPORT_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || undefined });
+      if (error) { setReportNote('Upload failed: ' + error.message, true); continue; }
+      const { data } = client.storage.from(REPORT_BUCKET).getPublicUrl(path);
+      if (data && data.publicUrl) _reportFiles.push({ url: data.publicUrl, name: file.name, type: file.type || '' });
+    } catch (err) { setReportNote('Upload error — is the "reports" bucket created?', true); }
+  }
+  setReportNote('images or short video (optional)', false);
+  renderReportAttachments();
+}
+
+function renderReportAttachments() {
+  const el = $('rfAttachments');
+  if (!el) return;
+  el.innerHTML = _reportFiles.map((f, i) => {
+    const media = /^video\//.test(f.type) ? `<video src="${esc(f.url)}" muted></video>` : `<img src="${esc(f.url)}" alt="">`;
+    return `<div class="rf-thumb">${media}<button type="button" class="rf-rm" data-rm="${i}" aria-label="Remove">&times;</button></div>`;
+  }).join('');
+  el.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { _reportFiles.splice(+b.dataset.rm, 1); renderReportAttachments(); });
+}
+
+function setReportNote(t, busy) { const n = $('rfUploadNote'); if (n) { n.textContent = t; n.classList.toggle('busy', !!busy); } }
+function setReportStatus(t, kind) { const s = $('rfStatus'); if (s) { s.textContent = t; s.className = 'rf-status' + (kind ? ' ' + kind : ''); } }
+
+function emailValid(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+function submitReport() {
+  const fields = {
+    email: $('rfEmail').value.trim(),
+    build: $('rfBuild').value.trim(),
+    area: $('rfArea').value,
+    desc: $('rfDesc').value.trim(),
+    str: $('rfSTR').value.trim(),
+    expected: $('rfExpected').value.trim(),
+    actual: $('rfActual').value.trim(),
+    repro: $('rfRepro').value,
+    notes: $('rfNotes').value.trim(),
+  };
+  // Validate required: email, build, area, desc, str, actual
+  const required = { rfEmail: fields.email, rfBuild: fields.build, rfArea: fields.area, rfDesc: fields.desc, rfSTR: fields.str && fields.str !== '1.\n2.\n3.', rfActual: fields.actual };
+  let firstBad = null;
+  Object.keys(required).forEach(id => {
+    const ok = !!required[id];
+    $(id).classList.toggle('invalid', !ok);
+    if (!ok && !firstBad) firstBad = id;
+  });
+  if (!fields.email || !emailValid(fields.email)) { $('rfEmail').classList.add('invalid'); firstBad = firstBad || 'rfEmail'; }
+  if (firstBad) {
+    setReportStatus('Please fill in the highlighted required fields.', 'err');
+    $(firstBad).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  doSubmitReport(fields);
+}
+
+async function doSubmitReport(fields) {
+  const sb = C.supabase || {};
+  const fn = (C.reporting && C.reporting.submitFn) || (sb.url ? sb.url + '/functions/v1/submit-report' : '');
+  if (!fn || !sb.anonKey) { setReportStatus('Reporting isn\u2019t configured yet. Please try again later.', 'err'); return; }
+
+  setReportStatus('Sending your report…', '');
+  $('rfSubmit').disabled = true;
+
+  const areaLabelText = areaLabel(fields.area);
+  const payload = {
+    email: fields.email,
+    area: fields.area,
+    area_label: areaLabelText,
+    build: fields.build,
+    description: fields.desc,
+    steps: fields.str,
+    expected: fields.expected,
+    actual: fields.actual,
+    reproduction_rate: fields.repro,
+    os_notes: fields.notes,
+    attachments: _reportFiles.map(f => f.url),
+    source: 'status-dashboard',
+  };
+
+  try {
+    const res = await fetch(fn, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(txt || ('HTTP ' + res.status));
+    }
+    $('reportForm').classList.add('hidden');
+    $('reportDone').classList.remove('hidden');
+    $('reportDone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (err) {
+    setReportStatus('Sorry — sending failed. Please try again in a moment.', 'err');
+  } finally {
+    $('rfSubmit').disabled = false;
+  }
+}
+
 /* ---------- Image lightbox (full-size preview) ---------- */
 let _lightboxEl = null;
 function openLightbox(url) {
@@ -1221,8 +1360,7 @@ const PAGES = {
   },
 
   report() {
-    mountReportButton('bugBtn', 'bug');
-    mountReportButton('featBtn', 'feature');
+    initReportForm();
   },
 
   async bundles() {

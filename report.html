@@ -34,37 +34,110 @@
 <header class="hero">
   <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
   <div class="hero-inner compact">
-    <div class="hero-eyebrow">Report & feedback</div>
+    <div class="hero-eyebrow">Report an issue</div>
     <h1>Found something? <span class="grad">Tell the team.</span></h1>
-    <p class="hero-sub">Every report goes straight to the public Decentraland trackers on GitHub. A free GitHub account is required.</p>
-    
+    <p class="hero-sub">Fill in the report below and it goes straight to the Decentraland support team. The more detail you give, the faster we can help.</p>
   </div>
 </header>
 
 <main>
   <section>
-    <div class="wrap">
-      <div class="report-grid">
-        <div class="report-card">
-          <h3>🐛 Report a bug</h3>
-          <p>Something broken, crashing or not behaving as expected? This opens the Explorer bug report form with the right labels already set.</p>
-          <a class="report-btn" id="bugBtn" href="#" target="_blank" rel="noopener">Report bug on GitHub</a>
-          <p class="report-tips">Tip: include what you did, what you expected, and what happened instead. Screenshots help a lot.</p>
-        </div>
-        <div class="report-card">
-          <h3>💡 Submit a feature request</h3>
-          <p>Have an idea that would make Decentraland better? This opens the feature request form for the Explorer repo.</p>
-          <a class="report-btn ghost" id="featBtn" href="#" target="_blank" rel="noopener">Submit request on GitHub</a>
-          <p class="report-tips">Tip: explain the problem your idea solves — it helps the team prioritize.</p>
-        </div>
-      </div>
-      <div class="guide">
+    <div class="wrap wrap-narrow">
+      <div class="guide" style="margin-bottom:24px">
         <h3>Before you report</h3>
         <ol>
-          <li>Check the <a href="issues">Known issues</a> page — your bug may already be tracked, and adding a 👍 reaction there helps more than a duplicate report.</li>
-          <li>Try the <a href="workarounds">Workarounds</a> page if you are blocked right now.</li>
-          <li>For account-specific problems (purchases, bans, lost items), contact official Decentraland support instead — public trackers are not the right place for personal account data.</li>
+          <li>Check the <a href="issues">Known issues</a> page — your bug may already be tracked.</li>
+          <li>Try the <a href="workarounds">Workarounds</a> page if you're blocked right now.</li>
+          <li>Fill each section below as completely as you can — build version, steps, and evidence make the biggest difference.</li>
         </ol>
+      </div>
+
+      <form class="report-form" id="reportForm" novalidate>
+        <div class="rf-field">
+          <label for="rfEmail">✉️ Your email <span class="req">*</span></label>
+          <p class="rf-help">So the team can reply to you about this report.</p>
+          <input type="email" id="rfEmail" placeholder="you@example.com" required>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfBuild">🛠️ Build version <span class="req">*</span></label>
+          <p class="rf-help">The version or release date of the app/tool where you saw this.</p>
+          <input type="text" id="rfBuild" placeholder="e.g. Desktop 1.4.2 · 12 Jun 2026" required>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfArea">📂 Area <span class="req">*</span></label>
+          <select id="rfArea" required>
+            <option value="" disabled selected>Select the area…</option>
+            <option value="Explorer">Desktop app</option>
+            <option value="Creator Hub">Creator Tools</option>
+            <option value="Builder">Website</option>
+            <option value="SDK">SDK</option>
+          </select>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfDesc">📔 Issue description <span class="req">*</span></label>
+          <p class="rf-help">A short summary of the problem.</p>
+          <textarea id="rfDesc" rows="3" placeholder="Describe what's wrong…" required></textarea>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfSTR">👣 Steps to reproduce <span class="req">*</span></label>
+          <p class="rf-help">Number each step so we can follow exactly what you did.</p>
+          <textarea id="rfSTR" rows="4" placeholder="1. &#10;2. &#10;3. ">1. 
+2. 
+3. </textarea>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfExpected">✔️ Expected result</label>
+          <p class="rf-help">What you thought should happen.</p>
+          <textarea id="rfExpected" rows="2" placeholder="What should have happened…"></textarea>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfActual">❌ Actual result + evidence <span class="req">*</span></label>
+          <p class="rf-help">What actually happened. Attach screenshots or a short video — it helps enormously.</p>
+          <textarea id="rfActual" rows="3" placeholder="What actually happened…" required></textarea>
+          <div class="upload-row">
+            <input type="file" id="rfFiles" accept="image/*,video/*" multiple hidden>
+            <button class="btn ghost" id="rfUploadBtn" type="button">Attach evidence…</button>
+            <span class="upload-note" id="rfUploadNote">images or short video (optional)</span>
+          </div>
+          <div class="rf-attachments" id="rfAttachments"></div>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfRepro">➗ Reproduction rate</label>
+          <p class="rf-help">How often does it happen when you try?</p>
+          <select id="rfRepro">
+            <option value="" disabled selected>Select…</option>
+            <option>Always</option>
+            <option>Often</option>
+            <option>Sometimes</option>
+            <option>Once</option>
+            <option>Rare</option>
+          </select>
+        </div>
+
+        <div class="rf-field">
+          <label for="rfNotes">🖥️ Operating system & additional notes</label>
+          <p class="rf-help">Your OS (Windows/Mac/Linux), device, and anything else useful.</p>
+          <textarea id="rfNotes" rows="2" placeholder="e.g. Windows 11, RTX 3060, happens only in fullscreen…"></textarea>
+        </div>
+
+        <div class="rf-actions">
+          <button class="report-btn" id="rfSubmit" type="submit">Send report</button>
+          <span class="rf-status" id="rfStatus"></span>
+        </div>
+      </form>
+
+      <div class="report-done hidden" id="reportDone">
+        <div class="report-done-mark">✓</div>
+        <h2>Report sent — thank you!</h2>
+        <p>Your report is now with the Decentraland support team. If you gave a valid email, we'll be in touch. You can submit another report below.</p>
+        <button class="btn" id="rfAnother" type="button">Submit another report</button>
       </div>
     </div>
   </section>
