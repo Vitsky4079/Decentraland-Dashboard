@@ -467,19 +467,13 @@ function bugCard(b, withWorkaround = true) {
   return `<div class="card">
     <div class="card-top">${badge(b.status, BUG_STATUS_COLORS[b.status])}${badge(b.impact + ' impact', IMPACT_COLORS[b.impact])}${badge(b.area, '#A39DB3')}${extra}</div>
     <button class="card-title card-link" data-preview="${id}">${esc(b.title)}</button>
-    ${b.summary ? `<div class="card-expl${longSummary ? ' clamp' : ''}" data-expl>${esc(b.summary)}</div>${longSummary ? '<button class="more-link" data-toggle>Show more</button>' : ''}` : ''}
+    ${b.summary ? `<div class="card-expl${longSummary ? ' clamp' : ''}" data-expl>${esc(b.summary)}</div>${longSummary ? `<button class="more-link" data-preview="${id}">Show more</button>` : ''}` : ''}
     ${wk}
     <div class="card-meta"><span>Reported ${esc(fmtDate(b.created))}</span><span>Updated ${esc(rel(b.updated))}</span><button class="copy-btn" data-copy="${esc(encodeURIComponent(discordSnippet(b)))}">Copy for Discord</button></div>
   </div>`;
 }
 
 function bindCardInteractions(scope) {
-  (scope || document).querySelectorAll('[data-toggle]').forEach(btn => btn.onclick = (e) => {
-    e.preventDefault();
-    const expl = btn.previousElementSibling;
-    const open = expl.classList.toggle('clamp') === false;
-    btn.textContent = open ? 'Show less' : 'Show more';
-  });
   (scope || document).querySelectorAll('[data-preview]').forEach(btn => btn.onclick = (e) => {
     e.preventDefault();
     openPreview(CARD_STORE[btn.dataset.preview]);
@@ -511,7 +505,7 @@ function featCard(f) {
   return `<div class="card">
     <div class="card-top">${badge(f.status, FEAT_STATUS_COLORS[f.status])}${badge(f.interest + ' interest', '#FFBC5B')}${badge(f.area, '#A39DB3')}</div>
     <button class="card-title card-link" data-preview="${id}">${esc(f.title)}</button>
-    ${f.summary ? `<div class="card-expl${longSummary ? ' clamp' : ''}" data-expl>${esc(f.summary)}</div>${longSummary ? '<button class="more-link" data-toggle>Show more</button>' : ''}` : ''}
+    ${f.summary ? `<div class="card-expl${longSummary ? ' clamp' : ''}" data-expl>${esc(f.summary)}</div>${longSummary ? `<button class="more-link" data-preview="${id}">Show more</button>` : ''}` : ''}
     <div class="card-meta"><span>Submitted ${esc(fmtDate(f.created))}</span><span>Updated ${esc(rel(f.updated))}</span><button class="copy-btn" data-copy="${esc(encodeURIComponent(discordSnippet(f)))}">Copy for Discord</button></div>
   </div>`;
 }
