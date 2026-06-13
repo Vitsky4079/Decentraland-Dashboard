@@ -27,6 +27,11 @@ const FEAT_STATUS_COLORS = {
 };
 const IMPACT_COLORS = { 'Critical':'#FF4D5E','High':'#F0883E','Medium':'#E8B33C','Low':'#A39DB3' };
 
+// Display-only relabeling of internal area names. The underlying area value
+// (used for filtering/matching) is unchanged; this only affects what users see.
+const AREA_LABELS = { 'Creator Hub': 'Creator Tools', 'Builder': 'Website', 'Explorer': 'Desktop app' };
+const areaLabel = (a) => AREA_LABELS[a] || a;
+
 /* ---------- Helpers ---------- */
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -407,7 +412,7 @@ function classify(issues) {
   feats.sort((a, b) => intRank[a.interest] - intRank[b.interest] || heat(a, b));
 
   const fixed = issues.filter(i => i.state === 'closed' && i.closed && daysAgo(i.closed) <= C.recentFixDays && !isFeature(i) && bugStatus(i) === 'Resolved' && !isHidden(i))
-    .map(applyOverride)
+    .map(i => applyOverride({ ...i, status: bugStatus(i), impact: impact(i) }))
     .sort((a, b) => new Date(b.closed) - new Date(a.closed));
 
   return { bugs, feats, fixed };
@@ -465,7 +470,7 @@ function bugCard(b, withWorkaround = true) {
   CARD_STORE[id] = b;
   const longSummary = b.summary && b.summary.length > 150;
   return `<div class="card">
-    <div class="card-top">${badge(b.status, BUG_STATUS_COLORS[b.status])}${badge(b.impact + ' impact', IMPACT_COLORS[b.impact])}${badge(b.area, '#A39DB3')}${extra}</div>
+    <div class="card-top">${badge(b.status, BUG_STATUS_COLORS[b.status])}${badge(b.impact + ' impact', IMPACT_COLORS[b.impact])}${badge(areaLabel(b.area), '#A39DB3')}${extra}</div>
     <button class="card-title card-link" data-preview="${id}">${esc(b.title)}</button>
     ${b.summary ? `<div class="card-expl${longSummary ? ' clamp' : ''}" data-expl>${esc(b.summary)}</div>${longSummary ? `<button class="more-link" data-preview="${id}">Show more</button>` : ''}` : ''}
     ${wk}
@@ -503,7 +508,7 @@ function featCard(f) {
   CARD_STORE[id] = f;
   const longSummary = f.summary && f.summary.length > 150;
   return `<div class="card">
-    <div class="card-top">${badge(f.status, FEAT_STATUS_COLORS[f.status])}${badge(f.interest + ' interest', '#FFBC5B')}${badge(f.area, '#A39DB3')}</div>
+    <div class="card-top">${badge(f.status, FEAT_STATUS_COLORS[f.status])}${badge(f.interest + ' interest', '#FFBC5B')}${badge(areaLabel(f.area), '#A39DB3')}</div>
     <button class="card-title card-link" data-preview="${id}">${esc(f.title)}</button>
     ${f.summary ? `<div class="card-expl${longSummary ? ' clamp' : ''}" data-expl>${esc(f.summary)}</div>${longSummary ? `<button class="more-link" data-preview="${id}">Show more</button>` : ''}` : ''}
     <div class="card-meta"><span>Submitted ${esc(fmtDate(f.created))}</span><span>Updated ${esc(rel(f.updated))}</span><button class="copy-btn" data-copy="${esc(encodeURIComponent(discordSnippet(f)))}">Copy for Discord</button></div>
@@ -516,7 +521,7 @@ function fixedRow(f) {
     <span class="fixed-body">
       <span class="fixed-title">${esc(f.title)}</span>
       <span class="fixed-meta">
-        <span class="fixed-area">${esc(f.area)}</span>
+        <span class="fixed-area">${esc(areaLabel(f.area))}</span>
         <span class="fixed-dot">·</span>
         <span class="fixed-date">Fixed ${esc(fmtDate(f.closed))}</span>
       </span>
@@ -663,7 +668,7 @@ async function openPreview(b) {
   const colors = b.status in BUG_STATUS_COLORS ? BUG_STATUS_COLORS : FEAT_STATUS_COLORS;
   const tags = (b.pinned ? badge('Pinned', '#FFBC5B') : '') + (b.qa ? badge('QA priority', '#F0883E') : '') +
     badge(b.status, colors[b.status]) + (b.impact ? badge(b.impact + ' impact', IMPACT_COLORS[b.impact]) : '') +
-    (b.interest ? badge(b.interest + ' interest', '#FFBC5B') : '') + badge(b.area, '#A39DB3') +
+    (b.interest ? badge(b.interest + ' interest', '#FFBC5B') : '') + badge(areaLabel(b.area), '#A39DB3') +
     (b.sentry ? badge('Auto-detected', '#7C8CF8') : '');
   m.querySelector('.modal-body').innerHTML = `
     <div class="card-top" style="margin-bottom:14px">${tags}</div>
@@ -746,7 +751,7 @@ function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chips
     bindCardInteractions(grid);
     if (chips) {
       chips.innerHTML = ['All', ...areas].map(a =>
-        `<button class="chip ${a === st.area ? 'on' : ''}" data-a="${esc(a)}">${esc(a)}</button>`).join('');
+        `<button class="chip ${a === st.area ? 'on' : ''}" data-a="${esc(a)}">${esc(a === 'All' ? 'All' : areaLabel(a))}</button>`).join('');
       chips.querySelectorAll('.chip').forEach(c => c.onclick = () => { st.area = c.dataset.a; st.pages = 1; draw(); });
     }
   }
@@ -1132,7 +1137,8 @@ const PAGES = {
     bindCopyButtons($('topIssues')); bindCardInteractions($('topIssues'));
     $('topFeats').innerHTML = feats.slice(0, 6).map(featCard).join('') || '<div class="empty" style="grid-column:1/-1">No open requests right now.</div>';
     bindCopyButtons($('topFeats')); bindCardInteractions($('topFeats'));
-    $('latestFixed').innerHTML = fixed.slice(0, 5).map(fixedRow).join('') || '<div class="empty">No fixes in the recent window.</div>';
+    $('latestFixed').innerHTML = fixed.length ? fixed.slice(0, 6).map(b => bugCard(b)).join('') : '<div class="empty" style="grid-column:1/-1">No fixes in the recent window.</div>';
+    bindCopyButtons($('latestFixed')); bindCardInteractions($('latestFixed'));
   },
 
   issues({ bugs }, meta) {
@@ -1155,7 +1161,8 @@ const PAGES = {
 
   fixed({ fixed }) {
     $('fixedCount').textContent = `${fixed.length} in the last ${C.recentFixDays} days`;
-    $('fixedList').innerHTML = fixed.length ? fixed.map(fixedRow).join('') : '<div class="empty">No fixes closed in the recent window.</div>';
+    $('fixedList').innerHTML = fixed.length ? fixed.map(b => bugCard(b)).join('') : '<div class="empty" style="grid-column:1/-1">No fixes closed in the recent window.</div>';
+    bindCopyButtons($('fixedList')); bindCardInteractions($('fixedList'));
   },
 
   workarounds({ bugs }) {
