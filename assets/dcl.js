@@ -626,6 +626,9 @@ function miniMarkdown(md) {
     .replace(/!\[([^\]]*)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="$1" loading="lazy"></a>')
     // Then links.
     .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    // Explicit video URLs (.mp4/.mov/.webm, incl. ?query) → inline player.
+    // Must run before the image/S3 rules so an .mp4 isn't wrapped in <img>.
+    .replace(/(^|\s)(https?:\/\/[^\s<]+?\.(?:mp4|mov|webm)(?:\?[^\s<]*)?)(?=\s|$)/gim, '$1<video class="md-video" src="$2" controls preload="metadata" playsinline></video>')
     // Bare image URLs on their own (GitHub/S3 user-attachment assets, or any
     // .png/.jpg/.gif/.webp link) become inline images too.
     .replace(/(^|\s)(https?:\/\/[^\s<]+?\.(?:png|jpe?g|gif|webp)(?:\?[^\s<]*)?)(?=\s|$)/gim, '$1<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="" loading="lazy"></a>')
@@ -676,19 +679,29 @@ async function openPreview(b) {
   }
 }
 
-// Render the issue body markdown and wire a fallback for extensionless GitHub
-// attachment URLs that turn out to be videos/non-images: if the <img> fails to
-// load, replace it with a plain link instead of a broken image icon.
+// Render the issue body markdown and wire fallbacks for extensionless GitHub
+// attachment URLs (the URL doesn't reveal its type): try as an image first; if
+// that fails, try as a <video>; if that also fails, show a plain link.
 function renderModalBody(md, body) {
   md.innerHTML = body ? miniMarkdown(body) : '<p class="modal-empty">No description provided.</p>';
   md.querySelectorAll('img.md-img-maybe').forEach(img => {
     img.onerror = () => {
       const url = img.getAttribute('src');
-      const link = document.createElement('a');
-      link.href = url; link.target = '_blank'; link.rel = 'noopener';
-      link.textContent = 'View attachment on GitHub →';
       const wrap = img.closest('.md-img-link') || img;
-      wrap.replaceWith(link);
+      // Try a video player next (many GitHub attachments are .mp4/.mov/.webm).
+      const vid = document.createElement('video');
+      vid.className = 'md-video';
+      vid.src = url;
+      vid.controls = true;
+      vid.preload = 'metadata';
+      vid.playsInline = true;
+      vid.onerror = () => {
+        const link = document.createElement('a');
+        link.href = url; link.target = '_blank'; link.rel = 'noopener';
+        link.textContent = 'View attachment on GitHub →';
+        vid.replaceWith(link);
+      };
+      wrap.replaceWith(vid);
     };
   });
 }
