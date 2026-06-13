@@ -41,6 +41,7 @@ let pins = [];            // [{url, position}] sorted (staged)
 let dbPinUrls = [];       // urls currently in the database
 let overrides = {};       // url -> row
 let notes = [];           // staged [{id|null, version, date_label, body, position}]
+let adminNotes = [];      // admin-to-admin notes [{id, body, author, position, ...}]
 let deletedNoteIds = [];  // ids removed locally, deleted on save
 let svcStaged = {};       // staged service levels (name -> level | undefined=Auto)
 let pickQ = '', editQ = '', editUrl = null;
@@ -76,21 +77,39 @@ async function login() {
 async function openPanel(session) {
   $('gate').classList.add('hidden');
   $('panel').classList.remove('hidden');
-  $('whoami').textContent = (session.user && session.user.email) || 'admin';
+  currentEmail = (session.user && session.user.email) || '';
+  $('whoami').textContent = currentEmail || 'admin';
   wireEditors();
+  applyAdminNotesGate();
   await Promise.all([loadDbState(), loadGithubIssues()]);
   drawAll();
 }
 
+// The admin-notes editor is shown only to the configured owner email (UI gate).
+// If no ownerEmail is set, any admin may edit.
+let currentEmail = '';
+function isNotesOwner() {
+  const owner = (DCL_CONFIG.admin && DCL_CONFIG.admin.ownerEmail || '').trim().toLowerCase();
+  return !owner || currentEmail.trim().toLowerCase() === owner;
+}
+function applyAdminNotesGate() {
+  const editor = $('anEditor');
+  if (editor) editor.classList.toggle('hidden', !isNotesOwner());
+  const hint = $('anHint');
+  if (hint && !isNotesOwner()) hint.textContent = 'Internal notes from the admin team about platform updates (read-only for your account).';
+}
+
 /* ---------- Load state ---------- */
 async function loadDbState() {
-  const [a, s, p, o, n] = await Promise.all([
+  const [a, s, p, o, n, an] = await Promise.all([
     sb.from('announcements').select('*').eq('id', 1).maybeSingle(),
     sb.from('service_status').select('*'),
     sb.from('pins').select('*').order('position'),
     sb.from('issue_overrides').select('*'),
     sb.from('patch_notes').select('*').order('position'),
+    sb.from('admin_notes').select('*').order('position'),
   ]);
+  adminNotes = an.data || [];
   const ann = a.data || { text: '', level: 'Info', link: '' };
   $('annText').value = ann.text || '';
   $('annLevel').value = ann.level || 'Info';
@@ -113,7 +132,7 @@ async function loadGithubIssues() {
   } catch (e) { BUGS = []; ALLITEMS = []; }
 }
 
-function drawAll() { drawServices(); drawPinned(); drawPicker(); drawWkPick(); drawWkList(); drawPatchNotes(); }
+function drawAll() { drawServices(); drawPinned(); drawPicker(); drawWkPick(); drawWkList(); drawPatchNotes(); drawAdminNotes(); }
 const itemByUrl = u => ALLITEMS.find(x => x.url === u);
 
 /* ---------- Wire static controls ---------- */
@@ -124,6 +143,7 @@ function wireEditors() {
   $('wkApply').onclick = applyWk;
   $('wkClear').onclick = clearWk;
   PN_STREAMS.forEach(s => { const b = $('pnAdd_' + s.key); if (b) b.onclick = () => addPatchNote(s.key); });
+  { const b = $('anAdd'); if (b) b.onclick = addAdminNote; }
   $('pnSave').onclick = savePatchNotes;
   $('svcSave').onclick = saveServices;
   $('pinsSave').onclick = savePins;
@@ -304,6 +324,86 @@ function drawWkList() {
     setStatus(error ? 'Remove failed: ' + error.message : 'Workaround removed.', !error);
     drawWkPick(); drawWkList();
   });
+}
+
+/* ---------- Admin-to-admin notes ---------- */
+function fmtNoteDate(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function drawAdminNotes() {
+  const el = $('anList');
+  if (!el) return;
+  const owner = isNotesOwner();
+  if (!adminNotes.length) {
+    el.innerHTML = '<div class="an-empty">No admin notes yet.</div>';
+    return;
+  }
+  el.innerHTML = adminNotes.map(n => {
+    const actions = owner
+      ? `<div class="an-note-actions">
+           <button class="mini" data-anedit="${n.id}">Edit</button>
+           <button class="mini" data-anrm="${n.id}">Delete</button>
+         </div>`
+      : '';
+    return `<div class="an-note">
+      <div class="an-note-body" data-anbody="${n.id}">${esc(n.body)}</div>
+      <div class="an-note-meta"><span>${esc(n.author || 'admin')}</span><span>·</span><span>${esc(fmtNoteDate(n.updated_at || n.created_at))}</span>${actions}</div>
+    </div>`;
+  }).join('');
+
+  if (owner) {
+    el.querySelectorAll('[data-anedit]').forEach(b => b.onclick = () => editAdminNote(+b.dataset.anedit));
+    el.querySelectorAll('[data-anrm]').forEach(b => b.onclick = () => removeAdminNote(+b.dataset.anrm));
+  }
+}
+
+async function addAdminNote() {
+  if (!isNotesOwner()) return;
+  const ta = $('anText');
+  const body = ta.value.trim();
+  if (!body) { setStatus('Write a note first.', false); return; }
+  const position = adminNotes.length ? Math.max(...adminNotes.map(n => n.position || 0)) + 1 : 0;
+  const row = { body, author: currentEmail || 'admin', position, updated_at: new Date().toISOString() };
+  const { data, error } = await sb.from('admin_notes').insert(row).select();
+  if (error) { setStatus('Save failed: ' + error.message, false); return; }
+  if (data && data[0]) adminNotes.push(data[0]);
+  ta.value = '';
+  setStatus('Admin note added.', true);
+  drawAdminNotes();
+}
+
+function editAdminNote(id) {
+  if (!isNotesOwner()) return;
+  const n = adminNotes.find(x => x.id === id);
+  if (!n) return;
+  // Inline-edit: swap the body for a textarea with Save/Cancel.
+  const bodyEl = $('anList').querySelector(`[data-anbody="${id}"]`);
+  if (!bodyEl) return;
+  const wrap = bodyEl.parentNode;
+  bodyEl.outerHTML = `<textarea class="an-edit-ta" rows="3" style="width:100%">${esc(n.body)}</textarea>
+    <div class="btn-row" style="margin-top:8px"><button class="mini pin" data-ansave="${id}">Save</button><button class="mini" data-ancancel="${id}">Cancel</button></div>`;
+  wrap.querySelector(`[data-ansave="${id}"]`).onclick = async () => {
+    const text = wrap.querySelector('.an-edit-ta').value.trim();
+    if (!text) { setStatus('Note cannot be empty.', false); return; }
+    const { error } = await sb.from('admin_notes').update({ body: text, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { setStatus('Save failed: ' + error.message, false); return; }
+    n.body = text; n.updated_at = new Date().toISOString();
+    setStatus('Admin note updated.', true);
+    drawAdminNotes();
+  };
+  wrap.querySelector(`[data-ancancel="${id}"]`).onclick = () => drawAdminNotes();
+}
+
+async function removeAdminNote(id) {
+  if (!isNotesOwner()) return;
+  const { error } = await sb.from('admin_notes').delete().eq('id', id);
+  if (error) { setStatus('Delete failed: ' + error.message, false); return; }
+  adminNotes = adminNotes.filter(n => n.id !== id);
+  setStatus('Admin note deleted.', true);
+  drawAdminNotes();
 }
 
 /* ---------- Patch notes (per stream: explorer / creator-hub / sdk) ---------- */

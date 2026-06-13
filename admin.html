@@ -60,6 +60,11 @@ select option{background:var(--surface-2);color:var(--text)}
 .tag .x:hover{color:#FF8AA0}
 .wk-tag-label{cursor:pointer}
 .wk-tag-label:hover{color:var(--peach)}
+.an-note{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.an-note-body{font-size:14px;color:var(--text);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.an-note-meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text-faint)}
+.an-note-actions{display:flex;gap:8px;margin-left:auto}
+.an-empty{color:var(--text-faint);font-size:13.5px}
 .session-bar{display:flex;align-items:center;gap:14px;margin-bottom:22px;font-size:13.5px;color:var(--text-dim)}
 .session-bar .mini{margin-left:auto}
 @media(max-width:640px){.row2,.row3{grid-template-columns:1fr}.svc-row{grid-template-columns:1fr}}
@@ -180,6 +185,16 @@ select option{background:var(--surface-2);color:var(--text)}
       </div>
 
       <div class="btn-row" style="margin-top:18px"><button class="btn" id="pnSave">Save patch notes</button><span class="dirty hidden" id="pnDirty">Unsaved changes</span></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Admin notes</h2>
+      <p class="hint" id="anHint">Internal notes for the admin team about platform updates. Visible to all signed-in admins; not shown on the public site.</p>
+      <div id="anEditor" class="hidden">
+        <div class="field"><label for="anText">New note</label><textarea id="anText" rows="3" placeholder="What changed on the platform…"></textarea></div>
+        <div class="btn-row"><button class="btn" id="anAdd">Add note</button></div>
+      </div>
+      <div id="anList" style="margin-top:16px"><div class="loading" style="border:none">Loading notes…</div></div>
     </div>
 
     <div class="statusline" id="saveStatus"></div>

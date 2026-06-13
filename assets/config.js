@@ -94,6 +94,10 @@ const DCL_CONFIG = {
   // bottom of the login box, and paste the new hash here.
   admin: {
     passHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // default passphrase: admin
+    // Admin-to-admin notes are visible to every logged-in admin but the editor
+    // is shown only to this account email (UI gate). Set to your Supabase Auth
+    // login email. Leave '' to let any admin edit. Case-insensitive.
+    ownerEmail: '',
   },
 
   // Issues pinned to "Top known issues" on the overview (GitHub issue URLs,
