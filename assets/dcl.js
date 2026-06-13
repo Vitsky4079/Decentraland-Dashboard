@@ -1053,9 +1053,12 @@ function setupPatchCarousel(wrap) {
   const prevBtn = nav.querySelector('[data-pncar="prev"]');
   const nextBtn = nav.querySelector('[data-pncar="next"]');
 
+  let startPage = 0, settleTimer = null, programmatic = false;
   const current = () => Math.round(wrap.scrollLeft / wrap.clientWidth);
   const goTo = (i) => {
     const idx = Math.max(0, Math.min(cols.length - 1, i));
+    programmatic = true;           // this jump is intentional; don't clamp it
+    startPage = idx;
     wrap.scrollTo({ left: idx * wrap.clientWidth, behavior: 'smooth' });
   };
   const sync = () => {
@@ -1069,8 +1072,25 @@ function setupPatchCarousel(wrap) {
   nextBtn.onclick = () => goTo(current() + 1);
   dots.forEach((d, i) => d.onclick = () => goTo(i));
 
+  // Limit each swipe to at most one page so a hard fling can't skip the middle
+  // card. Record where the gesture started; when scrolling settles, clamp the
+  // landing page to within ±1 of the start and snap there.
+  wrap.addEventListener('touchstart', () => { startPage = current(); programmatic = false; }, { passive: true });
+
   let raf;
-  wrap.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(sync); }, { passive: true });
+  const onScroll = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(sync);
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      const landed = current();
+      if (programmatic) { programmatic = false; startPage = landed; sync(); return; }
+      const clamped = Math.max(startPage - 1, Math.min(startPage + 1, landed));
+      if (clamped !== landed) goTo(clamped);
+      else { startPage = landed; sync(); }
+    }, 90);
+  };
+  wrap.addEventListener('scroll', onScroll, { passive: true });
   sync();
 }
 

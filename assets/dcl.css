@@ -297,7 +297,7 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .pn-version{font-family:var(--display);font-weight:700;font-size:18px}
 .pn-date{font-family:var(--mono);font-size:12px;color:var(--text-faint)}
 .pn-badge{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#1A0710;background:var(--grad);padding:3px 9px;border-radius:99px;font-weight:700}
-.pn-body{font-size:14.5px;color:var(--text-dim);line-height:1.6}
+.pn-body{font-size:14.5px;color:var(--text-dim);line-height:1.6;overflow-wrap:anywhere;word-break:break-word}
 .pn-sub{font-family:var(--display);font-weight:600;font-size:14.5px;color:var(--text);margin:14px 0 6px}
 .pn-sub:first-child{margin-top:0}
 .pn-line{margin:6px 0}
