@@ -152,7 +152,7 @@ select option{background:var(--surface-2);color:var(--text)}
     </div>
 
     <div class="panel-card">
-      <h2>Announcement banner</h2>
+      <h2>Status top bar</h2>
       <p class="hint">Shown at the top of every page. Empty text hides it. Saves on click — live for visitors immediately.</p>
       <div class="field"><label for="annText">Text</label><input id="annText" placeholder="e.g. Marketplace maintenance tonight 20:00–21:00 CET"></div>
       <div class="row2">
@@ -161,6 +161,19 @@ select option{background:var(--surface-2);color:var(--text)}
         <div class="field"><label for="annLink">"More details" link (optional)</label><input id="annLink" placeholder="https://…"></div>
       </div>
       <div class="btn-row"><button class="btn" id="annSave">Save banner</button></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Announcements</h2>
+      <p class="hint">Blog posts shown on the public <strong>Announcements</strong> tab, newest first. Paste a block of text (Markdown supported — bold, links, headings, lists), add image URLs, and publish.</p>
+      <div class="row2">
+        <div class="field"><label for="apDate">Date</label><input type="date" id="apDate"></div>
+        <div class="field"><label for="apTitle">Title</label><input id="apTitle" placeholder="e.g. Decentraland Pride Returns…"></div>
+      </div>
+      <div class="field"><label for="apBody">Announcement text (paste from Discord — Markdown supported)</label><textarea id="apBody" rows="7" placeholder="Paste the announcement here…"></textarea></div>
+      <div class="field"><label for="apImages">Images (URLs, one per line — optional)</label><textarea id="apImages" rows="2" placeholder="https://… .png"></textarea></div>
+      <div class="btn-row"><button class="btn" id="apAdd">Publish announcement</button><button class="btn ghost hidden" id="apCancel">Cancel edit</button></div>
+      <div id="apList" style="margin-top:16px"><div class="loading" style="border:none">Loading announcements…</div></div>
     </div>
 
     <div class="panel-card">

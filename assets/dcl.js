@@ -157,6 +157,7 @@ let CONTENT = {
   pinnedIssues: C.pinnedIssues || [],
   issueOverrides: C.issueOverrides || {},
   patchNotes: C.patchNotes || [],
+  announcementPosts: [],
 };
 
 async function loadContent() {
@@ -176,6 +177,7 @@ async function loadContent() {
       pinnedIssues: d.pins || [],
       issueOverrides: d.issue_overrides || {},
       patchNotes: d.patch_notes || [],
+      announcementPosts: d.announcement_posts || [],
     };
   } catch (e) { /* fall back to config values */ }
   return CONTENT;
@@ -1122,6 +1124,34 @@ function mountReportButton(elId, kind) {
 /* ---------- Pages ---------- */
 const PAGES = {
 
+  announcements() {
+    const el = $('announceList');
+    const posts = CONTENT.announcementPosts || [];
+    if (!posts.length) { el.innerHTML = '<div class="empty">No announcements yet — check back soon.</div>'; return; }
+    el.innerHTML = posts.map(p => {
+      const imgs = (p.images || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const photos = imgs.length
+        ? `<div class="blog-photos${imgs.length === 1 ? ' single' : ''}">${imgs.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`
+        : '';
+      return `<article class="blog-post">
+        ${p.date ? `<div class="blog-date">${esc(fmtDate(p.date))}</div>` : ''}
+        ${p.title ? `<h2 class="blog-title">${esc(p.title)}</h2>` : ''}
+        <div class="blog-body">${miniMarkdown(p.body || '')}</div>
+        ${photos}
+      </article>`;
+    }).join('');
+    // Wire any rich-media fallbacks (videos / drive) inside post bodies.
+    el.querySelectorAll('img.md-img-maybe').forEach(img => {
+      img.onerror = () => {
+        const url = img.getAttribute('src');
+        const link = document.createElement('a');
+        link.href = url; link.target = '_blank'; link.rel = 'noopener';
+        link.textContent = 'View attachment →';
+        (img.closest('.md-img-link') || img).replaceWith(link);
+      };
+    });
+  },
+
   overview({ bugs, feats, fixed }, meta) {
     renderPatchNotes();
     const services = computeServices(bugs, meta.official);
@@ -1314,6 +1344,7 @@ async function boot() {
 
   if (page === 'report') { await loadContent(); initBanners(null); PAGES.report(); return; }
   if (page === 'bundles') { await loadContent(); initBanners(null); await PAGES.bundles(); return; }
+  if (page === 'announcements') { await loadContent(); initBanners(null); PAGES.announcements(); return; }
 
   try {
     const [{ issues, partial, fromCache, syncedAt }, official] = await Promise.all([loadData(), loadOfficial(), loadContent()]);

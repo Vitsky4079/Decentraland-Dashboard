@@ -28,6 +28,13 @@ as $$
          'version', n.version, 'date', n.date_label, 'body', n.body)
          order by n.position)
          from public.patch_notes n),
+      '[]'::jsonb),
+    'announcement_posts', coalesce(
+      (select jsonb_agg(jsonb_build_object(
+         'id', ap.id, 'title', ap.title, 'body', ap.body,
+         'images', ap.images, 'date', ap.post_date)
+         order by ap.post_date desc, ap.created_at desc)
+         from public.announcement_posts ap),
       '[]'::jsonb)
   );
 $$;

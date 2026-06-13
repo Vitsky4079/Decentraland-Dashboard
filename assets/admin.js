@@ -42,6 +42,7 @@ let dbPinUrls = [];       // urls currently in the database
 let overrides = {};       // url -> row
 let notes = [];           // staged [{id|null, version, date_label, body, position}]
 let adminNotes = [];      // admin-to-admin notes [{id, body, author, position, ...}]
+let annPosts = [];        // public announcement blog posts [{id, title, body, images, post_date, ...}]
 let deletedNoteIds = [];  // ids removed locally, deleted on save
 let svcStaged = {};       // staged service levels (name -> level | undefined=Auto)
 let pickQ = '', editQ = '', editUrl = null;
@@ -111,6 +112,11 @@ async function loadDbState() {
     sb.from('admin_notes').select('*').order('position'),
   ]);
   adminNotes = an.data || [];
+  // Announcement blog posts (separate query so a missing table doesn't break the rest).
+  try {
+    const ap = await sb.from('announcement_posts').select('*').order('post_date', { ascending: false });
+    annPosts = ap.data || [];
+  } catch (e) { annPosts = []; }
   const ann = a.data || { text: '', level: 'Info', link: '' };
   $('annText').value = ann.text || '';
   $('annLevel').value = ann.level || 'Info';
@@ -133,7 +139,7 @@ async function loadGithubIssues() {
   } catch (e) { BUGS = []; ALLITEMS = []; }
 }
 
-function drawAll() { drawServices(); drawPinned(); drawPicker(); drawWkPick(); drawWkList(); drawPatchNotes(); drawAdminNotes(); }
+function drawAll() { drawServices(); drawPinned(); drawPicker(); drawWkPick(); drawWkList(); drawPatchNotes(); drawAdminNotes(); drawAnnouncements(); }
 const itemByUrl = u => ALLITEMS.find(x => x.url === u);
 
 /* ---------- Wire static controls ---------- */
@@ -146,6 +152,8 @@ function wireEditors() {
   PN_STREAMS.forEach(s => { const b = $('pnAdd_' + s.key); if (b) b.onclick = () => addPatchNote(s.key); });
   { const b = $('anAdd'); if (b) b.onclick = addAdminNote; }
   { const b = $('anCancel'); if (b) b.onclick = resetAdminNoteForm; }
+  { const b = $('apAdd'); if (b) b.onclick = addAnnouncement; }
+  { const b = $('apCancel'); if (b) b.onclick = resetAnnouncementForm; }
   $('pnSave').onclick = savePatchNotes;
   $('svcSave').onclick = saveServices;
   $('pinsSave').onclick = savePins;
@@ -540,6 +548,94 @@ function startLiveVisitors() {
     // their own — this interval is only for the relative-time text).
     if (!_liveTimer) _liveTimer = setInterval(() => { if (_liveChannel) renderLiveVisitors(); }, 1000);
   } catch (e) { /* best-effort */ }
+}
+
+/* ---------- Announcements (public blog) ---------- */
+let apEditingId = null;
+
+function drawAnnouncements() {
+  const el = $('apList');
+  if (!el) return;
+  if (!annPosts.length) { el.innerHTML = '<div class="an-empty">No announcements yet.</div>'; return; }
+  el.innerHTML = annPosts.map(p => {
+    const imgCount = (p.images || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean).length;
+    const meta = [fmtNoteDate(p.post_date) || '', imgCount ? imgCount + ' image' + (imgCount > 1 ? 's' : '') : ''].filter(Boolean).join(' · ');
+    return `<div class="pn-row">
+      <div class="pn-row-title">${esc(p.title || '(untitled)')}${meta ? ` <span class="pn-row-date">${esc(meta)}</span>` : ''}</div>
+      <div class="pn-row-actions">
+        <button class="mini" data-apedit="${p.id}">Edit</button>
+        <button class="mini" data-aprm="${p.id}">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-apedit]').forEach(b => b.onclick = () => editAnnouncement(+b.dataset.apedit));
+  el.querySelectorAll('[data-aprm]').forEach(b => b.onclick = () => removeAnnouncement(+b.dataset.aprm));
+}
+
+function resetAnnouncementForm() {
+  apEditingId = null;
+  $('apDate').value = '';
+  $('apTitle').value = '';
+  $('apBody').value = '';
+  $('apImages').value = '';
+  $('apAdd').textContent = 'Publish announcement';
+  $('apCancel').classList.add('hidden');
+}
+
+async function addAnnouncement() {
+  const title = $('apTitle').value.trim();
+  const body = $('apBody').value.trim();
+  const post_date = $('apDate').value.trim();
+  const images = $('apImages').value.trim();
+  if (!body && !title) { setStatus('Add a title or some text first.', false); return; }
+  if (!post_date) { setStatus('Pick a date for the announcement.', false); return; }
+
+  if (apEditingId != null) {
+    const { error } = await sb.from('announcement_posts')
+      .update({ title, body, images, post_date, updated_at: new Date().toISOString() })
+      .eq('id', apEditingId);
+    if (error) { setStatus('Save failed: ' + error.message, false); return; }
+    const p = annPosts.find(x => x.id === apEditingId);
+    if (p) { p.title = title; p.body = body; p.images = images; p.post_date = post_date; }
+    annPosts.sort((a, b) => (b.post_date || '').localeCompare(a.post_date || ''));
+    setStatus('Announcement updated. Live on the Announcements tab.', true);
+    resetAnnouncementForm();
+    drawAnnouncements();
+    return;
+  }
+
+  const row = { title, body, images, post_date, author: currentEmail || 'admin', updated_at: new Date().toISOString() };
+  const { data, error } = await sb.from('announcement_posts').insert(row).select();
+  if (error) { setStatus('Publish failed: ' + error.message, false); return; }
+  if (data && data[0]) annPosts.unshift(data[0]);
+  annPosts.sort((a, b) => (b.post_date || '').localeCompare(a.post_date || ''));
+  resetAnnouncementForm();
+  setStatus('Announcement published. Live on the Announcements tab.', true);
+  drawAnnouncements();
+}
+
+function editAnnouncement(id) {
+  const p = annPosts.find(x => x.id === id);
+  if (!p) return;
+  apEditingId = id;
+  $('apDate').value = p.post_date || '';
+  $('apTitle').value = p.title || '';
+  $('apBody').value = p.body || '';
+  $('apImages').value = p.images || '';
+  $('apAdd').textContent = 'Update announcement';
+  $('apCancel').classList.remove('hidden');
+  $('apTitle').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('apBody').focus();
+  setStatus('Editing announcement — change the fields, then click Update.', true);
+}
+
+async function removeAnnouncement(id) {
+  const { error } = await sb.from('announcement_posts').delete().eq('id', id);
+  if (error) { setStatus('Delete failed: ' + error.message, false); return; }
+  annPosts = annPosts.filter(p => p.id !== id);
+  if (apEditingId === id) resetAnnouncementForm();
+  setStatus('Announcement deleted.', true);
+  drawAnnouncements();
 }
 
 /* ---------- Patch notes (per stream: explorer / creator-hub / sdk) ---------- */

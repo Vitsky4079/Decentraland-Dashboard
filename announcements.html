@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Feature requests · Decentraland Community Status</title>
-<meta name="description" content="Community-submitted feature requests for Decentraland with their review status and interest level.">
+<title>Announcements · Decentraland Community Status</title>
+<meta name="description" content="Decentraland community announcements — events, open calls, and platform news.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#08070C">
 <link rel="stylesheet" href="assets/dcl.css">
 </head>
-<body data-page="features">
+<body data-page="announcements">
 
 <nav class="nav">
   <div class="nav-inner">
@@ -34,24 +34,16 @@
 <header class="hero">
   <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
   <div class="hero-inner compact">
-    <div class="hero-eyebrow">Feature requests</div>
-    <h1>Ideas from <span class="grad">the community</span></h1>
-    <p class="hero-sub">Improvements suggested by users, sorted by community interest. Statuses show where each idea is in the review pipeline.</p>
-    <div class="hero-meta"><span class="sync-note" id="syncNote">Syncing with GitHub…</span></div>
+    <div class="hero-eyebrow">Announcements</div>
+    <h1>What's happening in <span class="grad">Decentraland</span></h1>
+    <p class="hero-sub">Events, open calls, and community news — newest first.</p>
   </div>
 </header>
 
 <main>
   <section>
-    <div class="wrap">
-      <div class="sec-head"><h2>All feature requests</h2><span class="sec-count" id="featCount"></span><a class="report-btn ghost sec-btn" id="reportFeatBtn" href="#" target="_blank" rel="noopener">+ Request a feature</a></div>
-      <div class="toolbar">
-        <input class="search" id="featSearch" type="search" placeholder="Search requests…" aria-label="Search feature requests">
-        <select class="repo-select sort-select" id="featSort" aria-label="Sort by"><option value="default">Sort: Interest</option><option value="newest">Sort: Newest</option><option value="updated">Sort: Recently updated</option><option value="reported">Sort: Most discussed</option></select>
-        <div class="chips" id="featAreaChips" role="group" aria-label="Filter by category"></div>
-      </div>
-      <div class="cards" id="featGrid"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
-      <button class="show-more" id="featMore" hidden>Show more requests</button>
+    <div class="wrap wrap-narrow">
+      <div class="blog" id="announceList"><div class="loading">Loading announcements…</div></div>
     </div>
   </section>
 </main>
