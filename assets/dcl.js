@@ -1374,9 +1374,10 @@ function initPresence() {
     _presence.channel = channel;
 
     const push = () => { try { channel.track(_presence.state); } catch (e) {} };
-    channel.subscribe((status) => { if (status === 'SUBSCRIBED') push(); });
+    const announce = () => { try { channel.send({ type: 'broadcast', event: 'session', payload: _presence.state }); } catch (e) {} };
+    channel.subscribe((status) => { if (status === 'SUBSCRIBED') { push(); announce(); } });
 
-    setInterval(push, 25000);  // keep the connection warm
+    setInterval(() => { push(); announce(); }, 25000);  // keep the connection warm
     window.addEventListener('beforeunload', () => { try { channel.untrack(); } catch (e) {} });
   } catch (e) { /* presence is best-effort; never break the page */ }
 }
@@ -1385,7 +1386,11 @@ function initPresence() {
 function presenceSetAction(action) {
   if (!_presence.channel) return;
   _presence.state = { ..._presence.state, action: action || '' };
+  // Presence re-track keeps fresh page loads accurate; the broadcast is what
+  // pushes the change live to already-connected admin observers (presence
+  // re-track of the same key isn't reliably propagated to subscribers).
   try { _presence.channel.track(_presence.state); } catch (e) {}
+  try { _presence.channel.send({ type: 'broadcast', event: 'session', payload: _presence.state }); } catch (e) {}
 }
 
 document.addEventListener('DOMContentLoaded', initPresence);

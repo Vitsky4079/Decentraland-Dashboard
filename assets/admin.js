@@ -474,6 +474,7 @@ async function removeAdminNote(id) {
 /* ---------- Live visitors (owner-only presence observer) ---------- */
 let _liveChannel = null;
 let _liveTimer = null;
+let _liveDetail = {};   // id -> freshest payload from broadcast (live action updates)
 
 function relTime(sinceMs) {
   if (!sinceMs) return '';
@@ -487,9 +488,19 @@ function relTime(sinceMs) {
 function renderLiveVisitors() {
   if (!_liveChannel) return;
   const state = _liveChannel.presenceState();   // { key: [ {payload...} ] }
+  const currentIds = new Set();
   const sessions = [];
-  Object.values(state).forEach(arr => { if (arr && arr[0]) sessions.push(arr[0]); });
-  // Don't count the owner's own admin tab (it never broadcasts, but be safe).
+  Object.values(state).forEach(arr => {
+    if (arr && arr[0]) {
+      const base = arr[0];
+      currentIds.add(base.id);
+      // Membership comes from presence (reliable join/leave); the freshest
+      // action comes from the broadcast detail map if we have it.
+      sessions.push(_liveDetail[base.id] || base);
+    }
+  });
+  // Drop detail for sessions that have left.
+  Object.keys(_liveDetail).forEach(id => { if (!currentIds.has(id)) delete _liveDetail[id]; });
   sessions.sort((a, b) => (a.since || 0) - (b.since || 0));
 
   $('liveCount').textContent = String(sessions.length);
@@ -520,6 +531,9 @@ function startLiveVisitors() {
       .on('presence', { event: 'sync' }, renderLiveVisitors)
       .on('presence', { event: 'join' }, renderLiveVisitors)
       .on('presence', { event: 'leave' }, renderLiveVisitors)
+      .on('broadcast', { event: 'session' }, ({ payload }) => {
+        if (payload && payload.id) { _liveDetail[payload.id] = payload; renderLiveVisitors(); }
+      })
       .subscribe();
     // Refresh the "time on page" labels every second so elapsed time ticks
     // smoothly (presence join/leave/sync events update the roster instantly on
