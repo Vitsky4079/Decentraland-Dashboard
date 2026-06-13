@@ -734,7 +734,11 @@ const SORTS = {
 
 function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chipsId, sortId, cardFn, emptyMsg, plus }) {
   const grid = $(gridId), more = $(moreId), count = $(countId), search = $(searchId), chips = $(chipsId), sortSel = $(sortId);
-  const areas = [...new Set(items.map(x => x.area))];
+  const AREA_ORDER = ['Explorer', 'Creator Hub', 'Builder', 'SDK', 'Platform'];
+  const areas = [...new Set(items.map(x => x.area))].sort((a, b) => {
+    const ia = AREA_ORDER.indexOf(a), ib = AREA_ORDER.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
+  });
   let st = { area: 'All', q: '', pages: 1, sort: 'default' };
 
   function draw() {
