@@ -94,12 +94,13 @@ function sceneFromEntity(e: any) {
   const md = e?.metadata || {};
   const worldName = md.worldConfiguration && (md.worldConfiguration.name || md.worldConfiguration.dclName);
   const title = (md.display && md.display.title) || (md.scene && md.scene.name) || md.name || null;
+  const timestamp = e?.timestamp || md.timestamp || null;
   if (worldName) {
-    return { type: 'world', name: (title && title !== 'interactive-text') ? title : worldName, world: worldName, parcels: [] };
+    return { type: 'world', name: (title && title !== 'interactive-text') ? title : worldName, world: worldName, parcels: [], timestamp };
   }
   const parcels = (md.scene && md.scene.parcels) || e?.pointers || [];
   const base = (md.scene && md.scene.base) || (parcels.length ? parcels[0] : null);
-  return { type: 'parcel', name: title, parcels, base };
+  return { type: 'parcel', name: title, parcels, base, timestamp };
 }
 
 // Catalyst: POST /entities/active accepts { ids } OR { pointers }. Asset-bundle

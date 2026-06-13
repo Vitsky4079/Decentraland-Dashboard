@@ -806,12 +806,13 @@ function sceneFromEntity(e) {
   const md = e.metadata || {};
   const worldName = md.worldConfiguration && (md.worldConfiguration.name || md.worldConfiguration.dclName);
   const title = (md.display && md.display.title) || (md.scene && md.scene.name) || md.name || null;
+  const timestamp = e.timestamp || md.timestamp || null;
   if (worldName) {
-    return { type: 'world', name: title && title !== 'interactive-text' ? title : worldName, world: worldName, parcels: [] };
+    return { type: 'world', name: title && title !== 'interactive-text' ? title : worldName, world: worldName, parcels: [], timestamp };
   }
   const parcels = (md.scene && md.scene.parcels) || e.pointers || [];
   let base = (md.scene && md.scene.base) || (parcels.length ? parcels[0] : null);
-  return { type: 'parcel', name: title, parcels, base };
+  return { type: 'parcel', name: title, parcels, base, timestamp };
 }
 
 // POST a batch of ids to a content server's /entities/active, return id->record.
@@ -1015,70 +1016,105 @@ const PAGES = {
 
   async bundles() {
     const cfg = C.assetBundles || {};
-    const grid = $('queueGrid'), totalEl = $('queueTotal'), sync = $('queueSync');
-    if (cfg.contentServer) { const a = $('contentServerLink'); if (a) a.href = cfg.contentServer; }
+    const wrap = $('queueGrid'), totalEl = $('queueTotal'), sync = $('queueSync');
+    if (cfg.registryUrl) { const a = $('contentServerLink'); if (a) a.href = cfg.registryUrl + '/queues/status'; }
     initEntityLookup();
 
     let queueState;
     try { queueState = await loadQueue(); }
     catch (e) {
-      grid.innerHTML = `<div class="error-box" style="grid-column:1/-1">Couldn't reach the asset-bundle queue endpoint. This is often a CORS restriction or a temporary registry outage.<br><button onclick="location.reload()">Retry</button></div>`;
+      wrap.innerHTML = `<div class="error-box">Couldn't reach the asset-bundle queue endpoint. This is often a temporary registry outage.<br><button onclick="location.reload()">Retry</button></div>`;
       if (sync) sync.textContent = 'Queue unavailable';
       return;
     }
     if (!queueState.configured) {
-      grid.innerHTML = `<div class="empty" style="grid-column:1/-1">The asset-bundle queue endpoint isn't set in <code>assetBundles.queueUrl</code>.</div>`;
+      wrap.innerHTML = `<div class="empty">The asset-bundle queue endpoint isn't set in <code>assetBundles.queueUrl</code>.</div>`;
       if (totalEl) totalEl.textContent = 'not configured';
       return;
     }
 
-    const jobs = queueState.jobs;
+    // Collapse the per-platform job lists into one row per unique entity, with a
+    // set of which platforms each is queued for (mirrors deployments.lastslice.co).
     const platforms = (cfg.platforms || ['webgl', 'windows', 'mac']);
-    const maxRows = cfg.maxRowsPerPlatform || 25;
-    if (totalEl) totalEl.textContent = `${jobs.length} pending`;
-    if (sync) sync.textContent = `Synced ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · auto-refreshes every ${cfg.refreshSeconds || 60}s`;
+    const byEntity = new Map();
+    for (const j of queueState.jobs) {
+      if (!byEntity.has(j.entityId)) byEntity.set(j.entityId, { entityId: j.entityId, platforms: new Set() });
+      byEntity.get(j.entityId).platforms.add(j.platform);
+    }
+    const rows = [...byEntity.values()];
+    const counts = platforms.map(p => queueState.jobs.filter(j => j.platform === p).length);
 
-    grid.innerHTML = platforms.map(p => {
-      const meta = PLATFORM_META[p] || { label: p, color: '#A39DB3', desc: '' };
-      const list = jobs.filter(j => j.platform === p);
-      const shown = list.slice(0, maxRows);
-      const moreCount = list.length - shown.length;
-      return `<div class="queue-col" style="--qcolor:${meta.color}">
-        <div class="queue-col-head"><span class="queue-plat">${esc(meta.label)}</span><span class="queue-num">${list.length}</span></div>
-        <div class="queue-col-desc">${esc(meta.desc)}</div>
-        <div class="queue-items" data-platform="${esc(p)}">
-          ${shown.length ? shown.map(jobRow).join('') : '<div class="queue-empty">Queue clear ✓</div>'}
-          ${moreCount > 0 ? `<div class="queue-more">+ ${moreCount} more in queue</div>` : ''}
-        </div>
+    if (totalEl) totalEl.textContent = `${rows.length} unique ${rows.length === 1 ? 'entity' : 'entities'}`;
+    if (sync) sync.textContent = `${platforms.map((p, i) => `${PLATFORM_META[p] ? PLATFORM_META[p].label : p} ${counts[i]}`).join(' · ')} · synced ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+
+    const maxRows = cfg.maxRows || 200;
+    const shown = rows.slice(0, maxRows);
+    const platHead = platforms.map(p => `<th class="qt-plat">${esc(PLATFORM_META[p] ? PLATFORM_META[p].label : p)}</th>`).join('');
+
+    wrap.innerHTML = `
+      <div class="qtable-scroll">
+        <table class="qtable">
+          <thead><tr>
+            <th>Scene</th><th>Base parcel</th><th>Deployed</th><th>Waiting</th>${platHead}
+          </tr></thead>
+          <tbody>
+            ${shown.map(r => {
+              const checks = platforms.map(p => `<td class="qt-plat">${r.platforms.has(p) ? '<span class="qt-check">✓</span>' : '<span class="qt-dash">—</span>'}</td>`).join('');
+              return `<tr data-entity="${esc(r.entityId)}">
+                <td class="qt-scene"><span class="qt-name">${esc(shortCid(r.entityId))}</span></td>
+                <td class="qt-parcel">—</td>
+                <td class="qt-deployed">…</td>
+                <td class="qt-elapsed">…</td>
+                ${checks}
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        ${rows.length > shown.length ? `<div class="queue-more">+ ${rows.length - shown.length} more entities in queue</div>` : ''}
       </div>`;
-    }).join('');
 
-    // Batch-resolve scene names for the visible rows (one POST, deduplicated)
-    const visible = [...new Set([...grid.querySelectorAll('[data-entity]')].map(el => el.dataset.entity))];
+    // Resolve scene names/parcels/timestamps for the visible rows and fill the cells.
+    const visible = shown.map(r => r.entityId);
     if (visible.length) {
       const resolved = await resolveScenes(visible);
-      grid.querySelectorAll('[data-entity]').forEach(el => {
-        const sc = resolved[el.dataset.entity];
-        const target = el.querySelector('.queue-scene');
-        const kindEl = el.querySelector('.queue-kind');
-        if (!target) return;
-        if (!sc) { if (kindEl) kindEl.textContent = ''; return; }
-        if (sc.type === 'world') {
-          // Worlds: show the scene/World name and a "World" badge with the dcl name.
-          target.innerHTML = esc(sc.name || sc.world || 'Unnamed World');
-          if (kindEl) { kindEl.textContent = 'World'; kindEl.className = 'queue-kind kind-world'; kindEl.title = sc.world || ''; }
-        } else if (sc.name || (sc.parcels && sc.parcels.length)) {
-          // Genesis City: show scene name + base/first parcel and a "Parcel" badge.
-          const coord = sc.base || (sc.parcels && sc.parcels[0]);
-          const extra = sc.parcels && sc.parcels.length > 1 ? ` +${sc.parcels.length - 1}` : '';
-          const loc = coord ? `<span class="queue-loc"> · ${esc(coord)}${extra}</span>` : '';
-          target.innerHTML = esc(sc.name || 'Unnamed scene') + loc;
-          if (kindEl) {
-            kindEl.textContent = sc.parcels && sc.parcels.length ? `${sc.parcels.length} parcel${sc.parcels.length > 1 ? 's' : ''}` : 'Parcel';
-            kindEl.className = 'queue-kind kind-parcel';
-            kindEl.title = (sc.parcels || []).join('  ');
-          }
+      const registry = cfg.registryUrl || 'https://asset-bundle-registry.decentraland.org';
+      wrap.querySelectorAll('tr[data-entity]').forEach(tr => {
+        const sc = resolved[tr.dataset.entity];
+        const nameEl = tr.querySelector('.qt-name');
+        const parcelEl = tr.querySelector('.qt-parcel');
+        const depEl = tr.querySelector('.qt-deployed');
+        const elapEl = tr.querySelector('.qt-elapsed');
+
+        if (!sc) {
+          if (depEl) depEl.textContent = '—';
+          if (elapEl) elapEl.textContent = '—';
+          return;
         }
+
+        // Scene name + type badge
+        if (sc.type === 'world') {
+          nameEl.innerHTML = `${esc(sc.name || sc.world || 'Unnamed World')} <span class="queue-kind kind-world" title="${esc(sc.world || '')}">World</span>`;
+          if (parcelEl) parcelEl.textContent = sc.world || '—';
+        } else {
+          const nm = sc.name || 'Unnamed scene';
+          const n = (sc.parcels && sc.parcels.length) || 0;
+          nameEl.innerHTML = `${esc(nm)}${n ? ` <span class="queue-kind kind-parcel" title="${esc((sc.parcels || []).join('  '))}">${n} parcel${n > 1 ? 's' : ''}</span>` : ''}`;
+          if (parcelEl) parcelEl.textContent = sc.base || (sc.parcels && sc.parcels[0]) || '—';
+        }
+
+        // Deployed date + waiting time from the entity timestamp
+        if (sc.timestamp) {
+          const d = new Date(sc.timestamp);
+          if (depEl) depEl.textContent = d.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+          if (elapEl) elapEl.textContent = rel(sc.timestamp).replace(' ago', '');
+        } else {
+          if (depEl) depEl.textContent = '—';
+          if (elapEl) elapEl.textContent = '—';
+        }
+
+        // Make the row link to the registry status for that entity
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => window.open(`${registry}/entities/status/${encodeURIComponent(tr.dataset.entity)}`, '_blank', 'noopener');
       });
     }
 

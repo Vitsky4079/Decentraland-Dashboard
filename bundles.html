@@ -43,9 +43,9 @@
 <main>
   <section>
     <div class="wrap">
-      <div class="sec-head"><h2>Pending jobs</h2><span class="sec-count" id="queueTotal"></span><a class="sec-link" id="contentServerLink" href="https://peer.decentraland.org/content" target="_blank" rel="noopener">Content server →</a></div>
-      <p class="sec-desc">Grouped by build target. Entity IDs are resolved to scene names and parcels where available. Click any job to inspect the entity on the content server.</p>
-      <div class="queue-grid" id="queueGrid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+      <div class="sec-head"><h2>Pending jobs</h2><span class="sec-count" id="queueTotal"></span><a class="sec-link" id="contentServerLink" href="https://asset-bundle-registry.decentraland.org/queues/status" target="_blank" rel="noopener">Registry →</a></div>
+      <p class="sec-desc">One row per pending entity. Scene names, parcels and deployment time are resolved from the content servers. The last columns show which platforms each entity is queued for. Click a row to inspect it on the registry.</p>
+      <div id="queueGrid"><div class="loading">Loading queue…</div></div>
     </div>
   </section>
 
