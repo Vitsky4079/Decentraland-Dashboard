@@ -313,6 +313,38 @@ const PN_STREAMS = [
   { key: 'creator-hub', label: 'Creator Hub' },
   { key: 'sdk',         label: 'SDK' },
 ];
+// When a note is pulled back for editing, we remember its db id (and original
+// position) here, keyed by stream, so re-adding it updates the same row.
+const pnEditing = {};
+
+// Rebuild the pasteable text (header line + body) from a stored note, so it can
+// be loaded back into the textarea for editing.
+function noteToText(n) {
+  const header = `**Release Notes** ${n.version || ''}${n.date_label ? ` (${n.date_label})` : ''}`.trim();
+  return `${header}\n${n.body || ''}`;
+}
+
+function editPatchNote(stream, gi) {
+  // Find the flat index of this note within its stream group.
+  let c = 0, fi = -1;
+  for (let i = 0; i < notes.length; i++) { if ((notes[i].stream || 'explorer') === stream) { if (c === gi) { fi = i; break; } c++; } }
+  if (fi < 0) return;
+  const ta = $('pnBody_' + stream);
+  // If the textarea already holds an in-progress edit, don't silently lose it.
+  if (ta.value.trim() && pnEditing[stream]) {
+    setStatus('Finish or clear the current edit in that box first (click "Update" or empty it).', false);
+    return;
+  }
+  const [row] = notes.splice(fi, 1);
+  pnEditing[stream] = { id: row.id, position: row.position };
+  ta.value = noteToText(row);
+  // Relabel the add button to make it clear this will update the existing note.
+  const btn = $('pnAdd_' + stream);
+  if (btn) btn.textContent = 'Update ' + (PN_STREAMS.find(s => s.key === stream) || {}).label;
+  markDirty('pn'); drawPatchNotes();
+  setStatus(`Editing ${row.version || 'release'} in ${stream}. Change the text, then click Update.`, true);
+  ta.focus();
+}
 
 function addPatchNote(stream) {
   const ta = $('pnBody_' + stream);
@@ -320,6 +352,30 @@ function addPatchNote(stream) {
   if (!raw) { setStatus('Paste the release notes first.', false); return; }
   const { version, date, body } = parseRelease(raw);
   if (!body) { setStatus('Could not find any notes below the header line.', false); return; }
+
+  const editing = pnEditing[stream];
+  if (editing) {
+    // Re-insert the edited note at its original position, keeping its db id so
+    // the save updates the existing row instead of creating a duplicate.
+    const updated = { id: editing.id, stream, version, date_label: date, body, position: editing.position || 0 };
+    // Place it back among its stream group near where it was.
+    let inserted = false, c = 0;
+    for (let i = 0; i < notes.length; i++) {
+      if ((notes[i].stream || 'explorer') === stream) {
+        if (c === (editing.position || 0)) { notes.splice(i, 0, updated); inserted = true; break; }
+        c++;
+      }
+    }
+    if (!inserted) notes.push(updated);
+    pnEditing[stream] = null;
+    const btn = $('pnAdd_' + stream);
+    if (btn) btn.textContent = 'Add to ' + (PN_STREAMS.find(s => s.key === stream) || {}).label;
+    ta.value = '';
+    markDirty('pn'); drawPatchNotes();
+    setStatus(`Updated ${version || 'release'} in ${stream} — click "Save patch notes" to publish.`, true);
+    return;
+  }
+
   // Insert at the top of this stream's group.
   notes.unshift({ id: null, stream, version, date_label: date, body, position: 0 });
   ta.value = '';
@@ -365,12 +421,18 @@ function drawPatchNotes() {
     if (!group.length) { el.innerHTML = '<div class="hint">No releases yet.</div>'; return; }
     el.innerHTML = group.map((n, gi) =>
       `<div class="pin-row"><span class="t">${esc(n.version || 'Release')} ${esc(n.date_label || '')}${n.id == null ? ' <small style="color:#FFBC5B">(unsaved)</small>' : ''}</span>
+        <button class="mini" data-pnedit="${s.key}:${gi}">Edit</button>
         <button class="mini" data-pnup="${s.key}:${gi}">↑</button>
         <button class="mini" data-pndown="${s.key}:${gi}">↓</button>
         <button class="mini" data-pnrm="${s.key}:${gi}">Remove</button></div>`).join('');
 
     // Helper: map a (stream, groupIndex) to the flat index in `notes`.
     const flatIndex = (gi) => { let c = 0; for (let i = 0; i < notes.length; i++) { if ((notes[i].stream || 'explorer') === s.key) { if (c === gi) return i; c++; } } return -1; };
+
+    el.querySelectorAll('[data-pnedit]').forEach(b => b.onclick = () => {
+      const gi = +b.dataset.pnedit.split(':')[1];
+      editPatchNote(s.key, gi);
+    });
 
     el.querySelectorAll('[data-pnrm]').forEach(b => b.onclick = () => {
       const gi = +b.dataset.pnrm.split(':')[1];
