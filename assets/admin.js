@@ -363,14 +363,32 @@ function drawPatchNotes() {
     if (!el) return;
     const group = notes.filter(n => (n.stream || 'explorer') === s.key);
     if (!group.length) { el.innerHTML = '<div class="hint">No releases yet.</div>'; return; }
-    el.innerHTML = group.map((n, gi) =>
-      `<div class="pin-row"><span class="t">${esc(n.version || 'Release')} ${esc(n.date_label || '')}${n.id == null ? ' <small style="color:#FFBC5B">(unsaved)</small>' : ''}</span>
+    el.innerHTML = group.map((n, gi) => {
+      const opts = PN_STREAMS.map(o => `<option value="${o.key}"${o.key === s.key ? ' selected' : ''}>${esc(o.label)}</option>`).join('');
+      return `<div class="pin-row"><span class="t">${esc(n.version || 'Release')} ${esc(n.date_label || '')}${n.id == null ? ' <small style="color:#FFBC5B">(unsaved)</small>' : ''}</span>
+        <select class="mini pn-move" data-pnmove="${s.key}:${gi}" title="Move to another stream">${opts}</select>
         <button class="mini" data-pnup="${s.key}:${gi}">↑</button>
         <button class="mini" data-pndown="${s.key}:${gi}">↓</button>
-        <button class="mini" data-pnrm="${s.key}:${gi}">Remove</button></div>`).join('');
+        <button class="mini" data-pnrm="${s.key}:${gi}">Remove</button></div>`;
+    }).join('');
 
     // Helper: map a (stream, groupIndex) to the flat index in `notes`.
     const flatIndex = (gi) => { let c = 0; for (let i = 0; i < notes.length; i++) { if ((notes[i].stream || 'explorer') === s.key) { if (c === gi) return i; c++; } } return -1; };
+
+    el.querySelectorAll('[data-pnmove]').forEach(sel => sel.onchange = () => {
+      const gi = +sel.dataset.pnmove.split(':')[1];
+      const fi = flatIndex(gi); if (fi < 0) return;
+      const target = sel.value;
+      if (target === s.key) return;
+      // Move it to the end of the target stream's group so it appends there.
+      const [row] = notes.splice(fi, 1);
+      row.stream = target;
+      let lastOfTarget = -1;
+      notes.forEach((m, i) => { if ((m.stream || 'explorer') === target) lastOfTarget = i; });
+      notes.splice(lastOfTarget + 1, 0, row);
+      markDirty('pn'); drawPatchNotes();
+      setStatus(`Moved "${row.version || 'release'}" to ${target} — click "Save patch notes" to publish.`, true);
+    });
 
     el.querySelectorAll('[data-pnrm]').forEach(b => b.onclick = () => {
       const gi = +b.dataset.pnrm.split(':')[1];
