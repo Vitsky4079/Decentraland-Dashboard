@@ -16,6 +16,7 @@
   --down:#FF4D5E;
   --info:#7C8CF8;
   --radius:14px;
+  --maxw:1480px;
   --mono:'JetBrains Mono',monospace;
   --display:'Space Grotesk',sans-serif;
   --body:'Inter',sans-serif;
@@ -26,7 +27,7 @@ html{scroll-behavior:smooth}
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
 }
-body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:16.5px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:clamp(16.5px,0.62rem + 0.42vw,19px);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
 main{flex:1}
 a{color:inherit}
 button{font-family:inherit;cursor:pointer}
@@ -34,7 +35,7 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- Nav ---------- */
 .nav{position:sticky;top:0;z-index:50;background:rgba(13,11,18,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.nav-inner{max-width:1280px;margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;gap:24px}
+.nav-inner{max-width:var(--maxw);margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;gap:24px}
 .logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17.5px;letter-spacing:.01em;text-decoration:none;flex:none}
 .logo-mark{width:27px;height:27px;border-radius:50%;background:var(--grad);position:relative;flex:none}
 .logo-mark::after{content:"";position:absolute;inset:0;border-radius:50%;clip-path:polygon(0 100%,100% 100%,50% 18%);background:rgba(13,11,18,.55)}
@@ -57,13 +58,13 @@ button{font-family:inherit;cursor:pointer}
 }
 .parcel{position:absolute;width:44px;height:44px;border-radius:3px;opacity:0;animation:parcelPulse 7s ease-in-out infinite}
 @keyframes parcelPulse{0%,100%{opacity:0}45%,55%{opacity:.55}}
-.hero-inner{position:relative;max-width:1280px;margin:0 auto;padding:72px 24px 56px}
+.hero-inner{position:relative;max-width:var(--maxw);margin:0 auto;padding:72px 24px 56px}
 .hero-inner.compact{padding:46px 24px 38px}
 .hero-eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--peach);margin-bottom:14px}
 h1{font-family:var(--display);font-size:clamp(36px,5.2vw,64px);font-weight:700;line-height:1.08;letter-spacing:-.015em;max-width:760px}
 .hero-inner.compact h1{font-size:clamp(30px,4vw,46px)}
 h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero-sub{color:var(--text-dim);max-width:660px;margin-top:16px;font-size:18px}
+.hero-sub{color:var(--text-dim);max-width:680px;margin-top:16px;font-size:clamp(17px,0.9rem + 0.4vw,21px)}
 .hero-meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px;align-items:center}
 .overall-pill{display:inline-flex;align-items:center;gap:10px;padding:11px 20px;border-radius:99px;border:1px solid var(--line-strong);background:var(--surface);font-family:var(--display);font-weight:600;font-size:16px}
 .sync-note{font-family:var(--mono);font-size:12.5px;color:var(--text-faint)}
@@ -72,14 +73,14 @@ h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:tex
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,255,255,.25)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
 
 /* ---------- Layout ---------- */
-.wrap{max-width:1280px;margin:0 auto;padding:0 24px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
 section{padding:48px 0 8px;scroll-margin-top:72px}
 .sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
-.sec-head h2{font-family:var(--display);font-size:30px;font-weight:700;letter-spacing:-.01em}
+.sec-head h2{font-family:var(--display);font-size:clamp(26px,0.9rem + 1vw,36px);font-weight:700;letter-spacing:-.01em}
 .sec-count{font-family:var(--mono);font-size:13.5px;color:var(--text-faint)}
 .sec-link{margin-left:auto;font-size:14.5px;color:var(--text-dim);text-decoration:none;border-bottom:1px solid var(--line-strong);padding-bottom:1px}
 .sec-link:hover{color:var(--text)}
-.sec-desc{color:var(--text-dim);font-size:16px;max-width:720px;margin-bottom:22px}
+.sec-desc{color:var(--text-dim);font-size:clamp(15.5px,0.9rem + 0.3vw,18px);max-width:760px;margin-bottom:22px}
 
 /* ---------- Service parcels ---------- */
 .services{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:14px}
@@ -123,7 +124,7 @@ section{padding:48px 0 8px;scroll-margin-top:72px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:30px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;text-decoration:none;transition:border-color .2s,transform .2s}
 .stat:hover{border-color:rgba(255,45,85,.4);transform:translateY(-3px);box-shadow:0 14px 40px -18px rgba(255,45,85,.3)}
-.stat-num{font-family:var(--display);font-size:42px;font-weight:700;line-height:1.1}
+.stat-num{font-family:var(--display);font-size:clamp(38px,1.5rem + 1.4vw,52px);font-weight:700;line-height:1.1}
 .stat-label{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);margin-top:4px}
 
 /* ---------- Fixed list ---------- */
