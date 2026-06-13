@@ -621,7 +621,15 @@ function miniMarkdown(md) {
     .replace(/^#\s*(.+)$/gm, '<h3>$1</h3>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
+    // Images first (![alt](url)), so they aren't mistaken for links. Lazy-loaded,
+    // click to open full size on GitHub.
+    .replace(/!\[([^\]]*)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="$1" loading="lazy"></a>')
+    // Then links.
     .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    // Bare image URLs on their own (GitHub/S3 user-attachment assets, or any
+    // .png/.jpg/.gif/.webp link) become inline images too.
+    .replace(/(^|\s)(https?:\/\/[^\s<]+?\.(?:png|jpe?g|gif|webp)(?:\?[^\s<]*)?)(?=\s|$)/gim, '$1<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="" loading="lazy"></a>')
+    .replace(/(^|\s)(https?:\/\/github-production-user-asset[^\s<]+)(?=\s|$)/gi, '$1<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="" loading="lazy"></a>')
     .replace(/&lt;!--[\s\S]*?--&gt;/g, '')
     .replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>')
     .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
