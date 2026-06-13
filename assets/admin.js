@@ -420,11 +420,15 @@ function drawPatchNotes() {
     const group = notes.filter(n => (n.stream || 'explorer') === s.key);
     if (!group.length) { el.innerHTML = '<div class="hint">No releases yet.</div>'; return; }
     el.innerHTML = group.map((n, gi) =>
-      `<div class="pin-row"><span class="t">${esc(n.version || 'Release')} ${esc(n.date_label || '')}${n.id == null ? ' <small style="color:#FFBC5B">(unsaved)</small>' : ''}</span>
-        <button class="mini" data-pnedit="${s.key}:${gi}">Edit</button>
-        <button class="mini" data-pnup="${s.key}:${gi}">↑</button>
-        <button class="mini" data-pndown="${s.key}:${gi}">↓</button>
-        <button class="mini" data-pnrm="${s.key}:${gi}">Remove</button></div>`).join('');
+      `<div class="pn-row">
+        <div class="pn-row-title">${esc(n.version || 'Release')}${n.date_label ? ` <span class="pn-row-date">${esc(n.date_label)}</span>` : ''}${n.id == null ? ' <small style="color:#FFBC5B">(unsaved)</small>' : ''}</div>
+        <div class="pn-row-actions">
+          <button class="mini" data-pnedit="${s.key}:${gi}">Edit</button>
+          <button class="mini" data-pnup="${s.key}:${gi}">↑</button>
+          <button class="mini" data-pndown="${s.key}:${gi}">↓</button>
+          <button class="mini" data-pnrm="${s.key}:${gi}">Remove</button>
+        </div>
+      </div>`).join('');
 
     // Helper: map a (stream, groupIndex) to the flat index in `notes`.
     const flatIndex = (gi) => { let c = 0; for (let i = 0; i < notes.length; i++) { if ((notes[i].stream || 'explorer') === s.key) { if (c === gi) return i; c++; } } return -1; };
