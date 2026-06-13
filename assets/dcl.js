@@ -1023,6 +1023,53 @@ function renderPatchNotes() {
         <div class="pn-col-cards">${cards}</div>
       </div>`;
   }).join('');
+
+  setupPatchCarousel(wrap);
+}
+
+// On mobile the .pn-grid is a horizontal scroll-snap carousel. Add arrow + dot
+// controls (the nav is display:none on desktop via CSS) and keep them in sync
+// with swipe scrolling.
+function setupPatchCarousel(wrap) {
+  // Remove any stale nav from a previous render.
+  const existing = wrap.parentNode.querySelector('.pn-carousel-nav');
+  if (existing) existing.remove();
+
+  const cols = Array.from(wrap.children);
+  if (cols.length < 2) return;
+
+  const nav = document.createElement('div');
+  nav.className = 'pn-carousel-nav';
+  nav.innerHTML =
+    `<button class="pn-carousel-btn" data-pncar="prev" aria-label="Previous">‹</button>
+     <div class="pn-carousel-dots">${cols.map((c, i) =>
+       `<button class="pn-carousel-dot${i === 0 ? ' active' : ''}" data-pncardot="${i}" aria-label="Go to ${i + 1}"></button>`).join('')}</div>
+     <button class="pn-carousel-btn" data-pncar="next" aria-label="Next">›</button>`;
+  wrap.parentNode.insertBefore(nav, wrap.nextSibling);
+
+  const dots = Array.from(nav.querySelectorAll('[data-pncardot]'));
+  const prevBtn = nav.querySelector('[data-pncar="prev"]');
+  const nextBtn = nav.querySelector('[data-pncar="next"]');
+
+  const current = () => Math.round(wrap.scrollLeft / wrap.clientWidth);
+  const goTo = (i) => {
+    const idx = Math.max(0, Math.min(cols.length - 1, i));
+    wrap.scrollTo({ left: idx * wrap.clientWidth, behavior: 'smooth' });
+  };
+  const sync = () => {
+    const i = current();
+    dots.forEach((d, di) => d.classList.toggle('active', di === i));
+    prevBtn.disabled = i <= 0;
+    nextBtn.disabled = i >= cols.length - 1;
+  };
+
+  prevBtn.onclick = () => goTo(current() - 1);
+  nextBtn.onclick = () => goTo(current() + 1);
+  dots.forEach((d, i) => d.onclick = () => goTo(i));
+
+  let raf;
+  wrap.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(sync); }, { passive: true });
+  sync();
 }
 
 /* ---------- Report URLs (use repo issue templates) ---------- */
