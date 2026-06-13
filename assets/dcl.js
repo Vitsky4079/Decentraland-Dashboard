@@ -626,6 +626,11 @@ function miniMarkdown(md) {
     .replace(/!\[([^\]]*)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="md-img-link"><img class="md-img" src="$2" alt="$1" loading="lazy"></a>')
     // Then links.
     .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    // Google Drive file links (bare drive.google.com/file/d/<id>/...). Show an
+    // inline preview iframe plus an always-present link, since the embed shows a
+    // sign-in wall if the file isn't shared publicly.
+    .replace(/(^|\s)(https?:\/\/drive\.google\.com\/file\/d\/([-\w]+)[^\s<]*)(?=\s|$)/gi,
+      '$1<span class="md-drive"><iframe class="md-drive-frame" src="https://drive.google.com/file/d/$3/preview" allow="autoplay" loading="lazy"></iframe><a class="md-drive-link" href="$2" target="_blank" rel="noopener">Open in Google Drive →</a></span>')
     // Explicit video URLs (.mp4/.mov/.webm, incl. ?query) → inline player.
     // Must run before the image/S3 rules so an .mp4 isn't wrapped in <img>.
     .replace(/(^|\s)(https?:\/\/[^\s<]+?\.(?:mp4|mov|webm)(?:\?[^\s<]*)?)(?=\s|$)/gim, '$1<video class="md-video" src="$2" controls preload="metadata" playsinline></video>')

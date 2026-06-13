@@ -252,6 +252,9 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .md-img-link{display:block;margin:10px 0}
 .md-img{max-width:100%;height:auto;border-radius:10px;border:1px solid var(--line);display:block;background:var(--surface-2)}
 .md-video{max-width:100%;height:auto;border-radius:10px;border:1px solid var(--line);display:block;margin:10px 0;background:#000}
+.md-drive{display:block;margin:10px 0}
+.md-drive-frame{width:100%;aspect-ratio:16/9;border:1px solid var(--line);border-radius:10px;background:#000;display:block}
+.md-drive-link{display:inline-block;margin-top:6px;font-size:13px;color:var(--peach)}
 .md-img-link:hover .md-img{border-color:var(--line-strong)}
 .modal-empty{color:var(--text-faint);font-style:italic}
 .modal-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--line)}
