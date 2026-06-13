@@ -167,6 +167,12 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
   .hero-inner{padding:52px 20px 44px}
   section{padding:40px 0 8px}
   .wrap{padding:0 20px}
+  .pn-grid,.pn-grid[data-cols]{grid-template-columns:1fr;max-width:560px}
+}
+
+/* Patch notes: drop 3 columns to 2 on mid-width screens before fully stacking */
+@media(max-width:1024px) and (min-width:821px){
+  .pn-grid[data-cols="3"]{--pn-cols:2;max-width:840px}
 }
 
 /* ---------- Banner ---------- */
@@ -249,7 +255,17 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .card .card-meta .copy-btn{margin-left:auto}
 
 /* ---------- Patch notes ---------- */
-.pn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:16px}
+/* Patch notes — one column per stream (Explorer / Creator Hub / SDK) */
+.pn-grid{display:grid;grid-template-columns:repeat(var(--pn-cols,3),minmax(0,1fr));gap:20px;align-items:start;max-width:1180px;margin:0 auto}
+.pn-grid[data-cols="1"]{--pn-cols:1;max-width:560px}
+.pn-grid[data-cols="2"]{--pn-cols:2;max-width:840px}
+.pn-grid[data-cols="3"]{--pn-cols:3}
+.pn-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.pn-col-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line-strong)}
+.pn-col-title{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.01em}
+.pn-col-link{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);text-decoration:none;white-space:nowrap}
+.pn-col-link:hover{color:var(--peach)}
+.pn-col-cards{display:flex;flex-direction:column;gap:14px}
 .pn-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;position:relative;overflow:hidden}
 .pn-card.latest{border-color:rgba(255,45,85,.35)}
 .pn-card.latest::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad)}

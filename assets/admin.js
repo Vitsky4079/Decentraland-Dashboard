@@ -124,7 +124,7 @@ function wireEditors() {
   $('editSearch').oninput = e => { editQ = e.target.value.toLowerCase(); drawEditPick(); };
   $('edApply').onclick = applyEdit;
   $('edClear').onclick = clearEdit;
-  $('pnAdd').onclick = addPatchNote;
+  PN_STREAMS.forEach(s => { const b = $('pnAdd_' + s.key); if (b) b.onclick = () => addPatchNote(s.key); });
   $('pnSave').onclick = savePatchNotes;
   $('svcSave').onclick = saveServices;
   $('pinsSave').onclick = savePins;
@@ -307,35 +307,46 @@ function drawEditedList() {
   });
 }
 
-/* ---------- Patch notes ---------- */
-function addPatchNote() {
-  const raw = $('pnBody').value.trim();
+/* ---------- Patch notes (per stream: explorer / creator-hub / sdk) ---------- */
+const PN_STREAMS = [
+  { key: 'explorer',    label: 'Explorer' },
+  { key: 'creator-hub', label: 'Creator Hub' },
+  { key: 'sdk',         label: 'SDK' },
+];
+
+function addPatchNote(stream) {
+  const ta = $('pnBody_' + stream);
+  const raw = ta.value.trim();
   if (!raw) { setStatus('Paste the release notes first.', false); return; }
   const { version, date, body } = parseRelease(raw);
   if (!body) { setStatus('Could not find any notes below the header line.', false); return; }
-  notes.unshift({ id: null, version, date_label: date, body, position: 0 });
-  $('pnBody').value = '';
+  // Insert at the top of this stream's group.
+  notes.unshift({ id: null, stream, version, date_label: date, body, position: 0 });
+  ta.value = '';
   markDirty('pn'); drawPatchNotes();
-  setStatus(version ? `Parsed ${version}${date ? ' (' + date + ')' : ''} — click "Save patch notes" to publish.` : 'Added — click "Save patch notes" to publish.', true);
+  setStatus(version ? `Parsed ${version}${date ? ' (' + date + ')' : ''} for ${stream} — click "Save patch notes" to publish.` : `Added to ${stream} — click "Save patch notes" to publish.`, true);
 }
 
 async function savePatchNotes() {
-  notes.forEach((n, i) => n.position = i);
+  // Position is per-stream ordering; recompute within each group.
+  PN_STREAMS.forEach(s => {
+    let p = 0;
+    notes.forEach(n => { if ((n.stream || 'explorer') === s.key) n.position = p++; });
+  });
   let error = null;
   const fresh = notes.filter(n => n.id == null);
   const existing = notes.filter(n => n.id != null);
   if (fresh.length) {
     const { data, error: e } = await sb.from('patch_notes')
-      .insert(fresh.map(n => ({ version: n.version, date_label: n.date_label, body: n.body, position: n.position })))
+      .insert(fresh.map(n => ({ stream: n.stream || 'explorer', version: n.version, date_label: n.date_label, body: n.body, position: n.position })))
       .select();
     error = e;
     if (!e && data) {
-      // re-attach generated ids by matching body+position
       data.forEach(row => { const m = notes.find(n => n.id == null && n.body === row.body); if (m) m.id = row.id; });
     }
   }
   if (!error && existing.length) {
-    ({ error } = await sb.from('patch_notes').upsert(existing.map(n => ({ id: n.id, version: n.version, date_label: n.date_label, body: n.body, position: n.position }))));
+    ({ error } = await sb.from('patch_notes').upsert(existing.map(n => ({ id: n.id, stream: n.stream || 'explorer', version: n.version, date_label: n.date_label, body: n.body, position: n.position }))));
   }
   if (!error && deletedNoteIds.length) {
     ({ error } = await sb.from('patch_notes').delete().in('id', deletedNoteIds));
@@ -347,27 +358,40 @@ async function savePatchNotes() {
 }
 
 function drawPatchNotes() {
-  const el = $('pnList');
-  if (!notes.length) { el.innerHTML = '<div class="hint">No releases yet.</div>'; return; }
-  el.innerHTML = notes.map((n, i) =>
-    `<div class="pin-row"><span class="t">${esc(n.version || 'Release')} ${esc(n.date_label || '')}${n.id == null ? ' <small style="color:#FFBC5B">(unsaved)</small>' : ''}</span>
-      <button class="mini" data-pnup="${i}">↑</button>
-      <button class="mini" data-pndown="${i}">↓</button>
-      <button class="mini" data-pnrm="${i}">Remove</button></div>`).join('');
-  el.querySelectorAll('[data-pnrm]').forEach(b => b.onclick = () => {
-    const row = notes.splice(+b.dataset.pnrm, 1)[0];
-    if (row.id != null) deletedNoteIds.push(row.id);
-    markDirty('pn'); drawPatchNotes();
-  });
-  el.querySelectorAll('[data-pnup]').forEach(b => b.onclick = () => {
-    const i = +b.dataset.pnup; if (i === 0) return;
-    [notes[i-1], notes[i]] = [notes[i], notes[i-1]];
-    markDirty('pn'); drawPatchNotes();
-  });
-  el.querySelectorAll('[data-pndown]').forEach(b => b.onclick = () => {
-    const i = +b.dataset.pndown; if (i >= notes.length - 1) return;
-    [notes[i+1], notes[i]] = [notes[i], notes[i+1]];
-    markDirty('pn'); drawPatchNotes();
+  PN_STREAMS.forEach(s => {
+    const el = $('pnList_' + s.key);
+    if (!el) return;
+    const group = notes.filter(n => (n.stream || 'explorer') === s.key);
+    if (!group.length) { el.innerHTML = '<div class="hint">No releases yet.</div>'; return; }
+    el.innerHTML = group.map((n, gi) =>
+      `<div class="pin-row"><span class="t">${esc(n.version || 'Release')} ${esc(n.date_label || '')}${n.id == null ? ' <small style="color:#FFBC5B">(unsaved)</small>' : ''}</span>
+        <button class="mini" data-pnup="${s.key}:${gi}">↑</button>
+        <button class="mini" data-pndown="${s.key}:${gi}">↓</button>
+        <button class="mini" data-pnrm="${s.key}:${gi}">Remove</button></div>`).join('');
+
+    // Helper: map a (stream, groupIndex) to the flat index in `notes`.
+    const flatIndex = (gi) => { let c = 0; for (let i = 0; i < notes.length; i++) { if ((notes[i].stream || 'explorer') === s.key) { if (c === gi) return i; c++; } } return -1; };
+
+    el.querySelectorAll('[data-pnrm]').forEach(b => b.onclick = () => {
+      const gi = +b.dataset.pnrm.split(':')[1];
+      const fi = flatIndex(gi); if (fi < 0) return;
+      const row = notes.splice(fi, 1)[0];
+      if (row.id != null) deletedNoteIds.push(row.id);
+      markDirty('pn'); drawPatchNotes();
+    });
+    el.querySelectorAll('[data-pnup]').forEach(b => b.onclick = () => {
+      const gi = +b.dataset.pnup.split(':')[1]; if (gi === 0) return;
+      const a = flatIndex(gi), c = flatIndex(gi - 1);
+      [notes[a], notes[c]] = [notes[c], notes[a]];
+      markDirty('pn'); drawPatchNotes();
+    });
+    el.querySelectorAll('[data-pndown]').forEach(b => b.onclick = () => {
+      const gi = +b.dataset.pndown.split(':')[1];
+      if (gi >= group.length - 1) return;
+      const a = flatIndex(gi), c = flatIndex(gi + 1);
+      [notes[a], notes[c]] = [notes[c], notes[a]];
+      markDirty('pn'); drawPatchNotes();
+    });
   });
 }
 

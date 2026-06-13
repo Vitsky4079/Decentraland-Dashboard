@@ -53,6 +53,11 @@
 .session-bar{display:flex;align-items:center;gap:14px;margin-bottom:22px;font-size:13.5px;color:var(--text-dim)}
 .session-bar .mini{margin-left:auto}
 @media(max-width:640px){.row2,.row3{grid-template-columns:1fr}.svc-row{grid-template-columns:1fr}}
+.pn-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.pn-admin-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pn-admin-label{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim)}
+.pn-admin-col textarea{width:100%;background:var(--surface-2);border:1px solid var(--line-strong);color:var(--text);border-radius:10px;padding:11px 13px;font-size:13px;font-family:var(--mono);line-height:1.5;resize:vertical}
+@media(max-width:860px){.pn-admin-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-page="admin">
@@ -152,10 +157,32 @@
 
     <div class="panel-card">
       <h2>Patch notes</h2>
-      <p class="hint">Paste the whole release-notes block in one go — the version and date are read automatically from the first line (e.g. <code>**Release Notes** v0.151.0 (10/6/2026) 🚀</code>).</p>
-      <div class="field"><label for="pnBody">Release notes</label><textarea id="pnBody" rows="11" placeholder="**Release Notes** v0.151.0 (10/6/2026)  🚀&#10;🎮 Features:&#10;- ...&#10;🛠️ Fixes:&#10;- ..."></textarea></div>
-      <div class="btn-row"><button class="btn ghost" id="pnAdd">Add to list</button><button class="btn" id="pnSave">Save patch notes</button><span class="dirty hidden" id="pnDirty">Unsaved changes</span></div>
-      <div id="pnList" style="margin-top:16px"></div>
+      <p class="hint">Three separate streams — Explorer, Creator Hub, and SDK — each shown as its own column on the overview. Paste a whole release-notes block in the matching box; the version and date are read automatically from the first line (e.g. <code>**Release Notes** v0.151.0 (10/6/2026) 🚀</code>). Add to as many streams as you like, then click <strong>Save patch notes</strong> once to publish all of them.</p>
+
+      <div class="pn-admin-grid">
+        <div class="pn-admin-col">
+          <label class="pn-admin-label" for="pnBody_explorer">Explorer</label>
+          <textarea id="pnBody_explorer" rows="9" placeholder="**Release Notes** v0.151.0 (10/6/2026)  🚀&#10;🎮 Features:&#10;- ...&#10;🛠️ Fixes:&#10;- ..."></textarea>
+          <button class="btn ghost" id="pnAdd_explorer">Add to Explorer</button>
+          <div id="pnList_explorer" style="margin-top:12px"></div>
+        </div>
+
+        <div class="pn-admin-col">
+          <label class="pn-admin-label" for="pnBody_creator-hub">Creator Hub</label>
+          <textarea id="pnBody_creator-hub" rows="9" placeholder="**Release Notes** v1.2.0 (10/6/2026)&#10;🎮 Features:&#10;- ...&#10;🛠️ Fixes:&#10;- ..."></textarea>
+          <button class="btn ghost" id="pnAdd_creator-hub">Add to Creator Hub</button>
+          <div id="pnList_creator-hub" style="margin-top:12px"></div>
+        </div>
+
+        <div class="pn-admin-col">
+          <label class="pn-admin-label" for="pnBody_sdk">SDK</label>
+          <textarea id="pnBody_sdk" rows="9" placeholder="**Release Notes** v7.5.0 (10/6/2026)&#10;🎮 Features:&#10;- ...&#10;🛠️ Fixes:&#10;- ..."></textarea>
+          <button class="btn ghost" id="pnAdd_sdk">Add to SDK</button>
+          <div id="pnList_sdk" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:18px"><button class="btn" id="pnSave">Save patch notes</button><span class="dirty hidden" id="pnDirty">Unsaved changes</span></div>
     </div>
 
     <div class="statusline" id="saveStatus"></div>

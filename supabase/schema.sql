@@ -25,11 +25,15 @@ create table if not exists public.pins (
 
 create table if not exists public.patch_notes (
   id         bigint generated always as identity primary key,
+  stream     text not null default 'explorer',  -- explorer | creator-hub | sdk
   version    text,
   date_label text,
   body       text not null,
   position   integer not null default 0
 );
+
+-- Backfill for existing installs that predate the stream column.
+alter table public.patch_notes add column if not exists stream text not null default 'explorer';
 
 create table if not exists public.service_status (
   name   text primary key,                -- e.g. 'Worlds'
@@ -94,6 +98,7 @@ as $$
       '{}'::jsonb),
     'patch_notes', coalesce(
       (select jsonb_agg(jsonb_build_object(
+         'stream', coalesce(n.stream, 'explorer'),
          'version', n.version, 'date', n.date_label, 'body', n.body)
          order by n.position)
          from public.patch_notes n),

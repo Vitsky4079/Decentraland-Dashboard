@@ -925,21 +925,53 @@ function patchNotesToHtml(body) {
   return html;
 }
 
+// The three patch-note streams shown side by side. Order here = column order.
+const PATCH_STREAMS = [
+  { key: 'explorer',    label: 'Explorer',    link: 'https://github.com/decentraland/unity-explorer/releases' },
+  { key: 'creator-hub', label: 'Creator Hub', link: 'https://github.com/decentraland/creator-hub/releases' },
+  { key: 'sdk',         label: 'SDK',         link: 'https://github.com/decentraland/sdk/releases' },
+];
+
 function renderPatchNotes() {
   const sec = $('patchNotesSec'), wrap = $('patchNotes');
   if (!wrap) return;
   const notes = CONTENT.patchNotes || [];
   if (!notes.length) { if (sec) sec.style.display = 'none'; return; }
   if (sec) sec.style.display = '';
-  wrap.innerHTML = notes.map((n, i) => `
-    <div class="pn-card${i === 0 ? ' latest' : ''}">
-      <div class="pn-head">
-        <span class="pn-version">${esc(n.version || 'Release')}</span>
-        ${n.date ? `<span class="pn-date">${esc(n.date)}</span>` : ''}
-        ${i === 0 ? '<span class="pn-badge">Latest</span>' : ''}
-      </div>
-      <div class="pn-body">${patchNotesToHtml(n.body || '')}</div>
-    </div>`).join('');
+
+  // Group notes by stream, preserving their stored order (already position-sorted).
+  const byStream = {};
+  PATCH_STREAMS.forEach(s => byStream[s.key] = []);
+  notes.forEach(n => {
+    const k = (n.stream && byStream[n.stream] !== undefined) ? n.stream : 'explorer';
+    byStream[k].push(n);
+  });
+
+  // Only render columns that actually have notes, so an unused stream doesn't
+  // leave an empty column.
+  const active = PATCH_STREAMS.filter(s => byStream[s.key].length);
+  wrap.dataset.cols = active.length;
+
+  wrap.innerHTML = active.map(s => {
+    const list = byStream[s.key];
+    const cards = list.map((n, i) => `
+      <div class="pn-card${i === 0 ? ' latest' : ''}">
+        <div class="pn-head">
+          <span class="pn-version">${esc(n.version || 'Release')}</span>
+          ${n.date ? `<span class="pn-date">${esc(n.date)}</span>` : ''}
+          ${i === 0 ? '<span class="pn-badge">Latest</span>' : ''}
+        </div>
+        <div class="pn-body">${patchNotesToHtml(n.body || '')}</div>
+      </div>`).join('');
+    return `
+      <div class="pn-col">
+        <div class="pn-col-head">
+          <span class="pn-col-title">${esc(s.label)}</span>
+          <a class="pn-col-link" href="${esc(s.link)}" target="_blank" rel="noopener">Releases →</a>
+        </div>
+        <div class="pn-col-cards">${cards}</div>
+      </div>`;
+  }).join('');
 }
 
 /* ---------- Report URLs (use repo issue templates) ---------- */
