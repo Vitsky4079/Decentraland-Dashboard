@@ -209,30 +209,8 @@ async function fetchRepo(cfg) {
   }
 
   function push(it) {
-    if (it.pull_request) return;
-    const sentry = /automatically created by Sentry/i.test(it.body || '');
-    const body = stripSentry(it.body || '');
-    let title = cleanTitle(it.title);
-    if (sentry || /[A-Za-z]:\\/.test(title)) title = cleanCrashTitle(title);
-    const r = it.reactions || {};
-    out.push({
-      url: it.html_url,
-      rawTitle: it.title,
-      title,
-      summary: sentry ? 'Automatically captured crash report from the client. Open on GitHub for technical details.' : summarize(body),
-      workaround: findWorkaround(body),
-      sentry,
-      state: it.state,
-      labels: (it.labels || []).map(l => ({ name: l.name })),
-      comments: it.comments || 0,
-      reactionsTotal: r.total_count || 0,
-      thumbs: (r['+1'] || 0) + (r.heart || 0) + (r.rocket || 0),
-      assigneeCount: (it.assignees || []).length,
-      created: it.created_at,
-      updated: it.updated_at,
-      closed: it.closed_at,
-      area: cfg.area,
-    });
+    const p = processIssue(it, cfg.area);
+    if (p) out.push(p);
   }
 
   // Open issues: paginate up to 3 pages of 100 (covers repos with hundreds of issues)
@@ -250,11 +228,72 @@ async function fetchRepo(cfg) {
   return { items: out, capped };
 }
 
+// Process a raw GitHub issue into the site's normalized shape.
+function processIssue(it, area) {
+  if (it.pull_request) return null;
+  const sentry = /automatically created by Sentry/i.test(it.body || '');
+  const body = stripSentry(it.body || '');
+  let title = cleanTitle(it.title);
+  if (sentry || /[A-Za-z]:\\/.test(title)) title = cleanCrashTitle(title);
+  const r = it.reactions || {};
+  return {
+    url: it.html_url,
+    rawTitle: it.title,
+    title,
+    summary: sentry ? 'Automatically captured crash report from the client. Open on GitHub for technical details.' : summarize(body),
+    workaround: findWorkaround(body),
+    sentry,
+    state: it.state,
+    labels: (it.labels || []).map(l => ({ name: l.name })),
+    comments: it.comments || 0,
+    reactionsTotal: r.total_count || 0,
+    thumbs: (r['+1'] || 0) + (r.heart || 0) + (r.rocket || 0),
+    assigneeCount: (it.assignees || []).length,
+    created: it.created_at,
+    updated: it.updated_at,
+    closed: it.closed_at,
+    area,
+  };
+}
+
+// Try the Supabase edge function (server-side token, shared cache, 5000/hr).
+// Returns null if not configured or unreachable, so callers fall back to direct GitHub.
+async function loadViaProxy() {
+  const sb = C.supabase || {};
+  if (!sb.url || !sb.anonKey || !(C.github && C.github.useProxy)) return null;
+  try {
+    const res = await fetch(`${sb.url}/functions/v1/github-issues`, {
+      headers: { apikey: sb.anonKey, Authorization: 'Bearer ' + sb.anonKey, Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.repos)) return null;
+    const areaFor = {};
+    (C.repos || []).forEach(r => areaFor[r.repo] = r.area);
+    const issues = [];
+    let capped = false;
+    for (const r of data.repos) {
+      if (r.capped) capped = true;
+      const area = areaFor[r.repo] || 'Platform';
+      (r.items || []).forEach(it => { const p = processIssue(it, area); if (p) issues.push(p); });
+    }
+    if (!issues.length) return null;
+    return { issues, partial: !!data.partial || !!data.stale, capped };
+  } catch (e) { return null; }
+}
+
 async function loadData(force = false) {
   if (!force) {
     const c = cacheGet();
     if (c) return { issues: c.data, partial: c.partial, capped: c.capped, fromCache: true, syncedAt: c.t };
   }
+  // Preferred path: server-side proxy (avoids the 60/hour unauthenticated limit).
+  const viaProxy = await loadViaProxy();
+  if (viaProxy) {
+    cacheSet(viaProxy.issues, viaProxy.partial, viaProxy.capped);
+    return { ...viaProxy, fromCache: false, syncedAt: Date.now() };
+  }
+  // Fallback: fetch GitHub directly from the browser (works, but rate-limited).
   const results = await Promise.allSettled(C.repos.map(fetchRepo));
   const rateLimited = results.some(r => r.status === 'rejected' && r.reason && r.reason.message === 'rate');
   const issues = results.flatMap(r => r.status === 'fulfilled' ? r.value.items : []);

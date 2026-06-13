@@ -7,6 +7,15 @@ const DCL_CONFIG = {
   // Supabase project (Database + Admin login). Get both values from
   // Supabase → Project Settings → API. The anon key is safe to publish —
   // Row Level Security restricts writes to logged-in admins only.
+  // GitHub data source. When useProxy is true, issues are fetched through the
+  // Supabase edge function 'github-issues' (server-side token, shared 10-min
+  // cache, 5000 req/hour) instead of directly from the browser (60/hour limit).
+  // If the function isn't deployed or fails, the site automatically falls back
+  // to direct GitHub fetching, so this is safe to leave on.
+  github: {
+    useProxy: true,
+  },
+
   supabase: {
     url: 'https://bkedlefssfcyashgxxqg.supabase.co',
     // "Publishable key" (sb_publishable_...) — safe to ship in public code by design;
