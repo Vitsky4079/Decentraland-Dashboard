@@ -1118,7 +1118,7 @@ const PAGES = {
       const remainingInPool = pool.length - rendered;
       const beyondPool = allRows.length - pool.length;
       if (remainingInPool > 0) {
-        moreWrap.innerHTML = `<button class="btn ghost" id="qtMoreBtn">Load ${Math.min(PAGE, remainingInPool)} more</button>`;
+        moreWrap.innerHTML = `<button class="report-btn ghost qt-more-btn" id="qtMoreBtn">Load ${Math.min(PAGE, remainingInPool)} more</button>`;
         $('qtMoreBtn').onclick = () => renderRows(PAGE);
       } else if (beyondPool > 0) {
         moreWrap.innerHTML = `<div class="queue-more">Showing the ${pool.length} most recent of ${allRows.length} pending entities.</div>`;
