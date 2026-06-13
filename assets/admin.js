@@ -77,7 +77,6 @@ async function openPanel(session) {
   $('gate').classList.add('hidden');
   $('panel').classList.remove('hidden');
   $('whoami').textContent = (session.user && session.user.email) || 'admin';
-  $('edStatus').innerHTML = '<option value="">— Auto —</option>' + BUG_STATUSES.map(s => `<option>${s}</option>`).join('');
   wireEditors();
   await Promise.all([loadDbState(), loadGithubIssues()]);
   drawAll();
@@ -114,16 +113,16 @@ async function loadGithubIssues() {
   } catch (e) { BUGS = []; ALLITEMS = []; }
 }
 
-function drawAll() { drawServices(); drawPinned(); drawPicker(); drawEditPick(); drawEditedList(); drawPatchNotes(); }
+function drawAll() { drawServices(); drawPinned(); drawPicker(); drawWkPick(); drawWkList(); drawPatchNotes(); }
 const itemByUrl = u => ALLITEMS.find(x => x.url === u);
 
 /* ---------- Wire static controls ---------- */
 function wireEditors() {
   $('annSave').onclick = saveAnnouncement;
   $('pinSearch').oninput = e => { pickQ = e.target.value.toLowerCase(); drawPicker(); };
-  $('editSearch').oninput = e => { editQ = e.target.value.toLowerCase(); drawEditPick(); };
-  $('edApply').onclick = applyEdit;
-  $('edClear').onclick = clearEdit;
+  $('wkSearch').oninput = e => { editQ = e.target.value.toLowerCase(); drawWkPick(); };
+  $('wkApply').onclick = applyWk;
+  $('wkClear').onclick = clearWk;
   PN_STREAMS.forEach(s => { const b = $('pnAdd_' + s.key); if (b) b.onclick = () => addPatchNote(s.key); });
   $('pnSave').onclick = savePatchNotes;
   $('svcSave').onclick = saveServices;
@@ -217,55 +216,37 @@ function drawPicker() {
   });
 }
 
-/* ---------- Issue editor ---------- */
-function drawEditPick() {
-  const el = $('editPick');
+/* ---------- Workarounds (per-issue, manual only) ---------- */
+function drawWkPick() {
+  const el = $('wkPick');
   if (!ALLITEMS.length) { el.innerHTML = '<div class="pin-row" style="color:var(--text-faint)">Could not load issues from GitHub.</div>'; return; }
   const list = ALLITEMS.filter(b => !editQ || b.title.toLowerCase().includes(editQ)).slice(0, 40);
   el.innerHTML = list.map(b => {
     const ov = overrides[b.url];
-    const tag = ov ? (ov.hidden ? ' · hidden' : ' · edited') : '';
+    const tag = (ov && ov.workaround) ? ' · has workaround' : '';
     return `<div class="pin-row"><span class="t">${esc(b.title)}</span><span class="a">${esc(b.area)}${tag}</span>
-      <button class="mini pin" data-edit="${esc(b.url)}">Edit</button></div>`;
+      <button class="mini pin" data-wkedit="${esc(b.url)}">Set</button></div>`;
   }).join('') || '<div class="pin-row" style="color:var(--text-faint)">No matching issues.</div>';
-  el.querySelectorAll('[data-edit]').forEach(btn => btn.onclick = () => openEdit(btn.dataset.edit));
+  el.querySelectorAll('[data-wkedit]').forEach(btn => btn.onclick = () => openWk(btn.dataset.wkedit));
 }
 
-function openEdit(url) {
+function openWk(url) {
   editUrl = url;
   const b = itemByUrl(url) || {};
   const ov = overrides[url] || {};
-  $('editForm').classList.remove('hidden');
-  $('editHead').innerHTML = `Editing: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a><br>GitHub title: ${esc(b.rawTitle || b.title || '')}`;
-  $('edTitle').value = ov.title || '';        $('edTitle').placeholder = b.title || '';
-  $('edArea').value = ov.area || '';          $('edArea').placeholder = b.area || '';
-  $('edSummary').value = ov.summary || '';    $('edSummary').placeholder = b.summary || '(no summary)';
-  $('edStatus').value = ov.status || '';
-  $('edImpact').value = ov.impact || '';
-  $('edWorkaround').value = ov.workaround || '';
-  $('edHidden').checked = !!ov.hidden;
-  $('edPin').checked = pins.some(p => p.url === url);
-  $('edPin').onchange = () => {
-    if ($('edPin').checked) { if (!pins.some(p => p.url === url)) pins.push({ url, position: pins.length }); }
-    else pins = pins.filter(p => p.url !== url);
-    markDirty('pins'); drawPinned(); drawPicker();
-  };
-  $('editForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('wkForm').classList.remove('hidden');
+  $('wkHead').innerHTML = `Issue: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(b.rawTitle || b.title || url)}</a>`;
+  $('wkText').value = ov.workaround || '';
+  $('wkForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('wkText').focus();
 }
 
-async function applyEdit() {
+async function applyWk() {
   if (!editUrl) return;
-  const row = {
-    url: editUrl,
-    title: $('edTitle').value.trim() || null,
-    area: $('edArea').value.trim() || null,
-    summary: $('edSummary').value.trim() || null,
-    status: $('edStatus').value || null,
-    impact: $('edImpact').value || null,
-    workaround: $('edWorkaround').value.trim() || null,
-    hidden: $('edHidden').checked,
-    updated_at: new Date().toISOString(),
-  };
+  const text = $('wkText').value.trim();
+  const existing = overrides[editUrl] || {};
+  // Preserve any other override fields already on the row; only change workaround.
+  const row = { ...existing, url: editUrl, workaround: text || null, updated_at: new Date().toISOString() };
   const isEmpty = !row.title && !row.area && !row.summary && !row.status && !row.impact && !row.workaround && !row.hidden;
   let error;
   if (isEmpty) {
@@ -275,35 +256,52 @@ async function applyEdit() {
     ({ error } = await sb.from('issue_overrides').upsert(row));
     if (!error) overrides[editUrl] = row;
   }
-  setStatus(error ? 'Save failed: ' + error.message : 'Override saved. Live for visitors.', !error);
-  drawEditPick(); drawEditedList();
+  setStatus(error ? 'Save failed: ' + error.message : (text ? 'Workaround saved. Live for visitors.' : 'Workaround cleared.'), !error);
+  drawWkPick(); drawWkList();
 }
 
-async function clearEdit() {
-  if (editUrl) {
-    const { error } = await sb.from('issue_overrides').delete().eq('url', editUrl);
+async function clearWk() {
+  if (!editUrl) return;
+  const existing = overrides[editUrl] || {};
+  const remaining = { ...existing }; delete remaining.workaround;
+  const stillHasOther = remaining.title || remaining.area || remaining.summary || remaining.status || remaining.impact || remaining.hidden;
+  let error;
+  if (stillHasOther) {
+    ({ error } = await sb.from('issue_overrides').upsert({ ...remaining, url: editUrl, workaround: null, updated_at: new Date().toISOString() }));
+    if (!error) overrides[editUrl] = { ...remaining, workaround: null };
+  } else {
+    ({ error } = await sb.from('issue_overrides').delete().eq('url', editUrl));
     if (!error) delete overrides[editUrl];
-    setStatus(error ? 'Remove failed: ' + error.message : 'Override removed.', !error);
   }
-  $('editForm').classList.add('hidden'); editUrl = null;
-  drawEditPick(); drawEditedList();
+  $('wkText').value = '';
+  setStatus(error ? 'Clear failed: ' + error.message : 'Workaround cleared.', !error);
+  drawWkPick(); drawWkList();
 }
 
-function drawEditedList() {
-  const el = $('editedList');
-  const keys = Object.keys(overrides);
+function drawWkList() {
+  const el = $('wkList');
+  const keys = Object.keys(overrides).filter(u => overrides[u] && overrides[u].workaround);
   if (!keys.length) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="hint" style="margin-bottom:8px">Active overrides:</div>' + keys.map(u => {
+  el.innerHTML = '<div class="hint" style="margin-bottom:8px">Issues with a workaround set:</div>' + keys.map(u => {
     const b = itemByUrl(u), o = overrides[u];
     const label = (o.title || (b && b.title) || u);
-    const what = [o.hidden && 'hidden', o.title && 'title', o.summary && 'summary', o.status && 'status', o.impact && 'impact', o.area && 'area', o.workaround && 'workaround'].filter(Boolean).join(', ');
-    return `<span class="tag">${esc(String(label).slice(0, 40))} <small style="color:var(--text-faint)">(${esc(what)})</small> <span class="x" data-rmov="${esc(u)}">✕</span></span>`;
+    return `<span class="tag">${esc(String(label).slice(0, 50))} <span class="x" data-rmwk="${esc(u)}">✕</span></span>`;
   }).join('');
-  el.querySelectorAll('[data-rmov]').forEach(x => x.onclick = async () => {
-    const { error } = await sb.from('issue_overrides').delete().eq('url', x.dataset.rmov);
-    if (!error) delete overrides[x.dataset.rmov];
-    setStatus(error ? 'Remove failed: ' + error.message : 'Override removed.', !error);
-    drawEditPick(); drawEditedList();
+  el.querySelectorAll('[data-rmwk]').forEach(x => x.onclick = async () => {
+    const u = x.dataset.rmwk;
+    const existing = overrides[u] || {};
+    const remaining = { ...existing }; delete remaining.workaround;
+    const stillHasOther = remaining.title || remaining.area || remaining.summary || remaining.status || remaining.impact || remaining.hidden;
+    let error;
+    if (stillHasOther) {
+      ({ error } = await sb.from('issue_overrides').upsert({ ...remaining, url: u, workaround: null, updated_at: new Date().toISOString() }));
+      if (!error) overrides[u] = { ...remaining, workaround: null };
+    } else {
+      ({ error } = await sb.from('issue_overrides').delete().eq('url', u));
+      if (!error) delete overrides[u];
+    }
+    setStatus(error ? 'Remove failed: ' + error.message : 'Workaround removed.', !error);
+    drawWkPick(); drawWkList();
   });
 }
 

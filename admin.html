@@ -19,6 +19,9 @@
 .field{margin-bottom:14px}
 .field label{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
 .field input,.field select,.field textarea{width:100%;background:var(--surface-2);border:1px solid var(--line-strong);color:var(--text);border-radius:10px;padding:11px 13px;font-size:14.5px;font-family:var(--body)}
+select{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong);border-radius:10px;padding:10px 36px 10px 13px;font-size:14.5px;font-family:var(--body);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23A39DB3' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+select:focus{outline:none;border-color:var(--peach)}
+select option{background:var(--surface-2);color:var(--text)}
 .field textarea{resize:vertical;font-family:var(--mono);font-size:13px;line-height:1.5}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
@@ -132,32 +135,19 @@
     </div>
 
     <div class="panel-card">
-      <h2>Issue editor</h2>
-      <p class="hint">Override an issue's public title, summary, status, impact, area, or workaround — or hide it. Blank fields fall back to GitHub values. "Apply" saves instantly.</p>
-      <div class="field"><label for="editSearch">Find an issue</label><input id="editSearch" placeholder="Search by title…"></div>
-      <div class="issue-pick" id="editPick"><div class="loading" style="border:none">Loading issues…</div></div>
-      <div id="editForm" class="hidden">
-        <div class="edit-head" id="editHead"></div>
-        <div class="row2">
-          <div class="field"><label for="edTitle">Public title</label><input id="edTitle"></div>
-          <div class="field"><label for="edArea">Affected area</label><input id="edArea"></div>
-        </div>
-        <div class="field"><label for="edSummary">Public summary</label><input id="edSummary"></div>
-        <div class="row2">
-          <div class="field"><label for="edStatus">Status</label>
-            <select id="edStatus"><option value="">— Auto —</option></select></div>
-          <div class="field"><label for="edImpact">Impact / priority</label>
-            <select id="edImpact"><option value="">— Auto —</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
-        </div>
-        <div class="field"><label for="edWorkaround">Workaround (shown on the issue + Workarounds page)</label><input id="edWorkaround" placeholder="Leave blank for &quot;No confirmed workaround yet.&quot;"></div>
-        <div class="field"><label class="chk"><input type="checkbox" id="edHidden"> Hide this issue from the public dashboard</label></div>
+      <h2>Workarounds</h2>
+      <p class="hint">Set a workaround for a specific issue. Only issues with a workaround set here show one on the site — on the issue card, in the detail view, and on the Workarounds page. Clearing the box removes it. Saves instantly.</p>
+      <div class="field"><label for="wkSearch">Find an issue</label><input id="wkSearch" placeholder="Search by title…"></div>
+      <div class="issue-pick" id="wkPick"><div class="loading" style="border:none">Loading issues…</div></div>
+      <div id="wkForm" class="hidden">
+        <div class="edit-head" id="wkHead"></div>
+        <div class="field"><label for="wkText">Workaround</label><textarea id="wkText" rows="4" placeholder="Describe the workaround users can apply…"></textarea></div>
         <div class="btn-row">
-          <button class="btn" id="edApply">Save this issue</button>
-          <button class="btn ghost" id="edClear">Remove override</button>
-          <label class="chk" style="margin-left:auto"><input type="checkbox" id="edPin"> Pinned to overview</label>
+          <button class="btn" id="wkApply">Save workaround</button>
+          <button class="btn ghost" id="wkClear">Clear workaround</button>
         </div>
       </div>
-      <div id="editedList" style="margin-top:16px"></div>
+      <div id="wkList" style="margin-top:16px"></div>
     </div>
 
     <div class="panel-card">

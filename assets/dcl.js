@@ -241,7 +241,7 @@ function processIssue(it, area) {
     rawTitle: it.title,
     title,
     summary: sentry ? 'Automatically captured crash report from the client. Open on GitHub for technical details.' : summarize(body),
-    workaround: findWorkaround(body),
+    workaround: null,
     sentry,
     state: it.state,
     labels: (it.labels || []).map(l => ({ name: l.name })),
@@ -457,9 +457,9 @@ const CARD_STORE = {};   // id -> issue, for preview modal
 let _cardId = 0;
 
 function bugCard(b, withWorkaround = true) {
-  const wk = !withWorkaround ? '' : b.workaround
+  const wk = (withWorkaround && b.workaround)
     ? `<div class="wk"><b>Workaround</b>${esc(b.workaround)}</div>`
-    : `<div class="wk none"><b>Workaround</b>No confirmed workaround yet.</div>`;
+    : '';
   const extra = (b.pinned ? badge('Pinned', '#FFBC5B') : '') + (b.qa ? badge('QA priority', '#F0883E') : '') + (b.sentry && !b._edited ? badge('Auto-detected', '#7C8CF8') : '') + (b.dupCount > 1 ? badge('×' + b.dupCount + ' reports', '#C77CF8') : '');
   const id = 'c' + (_cardId++);
   CARD_STORE[id] = b;
