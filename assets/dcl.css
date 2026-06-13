@@ -169,16 +169,17 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
   section{padding:40px 0 8px}
   .wrap{padding:0 20px}
   /* Patch notes become a swipeable / arrow-driven carousel on mobile:
-     one stream per screen, horizontal scroll-snap. */
-  .pn-grid{display:flex;grid-template-columns:none;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:0;scrollbar-width:none;margin:0 -20px;padding:0 20px}
-  .pn-grid::-webkit-scrollbar{display:none}
-  .pn-grid > .pn-col{flex:0 0 100%;scroll-snap-align:center;min-width:100%;padding:0 2px}
+     one stream per screen, horizontal scroll-snap. ID selector (#patchNotes)
+     is used so these win over the later base .pn-grid grid rule. */
+  #patchNotes.pn-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:0;scrollbar-width:none;margin:0 -20px;padding:0 20px}
+  #patchNotes.pn-grid::-webkit-scrollbar{display:none}
+  #patchNotes.pn-grid > .pn-col{flex:0 0 100%;scroll-snap-align:center;min-width:100%;padding:0 2px}
   .pn-carousel-nav{display:flex}
 }
 
 /* Patch notes: drop 3 columns to 2 on mid-width screens before fully stacking */
 @media(max-width:1024px) and (min-width:821px){
-  .pn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #patchNotes.pn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* ---------- Banner ---------- */
