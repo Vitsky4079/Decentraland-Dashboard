@@ -149,3 +149,7 @@ const DCL_CONFIG = {
   pageSize: 12,          // cards per "Show more" step on list pages
   cacheMinutes: 15,      // how long fetched GitHub data is reused across pages
 };
+
+// Expose on window so any script (e.g. the live-presence module) can read it
+// regardless of load order.
+if (typeof window !== 'undefined') window.DCL_CONFIG = DCL_CONFIG;

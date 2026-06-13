@@ -1359,7 +1359,8 @@ function pageName(path) {
 
 function initPresence() {
   try {
-    const cfg = (window.DCL_CONFIG && window.DCL_CONFIG.supabase) || {};
+    const CFG = (typeof window !== 'undefined' && window.DCL_CONFIG) || (typeof DCL_CONFIG !== 'undefined' ? DCL_CONFIG : null);
+    const cfg = (CFG && CFG.supabase) || {};
     if (!window.supabase || !cfg.url || !cfg.anonKey) return; // library/config missing → skip silently
     if (/\/admin(\.html)?$/.test(location.pathname)) return;  // don't broadcast from the admin panel
 
