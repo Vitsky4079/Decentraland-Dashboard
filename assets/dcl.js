@@ -947,14 +947,13 @@ function renderPatchNotes() {
     byStream[k].push(n);
   });
 
-  // Only render columns that actually have notes, so an unused stream doesn't
-  // leave an empty column.
-  const active = PATCH_STREAMS.filter(s => byStream[s.key].length);
-  wrap.dataset.cols = active.length;
+  // Always show all three columns in fixed order (Explorer, Creator Hub, SDK),
+  // so the layout stays a stable 3-up grid even when a stream has no notes yet.
+  wrap.dataset.cols = PATCH_STREAMS.length;
 
-  wrap.innerHTML = active.map(s => {
+  wrap.innerHTML = PATCH_STREAMS.map(s => {
     const list = byStream[s.key];
-    const cards = list.map((n, i) => `
+    const cards = list.length ? list.map((n, i) => `
       <div class="pn-card${i === 0 ? ' latest' : ''}">
         <div class="pn-head">
           <span class="pn-version">${esc(n.version || 'Release')}</span>
@@ -962,7 +961,8 @@ function renderPatchNotes() {
           ${i === 0 ? '<span class="pn-badge">Latest</span>' : ''}
         </div>
         <div class="pn-body">${patchNotesToHtml(n.body || '')}</div>
-      </div>`).join('');
+      </div>`).join('')
+      : `<div class="pn-empty">No releases posted yet.</div>`;
     return `
       <div class="pn-col">
         <div class="pn-col-head">
