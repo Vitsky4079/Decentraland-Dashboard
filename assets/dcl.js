@@ -1121,6 +1121,22 @@ function mountReportButton(elId, kind) {
   if (el) el.href = reportUrl(kind);
 }
 
+/* ---------- Image lightbox (full-size preview) ---------- */
+let _lightboxEl = null;
+function openLightbox(url) {
+  if (!_lightboxEl) {
+    _lightboxEl = document.createElement('div');
+    _lightboxEl.className = 'lightbox';
+    _lightboxEl.innerHTML = '<button class="lightbox-close" aria-label="Close">&times;</button><img alt="">';
+    document.body.appendChild(_lightboxEl);
+    const close = () => _lightboxEl.classList.remove('open');
+    _lightboxEl.onclick = (e) => { if (e.target === _lightboxEl || e.target.classList.contains('lightbox-close')) close(); };
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  }
+  _lightboxEl.querySelector('img').src = url;
+  _lightboxEl.classList.add('open');
+}
+
 /* ---------- Pages ---------- */
 const PAGES = {
 
@@ -1131,7 +1147,7 @@ const PAGES = {
     el.innerHTML = posts.map(p => {
       const imgs = (p.images || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
       const photos = imgs.length
-        ? `<div class="blog-photos${imgs.length === 1 ? ' single' : ''}">${imgs.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`
+        ? `<div class="blog-photos">${imgs.map(u => `<img src="${esc(u)}" alt="" loading="lazy" data-lightbox="${esc(u)}">`).join('')}</div>`
         : '';
       return `<article class="blog-post">
         ${p.date ? `<div class="blog-date">${esc(fmtDate(p.date))}</div>` : ''}
@@ -1140,15 +1156,9 @@ const PAGES = {
         ${photos}
       </article>`;
     }).join('');
-    // Wire any rich-media fallbacks (videos / drive) inside post bodies.
-    el.querySelectorAll('img.md-img-maybe').forEach(img => {
-      img.onerror = () => {
-        const url = img.getAttribute('src');
-        const link = document.createElement('a');
-        link.href = url; link.target = '_blank'; link.rel = 'noopener';
-        link.textContent = 'View attachment →';
-        (img.closest('.md-img-link') || img).replaceWith(link);
-      };
+    // Click any photo to preview it full-size in a lightbox.
+    el.querySelectorAll('[data-lightbox]').forEach(img => {
+      img.onclick = () => openLightbox(img.dataset.lightbox);
     });
   },
 

@@ -76,6 +76,9 @@ select option{background:var(--surface-2);color:var(--text)}
 .an-collapsed .chev{color:var(--text-faint);flex:none}
 .an-prev-head{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin:18px 0 10px}
 .an-empty{color:var(--text-faint);font-size:13.5px}
+.upload-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.upload-note{font-size:12.5px;color:var(--text-faint)}
+.upload-note.busy{color:var(--peach)}
 .live-count{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;padding:0 8px;border-radius:13px;background:var(--grad);color:#08070C;font-family:var(--mono);font-size:13px;font-weight:700;vertical-align:middle;margin-left:6px}
 .live-row{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin-bottom:8px}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#3FCB6E;flex:none;box-shadow:0 0 0 3px rgba(63,203,110,.15)}
@@ -171,7 +174,14 @@ select option{background:var(--surface-2);color:var(--text)}
         <div class="field"><label for="apTitle">Title</label><input id="apTitle" placeholder="e.g. Decentraland Pride Returns…"></div>
       </div>
       <div class="field"><label for="apBody">Announcement text (paste from Discord — Markdown supported)</label><textarea id="apBody" rows="7" placeholder="Paste the announcement here…"></textarea></div>
-      <div class="field"><label for="apImages">Images (URLs, one per line — optional)</label><textarea id="apImages" rows="2" placeholder="https://… .png"></textarea></div>
+      <div class="field"><label for="apImages">Images</label>
+        <div class="upload-row">
+          <input type="file" id="apFile" accept="image/*" multiple hidden>
+          <button class="btn ghost" id="apUploadBtn" type="button">Upload image(s)…</button>
+          <span class="upload-note" id="apUploadNote">or paste image URLs below (one per line)</span>
+        </div>
+        <textarea id="apImages" rows="3" placeholder="https://… .png"></textarea>
+      </div>
       <div class="btn-row"><button class="btn" id="apAdd">Publish announcement</button><button class="btn ghost hidden" id="apCancel">Cancel edit</button></div>
       <div id="apList" style="margin-top:16px"><div class="loading" style="border:none">Loading announcements…</div></div>
     </div>

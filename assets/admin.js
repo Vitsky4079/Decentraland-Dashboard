@@ -154,6 +154,8 @@ function wireEditors() {
   { const b = $('anCancel'); if (b) b.onclick = resetAdminNoteForm; }
   { const b = $('apAdd'); if (b) b.onclick = addAnnouncement; }
   { const b = $('apCancel'); if (b) b.onclick = resetAnnouncementForm; }
+  { const b = $('apUploadBtn'); if (b) b.onclick = () => $('apFile').click(); }
+  { const f = $('apFile'); if (f) f.onchange = () => { uploadAnnouncementImages(f.files); f.value = ''; }; }
   $('pnSave').onclick = savePatchNotes;
   $('svcSave').onclick = saveServices;
   $('pinsSave').onclick = savePins;
@@ -580,6 +582,35 @@ function resetAnnouncementForm() {
   $('apImages').value = '';
   $('apAdd').textContent = 'Publish announcement';
   $('apCancel').classList.add('hidden');
+}
+
+const ANN_BUCKET = 'announcements';
+
+async function uploadAnnouncementImages(files) {
+  if (!files || !files.length) return;
+  const note = $('apUploadNote');
+  const setNote = (t, busy) => { if (note) { note.textContent = t; note.classList.toggle('busy', !!busy); } };
+  const urls = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    setNote(`Uploading ${i + 1} of ${files.length}…`, true);
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await sb.storage.from(ANN_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || undefined });
+    if (error) {
+      setNote('Upload failed: ' + error.message, false);
+      setStatus('Image upload failed: ' + error.message + ' — is the "announcements" Storage bucket created?', false);
+      return;
+    }
+    const { data } = sb.storage.from(ANN_BUCKET).getPublicUrl(path);
+    if (data && data.publicUrl) urls.push(data.publicUrl);
+  }
+  // Append the new public URLs into the images textarea (preserving any pasted ones).
+  const ta = $('apImages');
+  const existing = ta.value.trim();
+  ta.value = (existing ? existing + '\n' : '') + urls.join('\n');
+  setNote(`Added ${urls.length} image${urls.length > 1 ? 's' : ''}. or paste more URLs below.`, false);
+  setStatus(`Uploaded ${urls.length} image${urls.length > 1 ? 's' : ''}.`, true);
 }
 
 async function addAnnouncement() {
