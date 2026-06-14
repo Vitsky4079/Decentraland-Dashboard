@@ -176,6 +176,26 @@ section{padding:48px 0 8px;scroll-margin-top:72px}
 .btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
 .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
 .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+/* Custom themed dropdown (replaces native select popup) */
+.cdd-native{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.cdd{position:relative;width:100%}
+.cdd-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:var(--text);font-family:var(--sans);font-size:14.5px;cursor:pointer;text-align:left;transition:border-color .12s}
+.cdd-btn:hover{border-color:var(--line-strong)}
+.cdd.open .cdd-btn,.cdd-btn:focus-visible{outline:none;border-color:var(--peach)}
+.cdd-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cdd-label.placeholder{color:var(--text-faint)}
+.cdd-chev{color:var(--text-faint);font-size:12px;transition:transform .15s;flex:none}
+.cdd.open .cdd-chev{transform:rotate(180deg)}
+.cdd-list{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:5px;max-height:260px;overflow-y:auto;box-shadow:0 14px 40px rgba(0,0,0,.5);display:none}
+.cdd.open .cdd-list{display:block}
+.cdd-opt{padding:9px 11px;border-radius:7px;font-size:14px;color:var(--text-dim);cursor:pointer;transition:background .1s,color .1s}
+.cdd-opt:hover,.cdd-opt.highlight{background:rgba(255,110,78,.14);color:var(--text)}
+.cdd-opt.selected{color:var(--peach);font-weight:600}
+.cdd-opt.selected::after{content:"✓";float:right;opacity:.9}
+.cdd-opt.disabled{color:var(--text-faint);cursor:default;opacity:.7}
+.cdd-opt.disabled:hover{background:transparent;color:var(--text-faint)}
+/* On the list pages the select is inline/auto-width; keep the custom one compact there */
+.sort-select+.cdd{width:auto;min-width:190px;display:inline-block;vertical-align:middle}
 .report-tips{font-size:13.5px;color:var(--text-faint);margin-top:14px}
 .guide{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-top:14px}
 .report-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:30px 32px;display:flex;flex-direction:column;gap:22px}

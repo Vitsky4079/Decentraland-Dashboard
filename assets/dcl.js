@@ -794,12 +794,138 @@ function initReveals() {
 }
 
 /* ---------- Chrome: nav, hero parcels ---------- */
+/* ---------- Custom themed dropdowns ----------
+   Replaces native <select> popups (whose open-list hover color is OS-controlled
+   and can't be themed) with a styled listbox. The real <select> stays in the
+   DOM (visually hidden) and remains the source of truth: choosing an option
+   sets its value and dispatches a native 'change' event, so all existing
+   handlers keep working. Keyboard- and outside-click-aware. */
+let _ddOpen = null;   // currently open custom dropdown root, or null
+
+function enhanceSelects(scope) {
+  (scope || document).querySelectorAll('select:not([data-enhanced])').forEach(sel => {
+    sel.setAttribute('data-enhanced', '1');
+
+    const root = document.createElement('div');
+    root.className = 'cdd';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cdd-btn';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    if (sel.getAttribute('aria-label')) btn.setAttribute('aria-label', sel.getAttribute('aria-label'));
+    const label = document.createElement('span');
+    label.className = 'cdd-label';
+    btn.appendChild(label);
+    btn.insertAdjacentHTML('beforeend', '<span class="cdd-chev" aria-hidden="true">▾</span>');
+
+    const list = document.createElement('div');
+    list.className = 'cdd-list';
+    list.setAttribute('role', 'listbox');
+
+    const opts = Array.from(sel.options);
+    opts.forEach((o, i) => {
+      const item = document.createElement('div');
+      item.className = 'cdd-opt';
+      item.setAttribute('role', 'option');
+      item.dataset.index = i;
+      item.textContent = o.textContent;
+      if (o.disabled) item.classList.add('disabled');
+      list.appendChild(item);
+    });
+
+    // Insert the custom UI right after the (now hidden) select.
+    sel.classList.add('cdd-native');
+    sel.parentNode.insertBefore(root, sel.nextSibling);
+    root.appendChild(btn);
+    root.appendChild(list);
+
+    const syncLabel = () => {
+      const o = sel.options[sel.selectedIndex];
+      label.textContent = o ? o.textContent : '';
+      label.classList.toggle('placeholder', !!(o && o.disabled));
+      list.querySelectorAll('.cdd-opt').forEach((el, i) => {
+        el.classList.toggle('selected', i === sel.selectedIndex);
+        el.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+      });
+    };
+    syncLabel();
+
+    const open = () => {
+      if (_ddOpen && _ddOpen !== root) closeDropdown(_ddOpen);
+      root.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      _ddOpen = root;
+      const selEl = list.querySelector('.cdd-opt.selected') || list.querySelector('.cdd-opt:not(.disabled)');
+      if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+    };
+    const choose = (i) => {
+      if (sel.options[i] && sel.options[i].disabled) return;
+      sel.selectedIndex = i;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      syncLabel();
+      closeDropdown(root);
+      btn.focus();
+    };
+
+    btn.onclick = () => { root.classList.contains('open') ? closeDropdown(root) : open(); };
+    list.querySelectorAll('.cdd-opt').forEach(el => {
+      el.onclick = () => choose(+el.dataset.index);
+    });
+
+    // Keyboard support on the button.
+    btn.addEventListener('keydown', (e) => {
+      const isOpen = root.classList.contains('open');
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!isOpen) { open(); return; }
+        moveHighlight(list, e.key === 'ArrowDown' ? 1 : -1);
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (!isOpen) { open(); return; }
+        const hi = list.querySelector('.cdd-opt.highlight');
+        if (hi) choose(+hi.dataset.index);
+      } else if (e.key === 'Escape') {
+        if (isOpen) { e.preventDefault(); closeDropdown(root); }
+      }
+    });
+
+    // Keep the custom UI in sync if other code changes the select value.
+    sel.addEventListener('change', syncLabel);
+  });
+}
+
+function moveHighlight(list, dir) {
+  const items = Array.from(list.querySelectorAll('.cdd-opt:not(.disabled)'));
+  if (!items.length) return;
+  let idx = items.findIndex(el => el.classList.contains('highlight'));
+  if (idx < 0) idx = items.findIndex(el => el.classList.contains('selected'));
+  idx = Math.max(0, Math.min(items.length - 1, idx + dir));
+  list.querySelectorAll('.cdd-opt').forEach(el => el.classList.remove('highlight'));
+  items[idx].classList.add('highlight');
+  items[idx].scrollIntoView({ block: 'nearest' });
+}
+
+function closeDropdown(root) {
+  root.classList.remove('open');
+  const btn = root.querySelector('.cdd-btn');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  root.querySelectorAll('.cdd-opt.highlight').forEach(el => el.classList.remove('highlight'));
+  if (_ddOpen === root) _ddOpen = null;
+}
+
+// Close on outside click.
+document.addEventListener('click', (e) => {
+  if (_ddOpen && !_ddOpen.contains(e.target)) closeDropdown(_ddOpen);
+});
+
 function initChrome() {
   // active nav link
   const page = document.body.dataset.page;
   document.querySelectorAll('.nav-links a').forEach(a => {
     if (a.dataset.nav === page) a.classList.add('active');
   });
+  enhanceSelects(document);
   // mobile menu
   const btn = $('menuBtn'), links = $('navLinks');
   if (btn && links) btn.onclick = () => links.classList.toggle('open');
@@ -1327,7 +1453,6 @@ const PAGES = {
   },
 
   issues({ bugs }, meta) {
-    mountReportButton('reportBugBtn', 'bug');
     cardList({
       items: bugs, gridId: 'issuesGrid', moreId: 'issuesMore', countId: 'issuesCount',
       countSuffix: 'active', searchId: 'issueSearch', chipsId: 'issueAreaChips', sortId: 'issueSort',
@@ -1575,5 +1700,5 @@ function presenceSetAction(action) {
 document.addEventListener('DOMContentLoaded', initPresence);
 
 // Minimal API for admin.html
-window.DCL = { loadData, classify, loadContent };
+window.DCL = { loadData, classify, loadContent, enhanceSelects };
 })();

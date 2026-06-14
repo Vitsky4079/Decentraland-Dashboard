@@ -81,6 +81,7 @@ async function openPanel(session) {
   currentEmail = (session.user && session.user.email) || '';
   $('whoami').textContent = currentEmail || 'admin';
   wireEditors();
+  if (window.DCL && window.DCL.enhanceSelects) window.DCL.enhanceSelects(document);
   applyAdminNotesGate();
   await Promise.all([loadDbState(), loadGithubIssues()]);
   drawAll();
