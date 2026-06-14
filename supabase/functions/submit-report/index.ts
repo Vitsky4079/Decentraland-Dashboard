@@ -110,7 +110,7 @@ Deno.serve(async (req: Request) => {
   body += block('✔️ Expected result', p.expected);
   body += block('❌ Actual result', p.actual);
   body += block('➗ Reproduction rate', p.reproduction_rate);
-  body += block('🖥️ OS & notes', p.os_notes);
+  body += block('🖥️ PC specification & notes', p.os_notes);
   body += block('✉️ Reporter email', email);
   if (otherUrls.length) {
     body += `<p><b>📎 Evidence (video/other)</b><br>` +
