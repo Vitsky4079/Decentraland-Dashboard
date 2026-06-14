@@ -29,19 +29,26 @@
   .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--peach);margin-bottom:12px}
   h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,46px);letter-spacing:-.015em;line-height:1.08}
   h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .sub{color:var(--text-dim);margin-top:14px;max-width:560px;font-size:17px;line-height:1.55}
+  .sub{color:var(--text-dim);margin-top:14px;max-width:580px;font-size:17px;line-height:1.55}
+
+  h2{font-family:var(--display);font-size:20px;font-weight:600}
+  .section-note{color:var(--text-dim);font-size:15px;margin:6px 0 18px}
+
+  /* ---- logo verify strip ---- */
+  .logo-verify{margin-top:38px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 26px}
+  .logo-verify .chip{width:96px;height:96px;flex:none}
+  .logo-verify .txt h2{margin-bottom:4px}
 
   /* ---- Stage ---- */
-  .stage{margin-top:40px;background:var(--surface);border:1px solid var(--line);border-radius:24px;
+  .stage{margin-top:30px;background:var(--surface);border:1px solid var(--line);border-radius:24px;
     padding:36px;display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:center;position:relative;overflow:hidden}
   .stage::before{content:"";position:absolute;inset:0;
     background:radial-gradient(ellipse 50% 60% at 30% 50%, rgba(155,123,216,.14), transparent 70%);pointer-events:none}
   @media(max-width:760px){.stage{grid-template-columns:1fr}}
-
   .manny-floor{display:flex;align-items:center;justify-content:center;min-height:300px;position:relative}
   .manny-svg{width:240px;height:240px;overflow:visible}
 
-  /* speech bubble (site voice) */
   .bubble{position:relative;background:#fff;color:#1A0710;border-radius:16px;padding:16px 18px;
     font-size:15px;line-height:1.4;font-weight:500;box-shadow:0 14px 40px rgba(0,0,0,.45);
     opacity:0;transform:translateY(8px) scale(.96);transition:opacity .3s,transform .3s}
@@ -51,11 +58,10 @@
   @media(max-width:760px){.bubble::after{left:26px;top:-9px;border:9px solid transparent;border-bottom-color:#fff;border-top:0}}
 
   /* ---- Controls ---- */
-  .controls{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}
+  .controls{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px}
   .controls .label{width:100%;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin-bottom:2px}
   .btn{font-family:var(--display);font-weight:600;font-size:14px;color:var(--text-dim);
-    background:var(--surface-2);border:1px solid var(--line);padding:10px 18px;border-radius:99px;
-    cursor:pointer;transition:all .15s}
+    background:var(--surface-2);border:1px solid var(--line);padding:10px 18px;border-radius:99px;cursor:pointer;transition:all .15s}
   .btn:hover{color:var(--text);border-color:var(--line-strong);transform:translateY(-1px)}
   .btn.active{color:#1A0710;background:var(--grad);border-color:transparent}
   .toggle{margin-top:16px;display:inline-flex;align-items:center;gap:9px;color:var(--text-dim);font-size:14px;cursor:pointer;user-select:none}
@@ -66,9 +72,7 @@
 
   /* ---- Size strip ---- */
   .sizes{margin-top:44px}
-  .sizes h2{font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:6px}
-  .sizes p{color:var(--text-dim);font-size:15px;margin-bottom:22px}
-  .size-row{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-end}
+  .size-row{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-end;margin-top:20px}
   .size-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
     padding:20px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;min-width:150px}
   .size-card .cap{font-family:var(--mono);font-size:11px;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;text-align:center}
@@ -77,46 +81,28 @@
   .launcher .manny-svg{width:52px;height:52px}
   .mid .manny-svg{width:120px;height:120px}
 
-  .note{margin-top:40px;color:var(--text-faint);font-size:13.5px;font-family:var(--mono);line-height:1.7;
-    border-top:1px solid var(--line);padding-top:20px}
+  .note{margin-top:40px;color:var(--text-faint);font-size:13.5px;font-family:var(--mono);line-height:1.7;border-top:1px solid var(--line);padding-top:20px}
 
-  /* =========================================================
-     MANNY — CSS animation state machine
-     state set via data-state on .manny-svg
-     ========================================================= */
+  /* ===== MANNY animation state machine ===== */
   .manny-svg g, .manny-svg path, .manny-svg ellipse{transform-box:fill-box}
-
-  /* root bob (idle ambient) */
   #m-root{transform-origin:50% 92%;animation:bob 3.4s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-9px) rotate(-1deg)}}
-
-  /* blink */
   #m-eyes{transform-origin:center;animation:blink 4.6s infinite}
   @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
-
-  /* flippers gentle sway */
   #m-flip-r{transform-origin:62% 18%;animation:swayR 3.4s ease-in-out infinite}
   #m-flip-l{transform-origin:38% 18%;animation:swayL 3.4s ease-in-out infinite}
   @keyframes swayR{0%,100%{transform:rotate(0)}50%{transform:rotate(7deg)}}
   @keyframes swayL{0%,100%{transform:rotate(0)}50%{transform:rotate(-7deg)}}
-
-  /* tail idle */
   #m-tail{transform-origin:50% 8%;animation:tail 3.8s ease-in-out infinite}
   @keyframes tail{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
-
-  /* happy eyes + open mouth hidden by default */
   #m-eyes-happy{opacity:0}
   #m-mouth-open{opacity:0}
 
-  /* ---------- NUDGE ---------- */
   .manny-svg[data-state="nudge"] #m-root{animation:nudge 1s ease-in-out infinite}
-  @keyframes nudge{0%,100%{transform:translateY(0) rotate(0)}
-    15%{transform:translateY(-16px) rotate(-5deg)}30%{transform:translateY(0) rotate(4deg)}
-    45%{transform:translateY(-9px) rotate(-2deg)}60%{transform:translateY(0) rotate(0)}}
+  @keyframes nudge{0%,100%{transform:translateY(0) rotate(0)}15%{transform:translateY(-16px) rotate(-5deg)}30%{transform:translateY(0) rotate(4deg)}45%{transform:translateY(-9px) rotate(-2deg)}60%{transform:translateY(0) rotate(0)}}
   .manny-svg[data-state="nudge"] #m-flip-r{animation:wave .55s ease-in-out infinite}
   @keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(34deg)}}
 
-  /* ---------- THINKING ---------- */
   .manny-svg[data-state="thinking"] #m-root{animation:think 2.6s ease-in-out infinite}
   @keyframes think{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-4px) rotate(2deg)}}
   .manny-svg[data-state="thinking"] #m-eyes{animation:lookUp 2.6s ease-in-out infinite}
@@ -128,7 +114,6 @@
   .manny-svg[data-state="thinking"] #td3{animation:dot 1.4s ease-in-out .4s infinite}
   @keyframes dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 
-  /* ---------- TALKING ---------- */
   .manny-svg[data-state="talking"] #m-root{animation:talkBob 1.8s ease-in-out infinite}
   @keyframes talkBob{0%,100%{transform:translateY(0) rotate(1.5deg)}50%{transform:translateY(-5px) rotate(-1.5deg)}}
   .manny-svg[data-state="talking"] #m-mouth-smile{opacity:0}
@@ -136,7 +121,6 @@
   @keyframes talk{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1)}}
   #m-mouth-open{transform-origin:center}
 
-  /* ---------- SUCCESS ---------- */
   .manny-svg[data-state="success"] #m-root{animation:hop .9s cubic-bezier(.3,1.4,.5,1) infinite}
   @keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-26px)}55%{transform:translateY(0)}70%{transform:translateY(-8px)}85%{transform:translateY(0)}}
   .manny-svg[data-state="success"] #m-eyes{opacity:0;animation:none}
@@ -148,27 +132,36 @@
   .manny-svg[data-state="success"] #sp3{animation:spark 1s ease-out .5s infinite}
   @keyframes spark{0%{opacity:0;transform:scale(.2)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.6)}}
 
-  /* ---------- DISMISS ---------- */
   .manny-svg[data-state="dismiss"] #m-root{animation:dismiss .5s ease-in forwards}
   @keyframes dismiss{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(40px) scale(.4);opacity:0}}
 
-  /* logo guide ring */
+  /* marking blend treatments */
+  #m-mark{transition:opacity .25s,filter .25s}
+  .manny-svg.mark-subtle #m-mark{opacity:.32;filter:saturate(.28) brightness(1.18)}
+  .manny-svg.mark-soft   #m-mark{opacity:.58;filter:saturate(.85)}
+  .manny-svg.mark-bold   #m-mark{opacity:.92;filter:none}
   #m-mark-guide{opacity:0}
   .manny-svg.guide #m-mark-guide{opacity:1}
 
-  @media(prefers-reduced-motion:reduce){
-    .manny-svg *{animation:none!important}
-  }
+  @media(prefers-reduced-motion:reduce){.manny-svg *{animation:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="eyebrow">Mascot test bench · internal</div>
   <h1>Meet <span class="grad">Manny</span> the Manatee</h1>
-  <p class="sub">The friendly help agent for the dashboard. Flip through his states below to check the animations, then toggle the marking guide to confirm the Decentraland mark sits subtly and in the same spot in every pose.</p>
+  <p class="sub">Now carrying the real Decentraland logo. First confirm the logo below matches the official mark, then check how it sits on Manny — use the blend treatments to dial how subtle it should be.</p>
+
+  <div class="logo-verify">
+    <div class="chip" id="logo-standalone"></div>
+    <div class="txt">
+      <h2>The Decentraland mark, rebuilt as SVG</h2>
+      <p class="section-note">Two split mountains, two suns, ground bands, brand-gradient circle. Does this match the official logo? If a proportion is off, tell me and I'll fix the geometry.</p>
+    </div>
+  </div>
 
   <div class="stage">
-    <div class="manny-floor" id="floor"><!-- Manny injected here --></div>
+    <div class="manny-floor" id="floor"></div>
     <div class="bubble" id="bubble"><div class="who">Manny</div><span id="bubble-text"></span></div>
   </div>
 
@@ -181,121 +174,105 @@
     <button class="btn" data-s="success">Success</button>
     <button class="btn" data-s="dismiss">Dismiss</button>
   </div>
-  <label class="toggle"><input type="checkbox" id="guide"> Show Decentraland mark guide</label>
+
+  <div class="controls" id="mark-controls">
+    <span class="label">Logo blend treatment</span>
+    <button class="btn" data-m="subtle">Subtle</button>
+    <button class="btn active" data-m="soft">Soft</button>
+    <button class="btn" data-m="bold">Bold</button>
+  </div>
+  <label class="toggle"><input type="checkbox" id="guide"> Show logo placement guide</label>
 
   <div class="sizes">
     <h2>How he reads at real sizes</h2>
-    <p>Top-left: the floating launcher (52px). Right: in-chat avatar (120px). The marking should stay subtle and legible at both.</p>
+    <p class="section-note">Floating launcher (52px) and in-chat avatar (120px). The logo should stay legible-but-quiet at both.</p>
     <div class="size-row">
-      <div class="size-card">
-        <div class="launcher" id="launcher"></div>
-        <div class="cap">Floating launcher · 52px</div>
-      </div>
-      <div class="size-card mid">
-        <div id="mid"></div>
-        <div class="cap">In-chat avatar · 120px</div>
-      </div>
+      <div class="size-card"><div class="launcher" id="launcher"></div><div class="cap">Floating launcher · 52px</div></div>
+      <div class="size-card mid"><div id="mid"></div><div class="cap">In-chat avatar · 120px</div></div>
     </div>
   </div>
 
   <div class="note">
-    // marking lives inside #m-body group → same flank position every pose<br>
-    // blended via low-opacity brand gradient + feathered ring, reuses favicon circle+triangle<br>
+    // logo rebuilt faithfully + placed on lower-left flank, feathered into skin<br>
+    // blend treatment = opacity + desaturation; placement fixed inside #m-body group<br>
     // all motion respects prefers-reduced-motion
   </div>
 </div>
 
 <script>
-/* ---- Manny SVG (single source, injected at 3 sizes) ---- */
+/* ---- Decentraland logo (0..100 space) ---- */
+function dclInner(){
+  return `
+    <clipPath id="logoClip"><circle cx="50" cy="50" r="50"/></clipPath>
+    <g clip-path="url(#logoClip)">
+      <circle cx="50" cy="50" r="50" fill="url(#markGrad)"/>
+      <rect x="0" y="76" width="100" height="9" fill="#F8C883"/>
+      <rect x="0" y="85" width="100" height="15" fill="#F2925C"/>
+      <circle cx="35" cy="20" r="9" fill="#FBC65B"/>
+      <circle cx="67" cy="30" r="16" fill="#FBC65B"/>
+      <polygon points="37,32 5,76 37,76" fill="#fff"/>
+      <polygon points="37,32 37,76 70,76" fill="url(#magGrad)"/>
+      <polygon points="65,52 45,76 65,76" fill="#fff"/>
+      <polygon points="65,52 65,76 92,76" fill="url(#magGrad)"/>
+    </g>`;
+}
+function dclStandalone(){
+  return `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="markGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FF6E4E"/><stop offset=".5" stop-color="#FF2D55"/><stop offset="1" stop-color="#E5215C"/>
+      </linearGradient>
+      <linearGradient id="magGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#C42A8E"/><stop offset="1" stop-color="#E51C5A"/>
+      </linearGradient>
+    </defs>${dclInner()}</svg>`;
+}
+
+/* ---- Manny ---- */
 function mannySVG(state){
   return `
-<svg class="manny-svg" viewBox="0 0 240 240" data-state="${state}" role="img" aria-label="Manny the manatee mascot">
+<svg class="manny-svg mark-soft" viewBox="0 0 240 240" data-state="${state}" role="img" aria-label="Manny the manatee mascot">
   <defs>
-    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#B196E8"/>
-      <stop offset="1" stop-color="#7C5CC0"/>
-    </linearGradient>
-    <linearGradient id="bellyGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#CDB6F2"/>
-      <stop offset="1" stop-color="#A98AD8"/>
-    </linearGradient>
-    <linearGradient id="markGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FF2D55"/>
-      <stop offset=".55" stop-color="#FF6E4E"/>
-      <stop offset="1" stop-color="#FFBC5B"/>
-    </linearGradient>
-    <radialGradient id="markFade" cx="50%" cy="50%" r="50%">
-      <stop offset="55%" stop-color="#fff" stop-opacity="1"/>
-      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-    </radialGradient>
-    <mask id="markMask"><circle cx="86" cy="166" r="20" fill="url(#markFade)"/></mask>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B196E8"/><stop offset="1" stop-color="#7C5CC0"/></linearGradient>
+    <linearGradient id="bellyGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CDB6F2"/><stop offset="1" stop-color="#A98AD8"/></linearGradient>
+    <linearGradient id="markGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6E4E"/><stop offset=".5" stop-color="#FF2D55"/><stop offset="1" stop-color="#E5215C"/></linearGradient>
+    <linearGradient id="magGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C42A8E"/><stop offset="1" stop-color="#E51C5A"/></linearGradient>
+    <radialGradient id="markFade" cx="50%" cy="50%" r="50%"><stop offset="60%" stop-color="#fff" stop-opacity="1"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <mask id="markMask"><circle cx="86" cy="166" r="22" fill="url(#markFade)"/></mask>
   </defs>
-
   <g id="m-root">
-    <!-- tail (behind) -->
     <g id="m-tail"><ellipse cx="120" cy="206" rx="46" ry="24" fill="#6E4FB0"/></g>
-
-    <!-- flippers -->
     <g id="m-flip-l"><path d="M70 132 C40 138 30 168 44 188 C56 178 72 160 80 142 Z" fill="#7C5CC0"/></g>
     <g id="m-flip-r"><path d="M170 132 C200 138 210 168 196 188 C184 178 168 160 160 142 Z" fill="#8A6BCE"/></g>
-
-    <!-- body -->
     <g id="m-body">
       <ellipse cx="120" cy="132" rx="74" ry="82" fill="url(#bodyGrad)"/>
-      <!-- top highlight -->
       <ellipse cx="98" cy="86" rx="38" ry="26" fill="#fff" opacity=".10"/>
-      <!-- belly -->
       <ellipse cx="120" cy="160" rx="50" ry="50" fill="url(#bellyGrad)" opacity=".55"/>
 
-      <!-- subtle Decentraland marking (left flank) -->
-      <g mask="url(#markMask)">
-        <circle cx="86" cy="166" r="18" fill="url(#markGrad)" opacity=".34"/>
-        <path d="M68 184 L104 184 L86 154 Z" fill="#2A1830" opacity=".30"/>
+      <!-- Decentraland marking -->
+      <g id="m-mark" mask="url(#markMask)">
+        <g transform="translate(66,146) scale(.4)">${dclInner()}</g>
       </g>
-      <!-- guide ring (toggle) -->
-      <circle id="m-mark-guide" cx="86" cy="166" r="18" fill="none" stroke="#FFBC5B" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <circle id="m-mark-guide" cx="86" cy="166" r="20" fill="none" stroke="#FFBC5B" stroke-width="1.5" stroke-dasharray="3 3"/>
 
-      <!-- cheeks -->
       <ellipse cx="84" cy="128" rx="11" ry="7" fill="#FF7A5C" opacity=".30"/>
       <ellipse cx="156" cy="128" rx="11" ry="7" fill="#FF7A5C" opacity=".30"/>
-
-      <!-- eyes (open) -->
       <g id="m-eyes">
         <ellipse cx="98" cy="110" rx="8" ry="10.5" fill="#2C2438"/>
         <ellipse cx="142" cy="110" rx="8" ry="10.5" fill="#2C2438"/>
-        <circle cx="100.5" cy="106" r="2.6" fill="#fff"/>
-        <circle cx="144.5" cy="106" r="2.6" fill="#fff"/>
+        <circle cx="100.5" cy="106" r="2.6" fill="#fff"/><circle cx="144.5" cy="106" r="2.6" fill="#fff"/>
       </g>
-      <!-- eyes (happy ^^) -->
       <g id="m-eyes-happy" fill="none" stroke="#2C2438" stroke-width="3.4" stroke-linecap="round">
-        <path d="M90 112 Q98 102 106 112"/>
-        <path d="M134 112 Q142 102 150 112"/>
+        <path d="M90 112 Q98 102 106 112"/><path d="M134 112 Q142 102 150 112"/>
       </g>
-
-      <!-- snout -->
       <ellipse cx="120" cy="142" rx="30" ry="25" fill="#A98AD8"/>
-      <!-- nostrils -->
       <path d="M111 135 q-2 4 0 8" fill="none" stroke="#5A4080" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>
       <path d="M129 135 q2 4 0 8" fill="none" stroke="#5A4080" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>
-      <!-- mouth: smile -->
       <path id="m-mouth-smile" d="M108 153 Q120 163 132 153" fill="none" stroke="#5A4080" stroke-width="2.6" stroke-linecap="round"/>
-      <!-- mouth: open -->
       <ellipse id="m-mouth-open" cx="120" cy="156" rx="7" ry="5" fill="#5A4080"/>
-      <!-- whiskers -->
-      <g fill="#7C5CC0" opacity=".5">
-        <circle cx="96" cy="146" r="1.4"/><circle cx="100" cy="152" r="1.4"/>
-        <circle cx="144" cy="146" r="1.4"/><circle cx="140" cy="152" r="1.4"/>
-      </g>
+      <g fill="#7C5CC0" opacity=".5"><circle cx="96" cy="146" r="1.4"/><circle cx="100" cy="152" r="1.4"/><circle cx="144" cy="146" r="1.4"/><circle cx="140" cy="152" r="1.4"/></g>
     </g>
-
-    <!-- thinking dots -->
-    <g id="m-think-dots" fill="#CDB6F2">
-      <circle id="td1" cx="168" cy="70" r="4"/>
-      <circle id="td2" cx="182" cy="62" r="5"/>
-      <circle id="td3" cx="198" cy="56" r="6"/>
-    </g>
-
-    <!-- success sparkles -->
+    <g id="m-think-dots" fill="#CDB6F2"><circle id="td1" cx="168" cy="70" r="4"/><circle id="td2" cx="182" cy="62" r="5"/><circle id="td3" cx="198" cy="56" r="6"/></g>
     <g id="m-sparkles" fill="#FFBC5B">
       <path id="sp1" d="M58 70 l3 7 7 3 -7 3 -3 7 -3-7 -7-3 7-3 z"/>
       <path id="sp2" d="M188 78 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5-6 -6-2.5 6-2.5 z" fill="#FF6E4E"/>
@@ -306,44 +283,44 @@ function mannySVG(state){
 }
 
 const copy = {
-  idle:    "Hi! I'm Manny. Stuck on something?",
-  nudge:   "Psst — need a hand with that?",
+  idle:"Hi! I'm Manny. Stuck on something?",
+  nudge:"Psst — need a hand with that?",
   thinking:"Let me check the known issues…",
-  talking: "Looks like a known one — here's the workaround.",
-  success: "All sorted. Anything else?",
-  dismiss: ""
+  talking:"Looks like a known one — here's the workaround.",
+  success:"All sorted. Anything else?",
+  dismiss:""
 };
 
+document.getElementById('logo-standalone').innerHTML = dclStandalone();
 const floor = document.getElementById('floor');
 floor.innerHTML = mannySVG('idle');
 document.getElementById('launcher').innerHTML = mannySVG('idle');
 document.getElementById('mid').innerHTML = mannySVG('idle');
 
-const bubble = document.getElementById('bubble');
-const bubbleText = document.getElementById('bubble-text');
-const guide = document.getElementById('guide');
+const bubble=document.getElementById('bubble'), bubbleText=document.getElementById('bubble-text'), guide=document.getElementById('guide');
 
 function setState(s){
-  const svg = floor.querySelector('.manny-svg');
-  svg.setAttribute('data-state', s);
-  if(guide.checked) svg.classList.add('guide'); else svg.classList.remove('guide');
-  if(copy[s]){ bubbleText.textContent = copy[s]; bubble.classList.add('show'); }
-  else { bubble.classList.remove('show'); }
+  const svg=floor.querySelector('.manny-svg');
+  svg.setAttribute('data-state',s);
+  if(copy[s]){bubbleText.textContent=copy[s];bubble.classList.add('show');}else{bubble.classList.remove('show');}
 }
-
-document.getElementById('controls').addEventListener('click', e=>{
-  const b = e.target.closest('.btn'); if(!b) return;
-  document.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  setState(b.dataset.s);
+document.getElementById('controls').addEventListener('click',e=>{
+  const b=e.target.closest('.btn');if(!b)return;
+  document.querySelectorAll('#controls .btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');setState(b.dataset.s);
 });
-
-guide.addEventListener('change', ()=>{
+document.getElementById('mark-controls').addEventListener('click',e=>{
+  const b=e.target.closest('.btn');if(!b)return;
+  document.querySelectorAll('#mark-controls .btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
   document.querySelectorAll('.manny-svg').forEach(svg=>{
-    if(guide.checked) svg.classList.add('guide'); else svg.classList.remove('guide');
+    svg.classList.remove('mark-subtle','mark-soft','mark-bold');
+    svg.classList.add('mark-'+b.dataset.m);
   });
 });
-
+guide.addEventListener('change',()=>{
+  document.querySelectorAll('.manny-svg').forEach(svg=>{guide.checked?svg.classList.add('guide'):svg.classList.remove('guide');});
+});
 setState('idle');
 </script>
 </body>
