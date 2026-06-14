@@ -189,7 +189,7 @@ section{padding:48px 0 8px;scroll-margin-top:72px}
 .cdd-list{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:5px;max-height:260px;overflow-y:auto;box-shadow:0 14px 40px rgba(0,0,0,.5);display:none}
 .cdd.open .cdd-list{display:block}
 .cdd-opt{padding:9px 11px;border-radius:7px;font-size:14px;color:var(--text-dim);cursor:pointer;transition:background .1s,color .1s}
-.cdd-opt:hover,.cdd-opt.highlight{background:rgba(255,110,78,.14);color:var(--text)}
+.cdd-opt:hover,.cdd-opt.highlight{background:rgba(255,110,78,.28);color:var(--text)}
 .cdd-opt.selected{color:var(--peach);font-weight:600}
 .cdd-opt.selected::after{content:"✓";float:right;opacity:.9}
 .cdd-opt.disabled{color:var(--text-faint);cursor:default;opacity:.7}
