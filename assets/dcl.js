@@ -8,7 +8,7 @@
 'use strict';
 
 const C = DCL_CONFIG;
-const CACHE_KEY = 'dclStatusCache_v2';
+const CACHE_KEY = 'dclStatusCache_v3';
 
 /* ---------- Vocabularies ---------- */
 const SVC_LEVELS = {
@@ -739,7 +739,10 @@ const SORTS = {
 function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chipsId, sortId, cardFn, emptyMsg, plus }) {
   const grid = $(gridId), more = $(moreId), count = $(countId), search = $(searchId), chips = $(chipsId), sortSel = $(sortId);
   const AREA_ORDER = ['Explorer', 'Creator Hub', 'Website', 'SDK'];
-  const areas = [...new Set(items.map(x => x.area))].sort((a, b) => {
+  // Pills are driven by the configured repo areas (not by whatever happens to be
+  // in the live data), so every section always shows in a stable order — even if a
+  // repo is momentarily quiet — and stray/legacy areas never spawn rogue pills.
+  const areas = [...new Set((C.repos || []).map(r => r.area))].sort((a, b) => {
     const ia = AREA_ORDER.indexOf(a), ib = AREA_ORDER.indexOf(b);
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
   });
