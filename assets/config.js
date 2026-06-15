@@ -29,9 +29,9 @@ const DCL_CONFIG = {
   repos: [
     { repo: 'decentraland/unity-explorer', area: 'Explorer',    reportAs: 'the Explorer (desktop app / in-world)' },
     { repo: 'decentraland/creator-hub',    area: 'Creator Hub', reportAs: 'the Creator Hub' },
-    { repo: 'decentraland/builder',        area: 'Builder',     reportAs: 'the Builder / Marketplace tools' },
+    { repo: 'decentraland/builder',        area: 'Creator Hub', reportAs: 'the Builder / Marketplace tools' },
     { repo: 'decentraland/sdk',            area: 'SDK',         reportAs: 'the SDK (scene development)' },
-    { repo: 'decentraland/core-team',      area: 'Platform',    reportAs: 'something else / general platform' },
+    { repo: 'decentraland/core-team',      area: 'Website',     reportAs: 'the Decentraland website' },
   ],
 
   // Services shown on the status board. Status is derived from

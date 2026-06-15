@@ -29,7 +29,7 @@ const IMPACT_COLORS = { 'Critical':'#FF4D5E','High':'#F0883E','Medium':'#E8B33C'
 
 // Display-only relabeling of internal area names. The underlying area value
 // (used for filtering/matching) is unchanged; this only affects what users see.
-const AREA_LABELS = { 'Creator Hub': 'Creator Tools', 'Builder': 'Website', 'Explorer': 'Desktop app' };
+const AREA_LABELS = { 'Creator Hub': 'Creator Tools', 'Explorer': 'Desktop app' };
 const areaLabel = (a) => AREA_LABELS[a] || a;
 
 /* ---------- Helpers ---------- */
@@ -738,7 +738,7 @@ const SORTS = {
 
 function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chipsId, sortId, cardFn, emptyMsg, plus }) {
   const grid = $(gridId), more = $(moreId), count = $(countId), search = $(searchId), chips = $(chipsId), sortSel = $(sortId);
-  const AREA_ORDER = ['Explorer', 'Creator Hub', 'Builder', 'SDK', 'Platform'];
+  const AREA_ORDER = ['Explorer', 'Creator Hub', 'Website', 'SDK'];
   const areas = [...new Set(items.map(x => x.area))].sort((a, b) => {
     const ia = AREA_ORDER.indexOf(a), ib = AREA_ORDER.indexOf(b);
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
