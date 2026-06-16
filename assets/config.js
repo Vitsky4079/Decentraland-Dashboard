@@ -136,7 +136,7 @@ const DCL_CONFIG = {
     contentServer: 'https://peer.decentraland.org/content',
     worldsServer: 'https://worlds-content-server.decentraland.org',
     platforms: ['webgl', 'windows', 'mac'],
-    refreshSeconds: 60,
+    refreshSeconds: 1,   // queue list re-polls this often so new deployments appear within ~1s
     pageSize: 20,        // rows shown per "Load more" click
     resolvePool: 150,    // how many entities to resolve+sort for the recent view
     maxRowsPerPlatform: 25,
