@@ -1755,9 +1755,10 @@ document.addEventListener('DOMContentLoaded', initPresence);
 
 /* ---------- Admin-only UI gating ---------- */
 // "Copy for Discord" buttons are a moderator tool, not for regular visitors.
-// They're hidden by CSS and revealed (via body.is-admin) only when the
-// configured owner is signed in — reusing the same Supabase session as /admin,
-// which is persisted per-origin, so logging in there carries over here.
+// They're hidden by CSS and revealed (via body.is-admin) for any signed-in
+// admin — anyone with a Supabase Auth login, not just the owner. Reuses the
+// same session as /admin, which is persisted per-origin, so logging in there
+// carries over to the public pages here.
 let _authClient = null;
 function authClient() {
   const sb = C.supabase || {};
@@ -1768,15 +1769,13 @@ async function applyAdminUI() {
   try {
     const client = authClient();
     if (!client) return;
-    const owner = ((C.admin && C.admin.ownerEmail) || '').trim().toLowerCase();
-    const isOwner = s => {
-      const em = ((s && s.user && s.user.email) || '').trim().toLowerCase();
-      return !!em && (!owner || em === owner);
-    };
+    // An admin is any authenticated (non-anonymous) session. Regular visitors
+    // only ever use the anon API key, so they have no session.user here.
+    const isAdmin = s => !!(s && s.user && !s.user.is_anonymous);
     const { data: { session } } = await client.auth.getSession();
-    if (isOwner(session)) document.body.classList.add('is-admin');
-    // Stay in sync if the owner signs in/out without a full page reload.
-    client.auth.onAuthStateChange((_e, s) => document.body.classList.toggle('is-admin', isOwner(s)));
+    if (isAdmin(session)) document.body.classList.add('is-admin');
+    // Stay in sync if an admin signs in/out without a full page reload.
+    client.auth.onAuthStateChange((_e, s) => document.body.classList.toggle('is-admin', isAdmin(s)));
   } catch (e) { /* not signed in / library missing → stay a normal visitor */ }
 }
 document.addEventListener('DOMContentLoaded', applyAdminUI);

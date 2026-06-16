@@ -265,7 +265,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
 .copy-btn:hover{color:var(--text);border-color:var(--text-faint)}
 .copy-btn.done{color:#9ADFB4;border-color:rgba(63,203,110,.45)}
 /* "Copy for Discord" is a moderator tool — hidden for regular visitors, shown
-   only when the owner is signed in (body.is-admin set by applyAdminUI). */
+   to any signed-in admin (body.is-admin set by applyAdminUI). */
 .copy-btn{display:none}
 body.is-admin .copy-btn{display:inline-block}
 .svc-src{color:var(--text-faint);text-transform:none;letter-spacing:0}
