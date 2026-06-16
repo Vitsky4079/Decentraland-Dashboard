@@ -787,7 +787,7 @@ const SORTS = {
   reported: (a, b) => (b.reactionsTotal + b.comments + (b.dupCount || 1) * 2) - (a.reactionsTotal + a.comments + (a.dupCount || 1) * 2),
 };
 
-function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chipsId, sortId, cardFn, emptyMsg, plus }) {
+function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chipsId, sortId, cardFn, emptyMsg, plus, defaultSort }) {
   const grid = $(gridId), more = $(moreId), count = $(countId), search = $(searchId), chips = $(chipsId), sortSel = $(sortId);
   const AREA_ORDER = ['Explorer', 'Creator Hub', 'Website', 'SDK'];
   // Pills are driven by the configured repo areas (not by whatever happens to be
@@ -797,7 +797,7 @@ function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chips
     const ia = AREA_ORDER.indexOf(a), ib = AREA_ORDER.indexOf(b);
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
   });
-  let st = { area: 'All', q: '', pages: 1, sort: 'default' };
+  let st = { area: 'All', q: '', pages: 1, sort: defaultSort || 'default' };
 
   function draw() {
     let list = items.filter(x =>
@@ -819,7 +819,7 @@ function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chips
   }
   if (search) search.oninput = e => { st.q = e.target.value.toLowerCase(); st.pages = 1; draw(); };
   if (more) more.onclick = () => { st.pages++; draw(); };
-  if (sortSel) sortSel.onchange = () => { st.sort = sortSel.value; st.pages = 1; draw(); };
+  if (sortSel) { sortSel.value = st.sort; sortSel.onchange = () => { st.sort = sortSel.value; st.pages = 1; draw(); }; }
   draw();
 }
 
@@ -1514,7 +1514,7 @@ const PAGES = {
     cardList({
       items: bugs, gridId: 'issuesGrid', moreId: 'issuesMore', countId: 'issuesCount',
       countSuffix: 'active', searchId: 'issueSearch', chipsId: 'issueAreaChips', sortId: 'issueSort',
-      cardFn: b => bugCard(b), emptyMsg: "No issues match — that's good news.", plus: meta.capped
+      cardFn: b => bugCard(b), emptyMsg: "No issues match — that's good news.", plus: meta.capped, defaultSort: 'newest'
     });
   },
 
