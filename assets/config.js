@@ -88,12 +88,9 @@ const DCL_CONFIG = {
   // Valid values: 'Operational' | 'Degraded' | 'Partial Outage' | 'Outage'
   statusOverrides: {},
 
-  // Admin panel (admin.html). The passphrase only hides the panel UI — real
-  // write access requires a GitHub token entered at save time (never stored).
-  // To change the passphrase: open admin.html, use the hash generator at the
-  // bottom of the login box, and paste the new hash here.
+  // Admin panel (admin.html) is gated by Supabase Auth (email + password login);
+  // all writes are protected server-side by Row Level Security (RLS).
   admin: {
-    passHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // default passphrase: admin
     // Admin-to-admin notes are visible to every logged-in admin but the editor
     // is shown only to this account email (UI gate). Set to your Supabase Auth
     // login email. Leave '' to let any admin edit. Case-insensitive.
