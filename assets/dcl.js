@@ -629,6 +629,13 @@ function ensureModal() {
 
 // very small, safe markdown -> html (headings, bold, italic, code, links, lists)
 function miniMarkdown(md) {
+  // GitHub's image/video paste inserts raw HTML tags (e.g. <img width=.. src="..">).
+  // Pull the src out to a bare URL on its own line *before* escaping, so the URL
+  // rules below turn it into an inline image/video. Fixes evidence in both bodies
+  // and comments that use this format instead of markdown.
+  md = String(md || '')
+    .replace(/<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, '\n$1\n')
+    .replace(/<(?:video|source)\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, '\n$1\n');
   let h = esc(md)
     .replace(/```([\s\S]*?)```/g, (m, c) => `<pre><code>${c.trim()}</code></pre>`)
     .replace(/`([^`]+)`/g, '<code>$1</code>')
@@ -680,6 +687,7 @@ async function openPreview(b) {
     <div class="modal-meta">Reported ${esc(fmtDate(b.created))} · Updated ${esc(rel(b.updated))}${b.dupCount > 1 ? ' · ' + b.dupCount + ' reports merged' : ''}</div>
     ${b.workaround ? `<div class="wk" style="margin:14px 0"><b>Workaround</b>${esc(b.workaround)}</div>` : ''}
     <div class="modal-md" id="modalMd"><div class="loading" style="border:none">Loading description…</div></div>
+    <div class="modal-comments" id="modalComments"></div>
     <div class="modal-actions">
       <button class="copy-btn" data-copy="${esc(encodeURIComponent(discordSnippet(b)))}" style="margin:0">Copy for Discord</button>
       <a class="report-btn" href="${esc(b.url)}" target="_blank" rel="noopener" style="padding:10px 20px">Open on GitHub →</a>
@@ -687,16 +695,19 @@ async function openPreview(b) {
   m.classList.add('open');
   document.body.style.overflow = 'hidden';
   bindCopyButtons(m);
-  // lazy-load body
+  // lazy-load body + comments (evidence is often in the comments)
   const md = m.querySelector('#modalMd');
-  if (b.fullBody !== undefined) { renderModalBody(md, b.fullBody); return; }
+  const cm = m.querySelector('#modalComments');
+  if (b.fullBody !== undefined) { renderModalBody(md, b.fullBody); loadComments(b, cm); return; }
   try {
     const api = b.url.replace('https://github.com/', 'https://api.github.com/repos/').replace('/issues/', '/issues/');
     const res = await fetch(api, { headers: { Accept: 'application/vnd.github+json' } });
     if (!res.ok) throw new Error();
     const data = await res.json();
     b.fullBody = (data.body || '').slice(0, 6000);
+    if (typeof data.comments === 'number') b.comments = data.comments;
     renderModalBody(md, b.fullBody);
+    loadComments(b, cm);
   } catch (e) {
     md.innerHTML = '<p class="modal-empty">Could not load the description here. Use “Open on GitHub” for the full ticket.</p>';
   }
@@ -707,11 +718,16 @@ async function openPreview(b) {
 // that fails, try as a <video>; if that also fails, show a plain link.
 function renderModalBody(md, body) {
   md.innerHTML = body ? miniMarkdown(body) : '<p class="modal-empty">No description provided.</p>';
-  md.querySelectorAll('img.md-img-maybe').forEach(img => {
+  wireAttachmentFallbacks(md);
+}
+
+// Extensionless GitHub attachment URLs don't reveal their type: try image first,
+// then a <video>, then a plain link. Shared by the body and comment renderers.
+function wireAttachmentFallbacks(root) {
+  root.querySelectorAll('img.md-img-maybe').forEach(img => {
     img.onerror = () => {
       const url = img.getAttribute('src');
       const wrap = img.closest('.md-img-link') || img;
-      // Try a video player next (many GitHub attachments are .mp4/.mov/.webm).
       const vid = document.createElement('video');
       vid.className = 'md-video';
       vid.src = url;
@@ -727,6 +743,41 @@ function renderModalBody(md, body) {
       wrap.replaceWith(vid);
     };
   });
+}
+
+// Lazily fetch + render a ticket's GitHub comments (evidence is often posted
+// there rather than in the body). One request per opened ticket, cached on the
+// item; bot comments (CI / triage automation) are filtered out. Fails silently —
+// the "Open on GitHub" link always covers the full thread.
+async function loadComments(b, host) {
+  if (!host || !b.comments) return;
+  try {
+    if (b.fullComments === undefined) {
+      host.innerHTML = '<div class="loading" style="border:none">Loading comments…</div>';
+      const api = b.url.replace('https://github.com/', 'https://api.github.com/repos/') + '/comments?per_page=100';
+      const res = await fetch(api, { headers: { Accept: 'application/vnd.github+json' } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      b.fullComments = (Array.isArray(data) ? data : [])
+        .filter(c => c.user && c.user.type !== 'Bot' && !/\[bot\]$/i.test(c.user.login || ''))
+        .map(c => ({ author: c.user.login, avatar: c.user.avatar_url, date: c.created_at, body: (c.body || '').slice(0, 4000) }));
+    }
+    renderComments(host, b.fullComments);
+  } catch (e) { host.innerHTML = ''; }
+}
+function renderComments(host, comments) {
+  if (!comments || !comments.length) { host.innerHTML = ''; return; }
+  host.innerHTML = `<div class="modal-comments-head">${comments.length} comment${comments.length > 1 ? 's' : ''} from GitHub</div>` +
+    comments.map(c => `
+      <div class="modal-comment">
+        <div class="mc-head">
+          <img class="mc-av" src="${esc(c.avatar || '')}" alt="" loading="lazy">
+          <span class="mc-author">${esc(c.author || 'user')}</span>
+          <span class="mc-date">${esc(rel(c.date))}</span>
+        </div>
+        <div class="mc-body">${miniMarkdown(c.body)}</div>
+      </div>`).join('');
+  wireAttachmentFallbacks(host);
 }
 
 /* ---------- Generic filterable card list ---------- */

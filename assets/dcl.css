@@ -337,6 +337,19 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .md-drive-frame{width:100%;aspect-ratio:16/9;border:1px solid var(--line);border-radius:10px;background:#000;display:block}
 .md-drive-link{display:inline-block;margin-top:6px;font-size:13px;color:var(--peach)}
 .md-img-link:hover .md-img{border-color:var(--line-strong)}
+.modal-comments{margin:0}
+.modal-comments-head{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);margin:0 0 12px;padding-top:18px;border-top:1px solid var(--line)}
+.modal-comment{margin:0 0 14px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
+.modal-comment:last-child{margin-bottom:0}
+.mc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+.mc-av{width:22px;height:22px;border-radius:50%;flex:none;background:var(--line)}
+.mc-author{font-weight:600;color:var(--text)}
+.mc-date{color:var(--text-faint)}
+.mc-body{font-size:14.5px;color:var(--text-dim);line-height:1.6;overflow-wrap:anywhere}
+.mc-body p{margin:6px 0}
+.mc-body ul{margin:6px 0 6px 18px}
+.mc-body pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow-x:auto;font-size:12.5px}
+.mc-body h3,.mc-body h4{font-family:var(--display);color:var(--text);font-size:15px;margin:10px 0 4px}
 .modal-empty{color:var(--text-faint);font-style:italic}
 .modal-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--line)}
 
