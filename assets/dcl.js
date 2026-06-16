@@ -1753,6 +1753,34 @@ function presenceSetAction(action) {
 
 document.addEventListener('DOMContentLoaded', initPresence);
 
+/* ---------- Admin-only UI gating ---------- */
+// "Copy for Discord" buttons are a moderator tool, not for regular visitors.
+// They're hidden by CSS and revealed (via body.is-admin) only when the
+// configured owner is signed in — reusing the same Supabase session as /admin,
+// which is persisted per-origin, so logging in there carries over here.
+let _authClient = null;
+function authClient() {
+  const sb = C.supabase || {};
+  if (!window.supabase || !sb.url || !sb.anonKey) return null;
+  return (_authClient = _authClient || window.supabase.createClient(sb.url, sb.anonKey));
+}
+async function applyAdminUI() {
+  try {
+    const client = authClient();
+    if (!client) return;
+    const owner = ((C.admin && C.admin.ownerEmail) || '').trim().toLowerCase();
+    const isOwner = s => {
+      const em = ((s && s.user && s.user.email) || '').trim().toLowerCase();
+      return !!em && (!owner || em === owner);
+    };
+    const { data: { session } } = await client.auth.getSession();
+    if (isOwner(session)) document.body.classList.add('is-admin');
+    // Stay in sync if the owner signs in/out without a full page reload.
+    client.auth.onAuthStateChange((_e, s) => document.body.classList.toggle('is-admin', isOwner(s)));
+  } catch (e) { /* not signed in / library missing → stay a normal visitor */ }
+}
+document.addEventListener('DOMContentLoaded', applyAdminUI);
+
 // Minimal API for admin.html
 window.DCL = { loadData, classify, loadContent, enhanceSelects };
 })();
