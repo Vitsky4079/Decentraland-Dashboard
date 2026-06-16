@@ -1065,22 +1065,22 @@ function sceneFromEntity(e) {
   return { type: 'parcel', name: title, parcels, base, timestamp };
 }
 
-// POST a batch of ids to a content server's /entities/active, return id->record.
+// Resolve a batch of entityIds against a content server (one GET /contents/{id}
+// each), returning id -> normalized scene/world record.
 async function fetchEntities(server, ids) {
   const out = {};
   if (!ids.length) return out;
-  try {
-    const res = await fetch(`${server}/entities/active`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ ids }),
-    });
-    if (!res.ok) throw new Error('http ' + res.status);
-    const arr = await res.json();
-    for (const e of (Array.isArray(arr) ? arr : [])) {
-      if (e && e.id) out[e.id] = sceneFromEntity(e);
-    }
-  } catch (e) { /* best-effort */ }
+  // The asset-bundle registry only returns entityIds; the entity itself
+  // (pointers, timestamp, metadata) is content-addressed on the catalyst. This
+  // is how DCL resolves it internally: GET {server}/contents/{entityId}.
+  await Promise.all(ids.map(async (id) => {
+    try {
+      const res = await fetch(`${server}/contents/${encodeURIComponent(id)}`, { headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      const e = await res.json();
+      if (e && typeof e === 'object' && (e.metadata || e.pointers)) out[id] = sceneFromEntity(e);
+    } catch (_) { /* best-effort per entity */ }
+  }));
   return out;
 }
 
@@ -1092,7 +1092,7 @@ async function resolveScenes(ids) {
   const todo = ids.filter(id => !(id in SCENE_CACHE));
 
   if (todo.length) {
-    let resolved = null;
+    let resolved = {};
 
     // Try the edge function first.
     const sb = C.supabase || {};
@@ -1110,23 +1110,27 @@ async function resolveScenes(ids) {
       } catch (e) { /* fall through to direct */ }
     }
 
-    if (resolved) {
-      for (const id of todo) SCENE_CACHE[id] = resolved[id] || null;
-    } else {
-      // Fallback: query the content servers directly from the browser. This may
-      // be blocked by CORS in some browsers — hence the proxy above is preferred.
+    // Apply whatever the proxy resolved; resolve the rest directly from the
+    // content servers via the per-entity /contents/{id} method (catalyst, then
+    // worlds). This keeps working even before the edge function is redeployed.
+    const missing = [];
+    for (const id of todo) {
+      if (resolved[id]) SCENE_CACHE[id] = resolved[id];
+      else missing.push(id);
+    }
+    if (missing.length) {
       const catalyst = (C.assetBundles && C.assetBundles.contentServer) || 'https://peer.decentraland.org/content';
       const worlds = (C.assetBundles && C.assetBundles.worldsServer) || 'https://worlds-content-server.decentraland.org';
-      const fromCatalyst = await fetchEntities(catalyst, todo);
+      const fromCatalyst = await fetchEntities(catalyst, missing);
       Object.assign(SCENE_CACHE, fromCatalyst);
-      const stillMissing = todo.filter(id => !(id in SCENE_CACHE));
-      if (stillMissing.length) {
-        const fromWorlds = await fetchEntities(worlds, stillMissing);
+      const worldMissing = missing.filter(id => !(id in SCENE_CACHE));
+      if (worldMissing.length) {
+        const fromWorlds = await fetchEntities(worlds, worldMissing);
         for (const [id, rec] of Object.entries(fromWorlds)) {
           SCENE_CACHE[id] = rec.type === 'world' ? rec : { ...rec, type: 'world', world: rec.world || rec.name };
         }
       }
-      todo.forEach(id => { if (!(id in SCENE_CACHE)) SCENE_CACHE[id] = null; });
+      missing.forEach(id => { if (!(id in SCENE_CACHE)) SCENE_CACHE[id] = null; });
     }
   }
 

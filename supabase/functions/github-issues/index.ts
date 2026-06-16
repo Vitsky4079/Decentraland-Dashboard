@@ -103,30 +103,27 @@ function sceneFromEntity(e: any) {
   return { type: 'parcel', name: title, parcels, base, timestamp };
 }
 
-// Catalyst: POST /entities/active accepts { ids } OR { pointers }. Asset-bundle
-// queue CIDs are deployment entity IDs, so we query by ids. Some servers also
-// accept GET /entities/scene?id=, used as a fallback.
+// The asset-bundle registry returns deployment entityIds; the entity itself
+// (pointers, timestamp, metadata) is content-addressed, so fetch each one at
+// GET {server}/contents/{entityId} — the method DCL uses internally.
 async function resolveBatch(server: string, ids: string[], asWorld = false) {
   const out: Record<string, unknown> = {};
   if (!ids.length) return out;
-  try {
-    const res = await fetch(`${server}/entities/active`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ ids }),
-    });
-    if (res.ok) {
-      const arr = await res.json();
-      for (const e of (Array.isArray(arr) ? arr : [])) {
-        if (e && e.id) {
-          const rec = sceneFromEntity(e);
-          out[e.id] = asWorld && rec.type !== 'world'
-            ? { ...rec, type: 'world', world: (rec as any).world || rec.name }
-            : rec;
-        }
+  await Promise.all(ids.map(async (id) => {
+    try {
+      const res = await fetch(`${server}/contents/${encodeURIComponent(id)}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) return;
+      const e = await res.json();
+      if (e && typeof e === 'object' && (e.metadata || e.pointers)) {
+        const rec = sceneFromEntity(e);
+        out[id] = asWorld && rec.type !== 'world'
+          ? { ...rec, type: 'world', world: (rec as any).world || rec.name }
+          : rec;
       }
-    }
-  } catch (_e) { /* best effort */ }
+    } catch (_e) { /* best effort */ }
+  }));
   return out;
 }
 
