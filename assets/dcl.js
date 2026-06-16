@@ -183,11 +183,11 @@ async function loadContent() {
   return CONTENT;
 }
 
-/* ---------- Cache (sessionStorage with in-memory fallback) ---------- */
+/* ---------- Cache (localStorage with in-memory fallback) ---------- */
 let memCache = null;
 function cacheGet() {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(CACHE_KEY);
     if (raw) {
       const c = JSON.parse(raw);
       if (Date.now() - c.t < C.cacheMinutes * 60000) return c;
@@ -199,7 +199,7 @@ function cacheGet() {
 function cacheSet(data, partial, capped) {
   const c = { t: Date.now(), data, partial, capped };
   memCache = c;
-  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (e) { /* ignore */ }
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (e) { /* ignore */ }
 }
 
 /* ---------- Fetch ---------- */
@@ -771,7 +771,7 @@ function renderComments(host, comments) {
     comments.map(c => `
       <div class="modal-comment">
         <div class="mc-head">
-          <img class="mc-av" src="${esc(c.avatar || '')}" alt="" loading="lazy">
+          <img class="mc-av" src="${esc(c.avatar || '')}" alt="" loading="lazy" decoding="async">
           <span class="mc-author">${esc(c.author || 'user')}</span>
           <span class="mc-date">${esc(rel(c.date))}</span>
         </div>
