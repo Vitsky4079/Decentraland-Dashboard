@@ -37,8 +37,7 @@ button{font-family:inherit;cursor:pointer}
 .nav{position:sticky;top:0;z-index:50;background:rgba(13,11,18,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .nav-inner{max-width:var(--maxw);margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;gap:24px}
 .logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17.5px;letter-spacing:.01em;text-decoration:none;flex:none}
-.logo-mark{width:27px;height:27px;border-radius:50%;background:var(--grad);position:relative;flex:none}
-.logo-mark::after{content:"";position:absolute;inset:0;border-radius:50%;clip-path:polygon(0 100%,100% 100%,50% 18%);background:rgba(13,11,18,.55)}
+.logo-mark{width:27px;height:27px;border-radius:50%;flex:none;object-fit:contain;display:block}
 .nav-links{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
 .nav-links::-webkit-scrollbar{display:none}
 .nav-links a{text-decoration:none;color:var(--text-dim);font-size:14.5px;font-weight:500;padding:7px 11px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
