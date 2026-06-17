@@ -1,3 +1,9 @@
+/* Decentraland brand typeface — Inter (self-hosted, brand-provided weights) */
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-400.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/inter-600.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/inter-700.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/inter-800.woff2') format('woff2')}
+
 :root{
   --bg:#08070C;
   --surface:#121017;
@@ -18,7 +24,7 @@
   --radius:14px;
   --maxw:1480px;
   --mono:'JetBrains Mono',monospace;
-  --display:'Space Grotesk',sans-serif;
+  --display:'Inter',sans-serif;
   --body:'Inter',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -60,7 +66,7 @@ button{font-family:inherit;cursor:pointer}
 .hero-inner{position:relative;max-width:var(--maxw);margin:0 auto;padding:72px 24px 56px}
 .hero-inner.compact{padding:46px 24px 38px}
 .hero-eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--peach);margin-bottom:14px}
-h1{font-family:var(--display);font-size:clamp(36px,5.2vw,64px);font-weight:700;line-height:1.08;letter-spacing:-.015em;max-width:760px}
+h1{font-family:var(--display);font-size:clamp(36px,5.2vw,64px);font-weight:800;line-height:1.08;letter-spacing:-.015em;max-width:760px}
 .hero-inner.compact h1{font-size:clamp(30px,4vw,46px)}
 h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero-sub{color:var(--text-dim);max-width:680px;margin-top:16px;font-size:clamp(17px,0.9rem + 0.4vw,21px)}
@@ -96,7 +102,7 @@ h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:tex
 .lightbox-close:hover{border-color:var(--line-strong)}
 section{padding:48px 0 8px;scroll-margin-top:72px}
 .sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
-.sec-head h2{font-family:var(--display);font-size:clamp(26px,0.9rem + 1vw,36px);font-weight:700;letter-spacing:-.01em}
+.sec-head h2{font-family:var(--display);font-size:clamp(26px,0.9rem + 1vw,36px);font-weight:800;letter-spacing:-.01em}
 .sec-count{font-family:var(--mono);font-size:13.5px;color:var(--text-faint)}
 .sec-link{margin-left:auto;font-size:14.5px;color:var(--text-dim);text-decoration:none;border-bottom:1px solid var(--line-strong);padding-bottom:1px}
 .sec-link:hover{color:var(--text)}
@@ -144,7 +150,7 @@ section{padding:48px 0 8px;scroll-margin-top:72px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:30px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;text-decoration:none;transition:border-color .2s,transform .2s}
 .stat:hover{border-color:rgba(255,45,85,.4);transform:translateY(-3px);box-shadow:0 14px 40px -18px rgba(255,45,85,.3)}
-.stat-num{font-family:var(--display);font-size:clamp(38px,1.5rem + 1.4vw,52px);font-weight:700;line-height:1.1}
+.stat-num{font-family:var(--display);font-size:clamp(38px,1.5rem + 1.4vw,52px);font-weight:800;line-height:1.1}
 .stat-label{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);margin-top:4px}
 
 /* ---------- Fixed list ---------- */
