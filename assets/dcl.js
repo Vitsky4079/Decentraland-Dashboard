@@ -819,7 +819,7 @@ function cardList({ items, gridId, moreId, countId, countSuffix, searchId, chips
   }
   if (search) search.oninput = e => { st.q = e.target.value.toLowerCase(); st.pages = 1; draw(); };
   if (more) more.onclick = () => { st.pages++; draw(); };
-  if (sortSel) { sortSel.value = st.sort; sortSel.onchange = () => { st.sort = sortSel.value; st.pages = 1; draw(); }; }
+  if (sortSel) { sortSel.value = st.sort; sortSel.dispatchEvent(new Event('change')); sortSel.onchange = () => { st.sort = sortSel.value; st.pages = 1; draw(); }; }
   draw();
 }
 
@@ -904,6 +904,9 @@ function enhanceSelects(scope) {
       });
     };
     syncLabel();
+    // Keep the custom UI in sync when the underlying value is set in code
+    // (e.g. a per-list default sort), not just on user clicks.
+    sel.addEventListener('change', syncLabel);
 
     const open = () => {
       if (_ddOpen && _ddOpen !== root) closeDropdown(_ddOpen);
