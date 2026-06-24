@@ -1229,10 +1229,10 @@ function renderPatchNotes() {
           ${n.date ? `<span class="pn-date">${esc(n.date)}</span>` : ''}
           ${cnt ? `<span class="pn-count">${cnt} update${cnt > 1 ? 's' : ''}</span>` : ''}
         </button>
-        <div class="pn-collapse"><div class="pn-body">${patchNotesToHtml(n.body || '')}</div></div>
+        <div class="pn-collapse"><div class="pn-inner"><div class="pn-body">${patchNotesToHtml(n.body || '')}</div></div></div>
       </div>`;
       }).join('');
-      cards = latestCard + (prev ? `<div class="pn-prev-label">Earlier releases</div>${prev}` : '');
+      cards = latestCard + (prev ? `<div class="pn-prev-label">Previous releases</div>${prev}` : '');
     }
     return `
       <div class="pn-col">

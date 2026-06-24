@@ -408,7 +408,8 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .pn-card.open .pn-chev{transform:rotate(45deg)}
 .pn-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
 .pn-card.open .pn-collapse{grid-template-rows:1fr}
-.pn-collapse>.pn-body{overflow:hidden;min-height:0;padding:2px 16px 16px}
+.pn-collapse>.pn-inner{overflow:hidden;min-height:0}
+.pn-collapse .pn-body{padding:2px 16px 16px}
 @media (prefers-reduced-motion:reduce){.pn-collapse,.pn-chev{transition:none}}
 
 /* ---------- Asset bundle queue ---------- */
