@@ -1204,16 +1204,36 @@ function renderPatchNotes() {
 
   wrap.innerHTML = PATCH_STREAMS.map(s => {
     const list = byStream[s.key];
-    const cards = list.length ? list.map((n, i) => `
-      <div class="pn-card${i === 0 ? ' latest' : ''}">
+    let cards;
+    if (!list.length) {
+      cards = `<div class="pn-empty">No releases posted yet.</div>`;
+    } else {
+      const latest = list[0];
+      const latestCard = `
+      <div class="pn-card latest">
         <div class="pn-head">
+          <span class="pn-version">${esc(latest.version || 'Release')}</span>
+          ${latest.date ? `<span class="pn-date">${esc(latest.date)}</span>` : ''}
+          <span class="pn-badge">Latest</span>
+        </div>
+        <div class="pn-body">${patchNotesToHtml(latest.body || '')}</div>
+      </div>`;
+      // Older releases collapse into one-line rows so they don't dominate the page.
+      const prev = list.slice(1).map(n => {
+        const cnt = ((n.body || '').match(/^\s*[-*]\s+/gm) || []).length;
+        return `
+      <div class="pn-card prev">
+        <button class="pn-toggle" type="button" aria-expanded="false">
+          <span class="pn-chev" aria-hidden="true"></span>
           <span class="pn-version">${esc(n.version || 'Release')}</span>
           ${n.date ? `<span class="pn-date">${esc(n.date)}</span>` : ''}
-          ${i === 0 ? '<span class="pn-badge">Latest</span>' : ''}
-        </div>
-        <div class="pn-body">${patchNotesToHtml(n.body || '')}</div>
-      </div>`).join('')
-      : `<div class="pn-empty">No releases posted yet.</div>`;
+          ${cnt ? `<span class="pn-count">${cnt} update${cnt > 1 ? 's' : ''}</span>` : ''}
+        </button>
+        <div class="pn-collapse"><div class="pn-body">${patchNotesToHtml(n.body || '')}</div></div>
+      </div>`;
+      }).join('');
+      cards = latestCard + (prev ? `<div class="pn-prev-label">Earlier releases</div>${prev}` : '');
+    }
     return `
       <div class="pn-col">
         <div class="pn-col-head">
@@ -1223,6 +1243,14 @@ function renderPatchNotes() {
         <div class="pn-col-cards">${cards}</div>
       </div>`;
   }).join('');
+
+  wrap.querySelectorAll('.pn-toggle').forEach(btn => {
+    btn.onclick = () => {
+      const card = btn.closest('.pn-card');
+      const open = card.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+  });
 
   setupPatchCarousel(wrap);
 }
