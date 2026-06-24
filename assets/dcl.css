@@ -109,13 +109,15 @@ section{padding:48px 0 8px;scroll-margin-top:72px}
 .sec-desc{color:var(--text-dim);font-size:clamp(15.5px,0.9rem + 0.3vw,18px);max-width:760px;margin-bottom:22px}
 
 /* ---------- Service parcels ---------- */
-.services{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:14px}
-.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px 17px;position:relative;overflow:hidden;transition:border-color .2s}
+.services{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:880px){.services{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.services{grid-template-columns:1fr}}
+.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px 26px 22px;position:relative;overflow:hidden;transition:border-color .2s}
 .svc::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--svc-color,var(--ok));opacity:.9}
 .svc:hover{border-color:var(--line-strong);box-shadow:0 10px 30px -16px rgba(0,0,0,.8)}
-.svc-name{font-family:var(--display);font-weight:600;font-size:17px;margin-bottom:2px}
-.svc-desc{font-size:13.5px;color:var(--text-faint);min-height:32px}
-.svc-status{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--svc-color,var(--ok))}
+.svc-name{font-family:var(--display);font-weight:700;font-size:20px;margin-bottom:3px}
+.svc-desc{font-size:14.5px;color:var(--text-faint);min-height:38px}
+.svc-status{display:flex;align-items:center;gap:8px;margin-top:16px;font-family:var(--mono);font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--svc-color,var(--ok))}
 
 /* ---------- Toolbar / filters ---------- */
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:center}

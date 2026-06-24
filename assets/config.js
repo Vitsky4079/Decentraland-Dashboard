@@ -43,7 +43,6 @@ const DCL_CONFIG = {
     { name: 'Marketplace',    desc: 'Wearables, names & LAND trading',      keys: ['marketplace','wearable','collection','listing'], repoAreas: ['Builder'] },
     { name: 'Events',         desc: 'Event listings & calendar',            keys: ['events','event page','calendar'], repoAreas: [] },
     { name: 'Login & Wallet', desc: 'Sign-in, wallets & transactions',      keys: ['login','sign in','sign-in','wallet','auth','transaction'], repoAreas: [] },
-    { name: 'Social',         desc: 'Friends, chat & communities',          keys: ['friend','chat','social','community','voice'], repoAreas: [] },
   ],
 
   // Official status page integration.
@@ -63,7 +62,6 @@ const DCL_CONFIG = {
       'marketplace': 'Marketplace', 'builder': 'Marketplace',
       'events': 'Events',
       'authentication': 'Login & Wallet', 'login': 'Login & Wallet', 'wallet': 'Login & Wallet',
-      'social': 'Social', 'social service': 'Social', 'chat': 'Social',
     },
   },
 
