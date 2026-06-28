@@ -1676,6 +1676,11 @@ const PAGES = {
         else webglSet.add(j.entityId);
       }
       const ids = [...new Set(qs.jobs.map(j => j.entityId))];
+      // Entities still building for Windows/macOS are the ones actually waiting
+      // (the rest are already live on desktop, just WebGL-pending). Put them
+      // first so they're resolved within the cap and surface at the top.
+      const pendingProd = id => winSet.has(id) || macSet.has(id);
+      ids.sort((a, b) => (pendingProd(b) ? 1 : 0) - (pendingProd(a) ? 1 : 0));
 
       // Resolve only entities we haven't seen yet (cached in SCENE_CACHE),
       // capped so a fresh load never fires hundreds of lookups at once.
@@ -1689,7 +1694,10 @@ const PAGES = {
           winPending: winSet.has(id), macPending: macSet.has(id), webglPending: webglSet.has(id),
           prodReady: !winSet.has(id) && !macSet.has(id),
         };
-      }).sort((a, b) => b.ts - a.ts);   // newest deployment first
+      }).sort((a, b) => {
+        if (a.prodReady !== b.prodReady) return a.prodReady ? 1 : -1;  // still-building (Win/Mac) first
+        return b.ts - a.ts;                                            // then newest deployment
+      });
 
       if (sync) sync.textContent = `WebGL ${webglSet.size} · Windows ${winSet.size} · macOS ${macSet.size} · synced ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
       draw();
