@@ -1690,13 +1690,18 @@ const PAGES = {
       state.rows = ids.map(id => {
         const sc = SCENE_CACHE[id] || null;
         return {
-          entityId: id, scene: sc, ts: (sc && sc.timestamp) || 0,
+          entityId: id, scene: sc, resolved: !!sc, ts: (sc && sc.timestamp) || 0,
           winPending: winSet.has(id), macPending: macSet.has(id), webglPending: webglSet.has(id),
           prodReady: !winSet.has(id) && !macSet.has(id),
         };
       }).sort((a, b) => {
         if (a.prodReady !== b.prodReady) return a.prodReady ? 1 : -1;  // still-building (Win/Mac) first
-        return b.ts - a.ts;                                            // then newest deployment
+        // Known deploy time sorts newest-first. A resolved scene with no deploy
+        // time means the content server hasn't indexed it yet (just deployed) —
+        // treat as freshest (top). Not-yet-resolved rows stay at the bottom.
+        const ka = a.ts || (a.resolved ? Infinity : -1);
+        const kb = b.ts || (b.resolved ? Infinity : -1);
+        return kb - ka;
       });
 
       if (sync) sync.textContent = `WebGL ${webglSet.size} · Windows ${winSet.size} · macOS ${macSet.size} · synced ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
