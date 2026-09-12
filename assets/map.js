@@ -28,7 +28,7 @@
   var resolutions = [];
   for (var i = 0; i <= zoom; i++) resolutions.push(Math.pow(2, zoom - i));
   var viewResolutions = [];
-  for (var j = 1; j <= 9; j++) viewResolutions.push(side / Math.pow(2, 1 + j));
+  for (var j = 1; j <= 12; j++) viewResolutions.push(side / Math.pow(2, 1 + j));
 
   var projection = new ol.proj.Projection({ code: 'dcl-images', units: 'pixels', extent: extent });
 
@@ -139,7 +139,7 @@
       projection: projection,
       center: ol.extent.getCenter(extent),
       resolutions: viewResolutions,
-      zoom: 3, minZoom: 1, maxZoom: 8, extent: extent,
+      zoom: 3, minZoom: 1, maxZoom: 11, extent: extent,
     }),
   });
 
