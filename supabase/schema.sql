@@ -349,6 +349,20 @@ alter table public.land_parcels add column if not exists scene_name text;
 create index if not exists land_parcels_type_idx on public.land_parcels (type);
 create index if not exists land_parcels_has_scene_idx on public.land_parcels (has_scene) where has_scene;
 
+create or replace function public.apply_scene_presence(p_rows jsonb)
+returns void
+language sql
+as $$
+  update public.land_parcels lp
+  set has_scene = true,
+      scene_entity_id = r.scene_entity_id,
+      scene_name = r.scene_name,
+      updated_at = now()
+  from jsonb_to_recordset(p_rows) as r(x integer, y integer, scene_entity_id text, scene_name text)
+  where lp.x = r.x and lp.y = r.y;
+$$;
+grant execute on function public.apply_scene_presence(jsonb) to service_role;
+
 alter table public.land_parcels enable row level security;
 drop policy if exists "public read" on public.land_parcels;
 create policy "public read" on public.land_parcels for select using (true);

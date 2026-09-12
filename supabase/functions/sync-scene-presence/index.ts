@@ -44,29 +44,6 @@ async function fetchActiveBatch(pointers: string[]): Promise<ActiveEntity[]> {
   return (await res.json()) as ActiveEntity[];
 }
 
-// The -152..152 square isn't fully populated — Decentraland's real grid has
-// ~427 gaps (92,598 actual parcels vs 93,025 grid cells; confirmed via
-// sync-land-parcels). A Catalyst scene can still be deployed at one of those
-// gap coordinates (observed live: "Dclectric Scene Template" at -150,-150,
-// which has no land_parcels row at all). Upserting blind would try to INSERT
-// a brand-new row missing the required `type` column and fail the whole
-// batch — so we only ever touch coordinates that already exist here.
-async function fetchExistingParcelKeys(log: string[]): Promise<Set<string>> {
-  const keys = new Set<string>();
-  const pageSize = 1000; // PostgREST's own hard cap regardless of ?limit=
-  for (let offset = 0; ; offset += pageSize) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/land_parcels?select=x,y&order=x,y&limit=${pageSize}&offset=${offset}`, {
-      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
-    });
-    if (!res.ok) throw new Error(`fetching existing parcel keys failed: HTTP ${res.status}`);
-    const page = (await res.json()) as Array<{ x: number; y: number }>;
-    for (const p of page) keys.add(`${p.x},${p.y}`);
-    if (page.length < pageSize) break;
-  }
-  log.push(`loaded ${keys.size} existing land_parcels coordinates`);
-  return keys;
-}
-
 async function resetStalePresence(log: string[]): Promise<void> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/land_parcels?has_scene=eq.true`, {
     method: 'PATCH',
@@ -81,21 +58,21 @@ async function resetStalePresence(log: string[]): Promise<void> {
   log.push('reset has_scene=false on previously-flagged parcels');
 }
 
-async function upsertPresence(rows: Array<{ x: number; y: number; has_scene: true; scene_entity_id: string; scene_name: string | null }>): Promise<void> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/land_parcels?on_conflict=x,y`, {
+// Calls apply_scene_presence — a real UPDATE ... FROM, not an upsert (see
+// supabase/migrations/scene_presence.sql for why: rows the sweep finds that
+// aren't in land_parcels at all — Decentraland's real grid has gaps inside
+// the nominal -152..152 square — must simply not match, not error out).
+async function applyPresence(rows: Array<{ x: number; y: number; scene_entity_id: string; scene_name: string | null }>): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/apply_scene_presence`, {
     method: 'POST',
     headers: {
       apikey: SERVICE_KEY,
       Authorization: `Bearer ${SERVICE_KEY}`,
       'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates',
     },
-    body: JSON.stringify(rows),
+    body: JSON.stringify({ p_rows: rows }),
   });
-  // Only x/y/has_scene/scene_entity_id/scene_name are in this payload, so the
-  // upsert's ON CONFLICT DO UPDATE only touches those columns — type/owner/
-  // name/estate_id/edge_* (written by sync-land-parcels) are left alone.
-  if (!res.ok) throw new Error(`upserting scene presence failed: HTTP ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`applying scene presence failed: HTTP ${res.status} ${await res.text()}`);
 }
 
 Deno.serve(async (req: Request) => {
@@ -111,14 +88,13 @@ Deno.serve(async (req: Request) => {
 
   const log: string[] = [];
   try {
-    const existingKeys = await fetchExistingParcelKeys(log);
     await resetStalePresence(log);
 
     const pointerBatches = buildPointerBatches(MIN_PARCEL, MAX_PARCEL, 1000);
     log.push(`sweeping ${pointerBatches.length} Catalyst batches (${(MAX_PARCEL - MIN_PARCEL + 1) ** 2} coordinates)`);
 
     let entitiesSeen = 0;
-    let pendingRows: Array<{ x: number; y: number; has_scene: true; scene_entity_id: string; scene_name: string | null }> = [];
+    let pendingRows: Array<{ x: number; y: number; scene_entity_id: string; scene_name: string | null }> = [];
     let parcelsWritten = 0;
 
     const fetchChunks = chunk(pointerBatches, FETCH_CONCURRENCY);
@@ -127,15 +103,12 @@ Deno.serve(async (req: Request) => {
       const entities = results.flat().map(extractEntityPresence);
       entitiesSeen += entities.length;
       const rows = flattenToParcelRows(entities);
-      for (const r of rows.values()) {
-        if (!existingKeys.has(`${r.x},${r.y}`)) continue; // gap in the real grid — see note above
-        pendingRows.push({ ...r, has_scene: true });
-      }
+      for (const r of rows.values()) pendingRows.push(r);
 
       if (pendingRows.length >= UPSERT_BATCH_SIZE) {
         for (const batch of chunk(pendingRows, UPSERT_BATCH_SIZE)) {
           if (!batch.length) continue;
-          await upsertPresence(batch);
+          await applyPresence(batch);
           parcelsWritten += batch.length;
         }
         pendingRows = [];
@@ -143,7 +116,7 @@ Deno.serve(async (req: Request) => {
     }
     if (pendingRows.length) {
       for (const batch of chunk(pendingRows, UPSERT_BATCH_SIZE)) {
-        await upsertPresence(batch);
+        await applyPresence(batch);
         parcelsWritten += batch.length;
       }
     }
