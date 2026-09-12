@@ -548,7 +548,6 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .map-legend-swatch[data-type=plaza]{background:#3FCB6E}
 .map-legend-swatch[data-type=road]{background:#78718C}
 .map-legend-swatch[data-type=scene]{background:#C1443A;box-shadow:inset 0 0 0 10px rgba(255,214,110,0.55)}
-.map-legend-star{width:11px;height:11px;display:inline-block;background:#FFA31A;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
 
 /* Ownership/type line in the parcel detail panel (official LAND data) */
 .map-detail-ownership{display:flex;flex-wrap:wrap;gap:4px 10px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);margin:2px 0 16px}
@@ -562,6 +561,9 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 #mapMoreWrap[hidden]{display:none}
 .map-imagery-note{margin-top:6px;color:var(--warn);font-size:11.5px;line-height:1.4;background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;padding:6px 10px;max-width:230px}
 .map-imagery-note:empty{display:none}
+.map-imagery-date{margin-top:4px;color:var(--text-faint);font-size:11px}
+.map-imagery-date:empty{display:none}
+.map-scroll-hint{position:absolute;bottom:14px;right:14px;z-index:5;font-family:var(--mono);font-size:11px;color:var(--text-faint);background:rgba(8,7,12,.72);border:1px solid var(--line);border-radius:8px;padding:5px 9px;pointer-events:none}
 
 /* Parcel/deployment detail: right-hand panel on desktop, bottom sheet on mobile */
 .map-detail-panel{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;background:var(--surface);border-left:1px solid var(--line-strong);box-shadow:-10px 0 40px rgba(0,0,0,.5);z-index:50;overflow-y:auto}
