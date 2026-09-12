@@ -28,7 +28,7 @@
   var resolutions = [];
   for (var i = 0; i <= zoom; i++) resolutions.push(Math.pow(2, zoom - i));
   var viewResolutions = [];
-  for (var j = -1; j <= 12; j++) viewResolutions.push(side / Math.pow(2, 1 + j));
+  for (var j = -3; j <= 12; j++) viewResolutions.push(side / Math.pow(2, 1 + j));
 
   var projection = new ol.proj.Projection({ code: 'dcl-images', units: 'pixels', extent: extent });
 
@@ -111,7 +111,7 @@
       projection: projection,
       center: ol.extent.getCenter(extent),
       resolutions: viewResolutions,
-      zoom: 1, minZoom: 0, maxZoom: 13, extent: extent,
+      zoom: 1, minZoom: 0, maxZoom: 15, extent: extent,
     }),
   });
 
@@ -120,7 +120,28 @@
   // so a hardcoded initial zoom wouldn't fit every screen size; fit() picks
   // whichever of those steps is the closest without cropping the extent,
   // adapting to the actual #map container size (mobile vs. desktop).
-  map.getView().fit(extent, { size: map.getSize() });
+  //
+  // #map's box is sized off the viewport (see dcl.css), and web-font swaps /
+  // layout above it can still shift that size right after this script runs
+  // — so this isn't a single synchronous call: it re-fits once OL has
+  // actually measured the container (rendercomplete) and again on window
+  // resize/orientation change, but only until the visitor manually pans or
+  // zooms (mapUserMoved), so it never fights a deliberate zoom-in.
+  var mapUserMoved = false, mapFitting = false;
+  function fitWholeMap() {
+    if (mapUserMoved) return;
+    map.updateSize();
+    var size = map.getSize();
+    if (!size || !size[0] || !size[1]) return;
+    mapFitting = true;
+    map.getView().fit(extent, { size: size });
+    mapFitting = false;
+  }
+  map.getView().on('change:resolution', function () { if (!mapFitting) mapUserMoved = true; });
+  map.on('pointerdrag', function () { mapUserMoved = true; });
+  fitWholeMap();
+  map.once('rendercomplete', fitWholeMap);
+  window.addEventListener('resize', fitWholeMap);
 
   // --- helpers ---
   function toPx(x, y) { return [(x + OFF) * SCALE + SCALE / 2, (y + OFF) * SCALE + SCALE / 2]; }

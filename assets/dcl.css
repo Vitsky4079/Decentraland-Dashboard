@@ -484,7 +484,7 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .map-count{font-family:var(--mono);color:var(--peach)}
 .map-hint{color:var(--text-faint);font-size:13px}
 .map-shell{position:relative;width:100%}
-#map{width:100%;height:calc(100vh - 160px);min-height:680px;background:#0b0a0f;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#map{width:100%;height:calc(100vh - 120px);min-height:760px;background:#0b0a0f;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .map-fallback{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-faint);font-family:var(--mono);font-size:14px;text-align:center;padding:24px}
 /* OpenLayers control theming */
 .ol-zoom{top:14px;left:14px}
@@ -528,7 +528,7 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 
 .map-layout{display:grid;grid-template-columns:1fr 320px;gap:0;align-items:start}
 .map-layout .map-shell{grid-column:1}
-.map-sidebar{grid-column:2;height:calc(100vh - 160px);min-height:680px;display:flex;flex-direction:column;background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-left:1px solid var(--line)}
+.map-sidebar{grid-column:2;height:calc(100vh - 120px);min-height:760px;display:flex;flex-direction:column;background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-left:1px solid var(--line)}
 .map-sidebar-head{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
 .map-sidebar-head h2{font-size:14px;letter-spacing:.02em;text-transform:uppercase;color:var(--text-dim)}
 .map-changes-list{flex:1;overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
@@ -544,7 +544,7 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .map-change-n{color:var(--text-faint)}
 @media(max-width:880px){
   .map-layout{grid-template-columns:1fr}
-  #map{height:min(78vh,760px);min-height:460px}
+  #map{height:min(85vh,820px);min-height:520px}
   .map-sidebar{grid-column:1;height:420px;border-left:1px solid var(--line)}
 }
 
