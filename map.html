@@ -50,6 +50,7 @@
         <input class="search" id="mapCoord" type="text" inputmode="text" placeholder="Jump to coordinates (e.g. -52,10)" aria-label="Jump to coordinates">
         <button class="report-btn" id="mapGo">Jump</button>
         <label class="map-toggle"><input type="checkbox" id="deployToggle" checked> Deployed today <span class="map-count" id="deployCount"></span></label>
+        <label class="map-toggle"><input type="checkbox" id="photoToggle"> Photo view (genesis.city)</label>
         <span class="map-hint">Click a red marker to see the scene, or any parcel to open it in-world.</span>
       </div>
 
@@ -76,6 +77,13 @@
       <div class="map-shell">
         <div id="map"><div class="loading" style="padding:40px">Loading map…</div></div>
         <div class="map-popup" id="mapPopup"></div>
+
+        <div class="map-legend" aria-label="Parcel type legend">
+          <span><i class="map-legend-swatch" data-type="owned"></i>Private LAND</span>
+          <span><i class="map-legend-swatch" data-type="district"></i>District</span>
+          <span><i class="map-legend-swatch" data-type="plaza"></i>Plaza</span>
+          <span><i class="map-legend-swatch" data-type="road"></i>Road</span>
+        </div>
 
         <div class="map-imagery" id="mapImagery">
           <button type="button" class="map-imagery-btn" id="mapImageryBtn">Compare historical imagery</button>

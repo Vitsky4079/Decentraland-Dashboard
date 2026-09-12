@@ -539,6 +539,18 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
   .map-sidebar{grid-column:1;height:340px;border-left:1px solid var(--line)}
 }
 
+/* Parcel-type legend for our own official-data base layer */
+.map-legend{position:absolute;bottom:14px;left:14px;z-index:5;display:flex;flex-wrap:wrap;gap:4px 12px;background:rgba(8,7,12,.72);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:11.5px;color:var(--text-dim)}
+.map-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.map-legend-swatch{width:10px;height:10px;border-radius:2px;display:inline-block}
+.map-legend-swatch[data-type=owned]{background:#FFBC5B}
+.map-legend-swatch[data-type=district]{background:#7C8CF8}
+.map-legend-swatch[data-type=plaza]{background:#3FCB6E}
+.map-legend-swatch[data-type=road]{background:#78718C}
+
+/* Ownership/type line in the parcel detail panel (official LAND data) */
+.map-detail-ownership{display:flex;flex-wrap:wrap;gap:4px 10px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);margin:2px 0 16px}
+
 /* Floating "compare historical imagery" control, top-right of the map */
 .map-imagery{position:absolute;top:14px;right:14px;z-index:5;font-family:var(--mono);font-size:12.5px}
 .map-imagery-btn{background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}

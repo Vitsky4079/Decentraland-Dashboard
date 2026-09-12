@@ -86,10 +86,26 @@
   var popEl = document.getElementById('mapPopup');
   var overlay = new ol.Overlay({ element: popEl, positioning: 'bottom-center', stopEvent: true, offset: [0, -6] });
 
-  var tileLayer = new ol.layer.Tile({ source: source });
+  // Our own base layer: rendered server-side from Decentraland's official LAND
+  // parcel data (ownership/type/estates), not genesis.city — always available
+  // regardless of genesis.city's uptime. See docs/DECENTRALAND_MAP.md.
+  var landSource = new ol.source.TileImage({
+    url: '/api/map/land-tile?z={z}&x={x}&y={y}',
+    wrapX: false,
+    tileGrid: new ol.tilegrid.TileGrid({
+      extent: extent, origin: origin, tileSize: [side, side],
+      resolutions: resolutions, minZoom: 1, maxZoom: 10,
+    }),
+  });
+  var landLayer = new ol.layer.Tile({ source: landSource });
+
+  // genesis.city's photographic renders — optional "Photo view" overlay, off
+  // by default so a genesis.city outage never breaks the map (see the 2026-09
+  // TLS-misconfiguration incident noted in docs/DECENTRALAND_MAP.md).
+  var tileLayer = new ol.layer.Tile({ source: source, visible: false });
   var map = new ol.Map({
     target: target,
-    layers: [tileLayer, changesLayer, deployLayer],
+    layers: [landLayer, tileLayer, changesLayer, deployLayer],
     overlays: [overlay],
     view: new ol.View({
       projection: projection,
@@ -416,6 +432,13 @@
     changesSource.changed();
   });
 
+  // "Photo view" — opt-in genesis.city photographic tiles layered over our
+  // own always-on official-data map. Off by default (see notes above).
+  var photoToggle = document.getElementById('photoToggle');
+  if (photoToggle) photoToggle.addEventListener('change', function () {
+    tileLayer.setVisible(photoToggle.checked);
+  });
+
   // Hover highlight for the changed-parcel overlay (separate listener from the
   // existing cursor-style one above, so neither has to know about the other).
   map.on('pointermove', function (e) {
@@ -431,6 +454,20 @@
   /* ---------- Parcel deployment-history panel ---------- */
   if (detailClose) detailClose.onclick = function () { if (detailPanel) detailPanel.hidden = true; };
 
+  function shortAddr(a) { return a ? (a.slice(0, 6) + '…' + a.slice(-4)) : ''; }
+  var LAND_TYPE_LABEL = { district: 'District', road: 'Road', plaza: 'Plaza', owned: 'Private LAND' };
+
+  async function renderOwnershipInfo(x, y) {
+    // get_parcel_info returns a single jsonb object (or SQL null), not an array.
+    var row = await callRpc('get_parcel_info', { p_x: x, p_y: y });
+    if (!row || !row.type) return '';
+    var typeLabel = LAND_TYPE_LABEL[row.type] || row.type;
+    var bits = ['<span>' + esc(typeLabel) + '</span>'];
+    if (row.name) bits.push('<span>' + esc(row.name) + '</span>');
+    if (row.owner) bits.push('<span title="' + esc(row.owner) + '">' + esc(shortAddr(row.owner)) + '</span>');
+    return '<div class="map-detail-ownership">' + bits.join(' · ') + '</div>';
+  }
+
   async function openDetailPanel(x, y) {
     if (!detailPanel || !detailBody) return;
     var play = 'https://play.decentraland.org/?position=' + x + '%2C' + y;
@@ -438,6 +475,12 @@
       '<a class="map-history-link" href="' + play + '" target="_blank" rel="noopener">Jump into Decentraland ↗</a>';
     detailPanel.hidden = false;
     detailBody.innerHTML = header + '<div class="loading" style="margin-top:16px">Loading history…</div>';
+
+    var ownershipHtml = '';
+    if (sb.url && sb.anonKey) {
+      try { ownershipHtml = await renderOwnershipInfo(x, y); } catch (e) { /* non-critical, skip */ }
+    }
+    header += ownershipHtml;
 
     if (!sb.url || !sb.anonKey) {
       detailBody.innerHTML = header + '<div class="empty" style="margin-top:16px">Deployment history isn’t configured yet.</div>';

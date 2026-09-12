@@ -18,8 +18,9 @@ assets/admin.js      admin panel (Supabase Auth + instant saves)
 assets/map.js        Decentraland map + daily scene-change history (see docs/DECENTRALAND_MAP.md)
 assets/dcl.css       styles
 supabase/schema.sql  database schema — paste once into Supabase
-supabase/functions/  Edge Functions (github-issues, submit-report, sync-map-changes)
-api/cron/sync-map.js Vercel Cron target for the daily map sync (see docs/DECENTRALAND_MAP.md)
+supabase/functions/  Edge Functions (github-issues, submit-report, sync-map-changes, sync-land-parcels)
+api/cron/            Vercel Cron targets for the daily map syncs (see docs/DECENTRALAND_MAP.md)
+api/map/land-tile.js Renders the map's base tiles from official LAND data (no genesis.city dependency)
 docs/DECENTRALAND_MAP.md   map/scene-change-history feature: architecture, setup, limitations
 ```
 

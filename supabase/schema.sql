@@ -320,3 +320,39 @@ as $$
     updated_at = excluded.updated_at;
 $$;
 grant execute on function public.recompute_map_daily_stats(date[]) to service_role, authenticated;
+
+-- =============================================================
+-- Decentraland Map — official LAND parcel data (ownership/type).
+-- See supabase/migrations/land_parcels.sql for the standalone version.
+-- Source of truth: Decentraland's own official Atlas/Tile API, not genesis.city.
+-- =============================================================
+
+create table if not exists public.land_parcels (
+  x              integer not null,
+  y              integer not null,
+  type           text not null,
+  name           text,
+  owner          text,
+  estate_id      text,
+  edge_top       boolean not null default false,
+  edge_left      boolean not null default false,
+  edge_top_left  boolean not null default false,
+  updated_at     timestamptz not null default now(),
+  primary key (x, y)
+);
+create index if not exists land_parcels_type_idx on public.land_parcels (type);
+
+alter table public.land_parcels enable row level security;
+drop policy if exists "public read" on public.land_parcels;
+create policy "public read" on public.land_parcels for select using (true);
+
+create or replace function public.get_parcel_info(p_x integer, p_y integer)
+returns jsonb
+language sql
+stable
+as $$
+  select to_jsonb(p) - 'x' - 'y'
+  from public.land_parcels p
+  where p.x = p_x and p.y = p_y;
+$$;
+grant execute on function public.get_parcel_info(integer, integer) to anon, authenticated;
