@@ -471,3 +471,34 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .qt-more-wrap{display:flex;justify-content:center;margin-top:18px}
 .qt-more-btn{cursor:pointer;font-size:13px;padding:11px 24px}
 .qt-more-wrap .queue-more{border:none}
+
+/* ---------- Land map page ---------- */
+.map-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.map-toolbar .search{max-width:300px;font-family:var(--mono);font-size:13px}
+.map-toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-dim);cursor:pointer;user-select:none}
+.map-toggle input{accent-color:var(--red);width:15px;height:15px}
+.map-count{font-family:var(--mono);color:var(--peach)}
+.map-hint{color:var(--text-faint);font-size:13px}
+.map-shell{position:relative;width:100%}
+#map{width:100%;height:calc(100vh - 300px);min-height:480px;background:#0b0a0f;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.map-fallback{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-faint);font-family:var(--mono);font-size:14px;text-align:center;padding:24px}
+/* OpenLayers control theming */
+.ol-zoom{top:14px;left:14px}
+.ol-control button{background:var(--surface-2);color:var(--text);border:1px solid var(--line);font-family:var(--mono);border-radius:8px;transition:background .15s}
+.ol-control button:hover,.ol-control button:focus{background:var(--surface);color:var(--peach)}
+.ol-zoom .ol-zoom-in{margin-bottom:4px}
+.ol-attribution{background:rgba(8,7,12,.72)!important;border-radius:8px 0 0 0}
+.ol-attribution ul{color:var(--text-dim);text-shadow:none}
+.ol-attribution a{color:var(--peach)}
+.ol-attribution button{background:var(--surface-2);color:var(--text)}
+/* Parcel / deploy popup */
+.map-popup{position:absolute;min-width:150px;max-width:210px;background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;padding:12px 14px;box-shadow:0 10px 40px rgba(0,0,0,.5);pointer-events:auto}
+.map-popup:empty{display:none}
+.map-popup .mp-thumb{display:block;width:100%;border-radius:8px;margin-bottom:8px}
+.map-popup .mp-coord{font-family:var(--mono);font-weight:700;font-size:15px;margin-bottom:6px;color:var(--text);word-break:break-word}
+.map-popup .mp-sub{font-family:var(--mono);font-size:11px;color:var(--text-faint);margin-bottom:6px}
+.map-popup .mp-note{font-size:11px;color:var(--warn);margin-bottom:6px}
+.map-popup a{display:block;color:var(--peach);font-size:13px;text-decoration:none;padding:2px 0}
+.map-popup a:hover{text-decoration:underline}
+.map-pop-x{position:absolute;top:6px;right:8px;background:none;border:0;color:var(--text-faint);font-size:18px;line-height:1;cursor:pointer;padding:2px}
+.map-pop-x:hover{color:var(--text)}

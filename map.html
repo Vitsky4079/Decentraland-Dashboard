@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recently fixed · Decentraland Community Status</title>
-<meta name="description" content="Recently resolved Decentraland issues — your reports lead to real improvements.">
+<title>Map · Decentraland Community Status</title>
+<meta name="description" content="Interactive map of Decentraland's LAND — pan, zoom, jump to coordinates, see scenes deployed today, and open any parcel in-world. Rendered tiles from genesis.city.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" href="assets/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -12,9 +12,10 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="assets/brand/icon-color.svg">
 <meta name="theme-color" content="#08070C">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.3.0/ol.css">
 <link rel="stylesheet" href="assets/dcl.css">
 </head>
-<body data-page="fixed">
+<body data-page="map">
 
 <nav class="nav">
   <div class="nav-inner">
@@ -36,31 +37,39 @@
 <header class="hero">
   <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
   <div class="hero-inner compact">
-    <div class="hero-eyebrow">Recently fixed</div>
-    <h1>Reports lead to <span class="grad">real fixes</span></h1>
-    <p class="hero-sub">Issues resolved recently across Decentraland services. Thank you for reporting — it works.</p>
-    <div class="hero-meta"><span class="sync-note" id="syncNote">Syncing with GitHub…</span></div>
+    <div class="hero-eyebrow">Land explorer</div>
+    <h1>Decentraland <span class="grad">map</span></h1>
+    <p class="hero-sub">Pan and zoom the full Genesis City atlas, jump to any coordinate, and see which scenes were deployed today. Map imagery is rendered by the genesis.city community project.</p>
   </div>
 </header>
 
 <main>
   <section>
     <div class="wrap">
-      <div class="sec-head"><h2>Resolved issues</h2><span class="sec-count" id="fixedCount"></span></div>
-      <div class="cards" id="fixedList"><div class="loading">Loading recent fixes…</div></div>
+      <div class="map-toolbar">
+        <input class="search" id="mapCoord" type="text" inputmode="text" placeholder="Jump to coordinates (e.g. -52,10)" aria-label="Jump to coordinates">
+        <button class="report-btn" id="mapGo">Jump</button>
+        <label class="map-toggle"><input type="checkbox" id="deployToggle" checked> Deployed today <span class="map-count" id="deployCount"></span></label>
+        <span class="map-hint">Click a red marker to see the scene, or any parcel to open it in-world.</span>
+      </div>
+    </div>
+    <div class="map-shell">
+      <div id="map"><div class="loading" style="padding:40px">Loading map…</div></div>
+      <div class="map-popup" id="mapPopup"></div>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <span>Community-run status board · Not an official Decentraland Foundation service</span>
+    <span>Community-run status board · Not an official Decentraland Foundation service · Map tiles © <a href="https://genesis.city" target="_blank" rel="noopener">genesis.city</a></span>
     <span id="footSync"></span>
   </div>
 </footer>
 
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/ol@v7.3.0/dist/ol.js"></script>
 <script defer src="assets/config.js"></script>
 <script defer src="assets/dcl.js"></script>
+<script defer src="assets/map.js"></script>
 </body>
 </html>
