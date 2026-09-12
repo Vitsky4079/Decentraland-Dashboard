@@ -11,12 +11,16 @@ no redeploys. Code changes go through the GitHub repo and deploy automatically.
 
 ```
 index.html / issues.html / features.html / fixed.html /
-workarounds.html / bundles.html / report.html / admin.html
+workarounds.html / bundles.html / report.html / admin.html / map.html
 assets/config.js     project configuration (Supabase keys, repos, endpoints)
 assets/dcl.js        site logic (GitHub data + Supabase content merge)
 assets/admin.js      admin panel (Supabase Auth + instant saves)
+assets/map.js        Decentraland map + daily scene-change history (see docs/DECENTRALAND_MAP.md)
 assets/dcl.css       styles
 supabase/schema.sql  database schema — paste once into Supabase
+supabase/functions/  Edge Functions (github-issues, submit-report, sync-map-changes)
+api/cron/sync-map.js Vercel Cron target for the daily map sync (see docs/DECENTRALAND_MAP.md)
+docs/DECENTRALAND_MAP.md   map/scene-change-history feature: architecture, setup, limitations
 ```
 
 ## One-time setup (~20 minutes)
@@ -46,6 +50,11 @@ supabase/schema.sql  database schema — paste once into Supabase
 Open `/admin.html` on the live site, sign in with your Supabase user, set a
 test announcement — it should appear on the homepage immediately in another
 tab. Remove it the same way.
+
+### 4. Decentraland map / daily scene changes (optional)
+The `/map` page's tile view and "deployed today" layer work with no extra setup.
+The change-history overlay, sidebar, and parcel panel need one more Edge Function,
+a cron job, and 3 env vars — see **[docs/DECENTRALAND_MAP.md](docs/DECENTRALAND_MAP.md)**.
 
 ## Day-to-day
 

@@ -52,13 +52,68 @@
         <label class="map-toggle"><input type="checkbox" id="deployToggle" checked> Deployed today <span class="map-count" id="deployCount"></span></label>
         <span class="map-hint">Click a red marker to see the scene, or any parcel to open it in-world.</span>
       </div>
+
+      <div class="map-toolbar map-toolbar-range">
+        <label class="map-toggle"><input type="checkbox" id="changesToggle"> Changes mode</label>
+        <div class="map-range" id="mapRange" role="group" aria-label="Change range">
+          <button type="button" class="map-range-btn" data-range="24h">24h</button>
+          <button type="button" class="map-range-btn" data-range="7d">7d</button>
+          <button type="button" class="map-range-btn is-active" data-range="30d">30d</button>
+          <button type="button" class="map-range-btn" data-range="custom">Custom</button>
+        </div>
+        <div class="map-custom-range" id="mapCustomRange" hidden>
+          <input type="date" id="mapRangeFrom" aria-label="From date">
+          <span>–</span>
+          <input type="date" id="mapRangeTo" aria-label="To date">
+        </div>
+        <label class="map-toggle" id="mapHeatmapToggleWrap" hidden><input type="checkbox" id="heatmapToggle"> Heatmap</label>
+      </div>
+
+      <div class="map-summary" id="mapSummary" aria-live="polite"></div>
     </div>
-    <div class="map-shell">
-      <div id="map"><div class="loading" style="padding:40px">Loading map…</div></div>
-      <div class="map-popup" id="mapPopup"></div>
+
+    <div class="map-layout">
+      <div class="map-shell">
+        <div id="map"><div class="loading" style="padding:40px">Loading map…</div></div>
+        <div class="map-popup" id="mapPopup"></div>
+
+        <div class="map-imagery" id="mapImagery">
+          <button type="button" class="map-imagery-btn" id="mapImageryBtn">Compare historical imagery</button>
+          <div class="map-imagery-panel" id="mapImageryPanel" hidden>
+            <select id="mapImageryDate" aria-label="Historical snapshot">
+              <option value="">Latest only</option>
+            </select>
+            <div class="map-imagery-slider-row" id="mapImagerySliderRow" hidden>
+              <span>Latest</span>
+              <input type="range" id="mapImagerySlider" min="0" max="100" value="50" aria-label="Historical imagery blend">
+              <span>Historical</span>
+            </div>
+            <div class="map-imagery-note" id="mapImageryNote"></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="map-sidebar" aria-label="Latest changes">
+        <div class="map-sidebar-head">
+          <h2>Latest changes</h2>
+        </div>
+        <div id="mapChangesList" class="map-changes-list">
+          <div class="loading">Loading changes…</div>
+        </div>
+        <div class="qt-more-wrap" id="mapMoreWrap" hidden>
+          <button type="button" class="report-btn qt-more-btn" id="mapMoreBtn">Load more</button>
+        </div>
+      </aside>
     </div>
   </section>
 </main>
+
+<div class="map-detail-panel" id="mapDetailPanel" hidden>
+  <div class="map-detail-inner">
+    <button class="map-pop-x map-detail-close" id="mapDetailClose" aria-label="Close">×</button>
+    <div id="mapDetailBody"><div class="loading">Loading…</div></div>
+  </div>
+</div>
 
 <footer>
   <div class="wrap">
