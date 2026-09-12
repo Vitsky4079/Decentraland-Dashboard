@@ -491,6 +491,8 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .ol-control button{background:var(--surface-2);color:var(--text);border:1px solid var(--line);font-family:var(--mono);border-radius:8px;transition:background .15s}
 .ol-control button:hover,.ol-control button:focus{background:var(--surface);color:var(--peach)}
 .ol-zoom .ol-zoom-in{margin-bottom:4px}
+.map-fit-btn{position:absolute;top:80px;left:14px;z-index:5;width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;font-size:15px;line-height:1;cursor:pointer;transition:background .15s}
+.map-fit-btn:hover{background:var(--surface);color:var(--peach)}
 .ol-attribution{background:rgba(8,7,12,.72)!important;border-radius:8px 0 0 0}
 .ol-attribution ul{color:var(--text-dim);text-shadow:none}
 .ol-attribution a{color:var(--peach)}

@@ -126,22 +126,37 @@
   // — so this isn't a single synchronous call: it re-fits once OL has
   // actually measured the container (rendercomplete) and again on window
   // resize/orientation change, but only until the visitor manually pans or
-  // zooms (mapUserMoved), so it never fights a deliberate zoom-in.
-  var mapUserMoved = false, mapFitting = false;
+  // zooms (mapUserMoved) — tracked from the actual interaction sources
+  // (drag, wheel-zoom, dblclick, the +/- buttons), never inferred from a
+  // 'change:resolution' event, since OL can apply our own fit() a tick
+  // after this script runs and that would look identical to a user zoom.
+  var mapUserMoved = false;
+  function markUserMoved() { mapUserMoved = true; }
   function fitWholeMap() {
     if (mapUserMoved) return;
     map.updateSize();
     var size = map.getSize();
     if (!size || !size[0] || !size[1]) return;
-    mapFitting = true;
     map.getView().fit(extent, { size: size });
-    mapFitting = false;
   }
-  map.getView().on('change:resolution', function () { if (!mapFitting) mapUserMoved = true; });
-  map.on('pointerdrag', function () { mapUserMoved = true; });
+  map.on('pointerdrag', markUserMoved);
+  // Only a Ctrl/Cmd+scroll actually zooms the map (see mapInteractions above)
+  // — a plain scroll just scrolls the page past it and shouldn't count.
+  target.addEventListener('wheel', function (e) { if (e.ctrlKey || e.metaKey) markUserMoved(); }, { passive: true });
+  target.addEventListener('dblclick', markUserMoved);
+  target.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.ol-zoom-in, .ol-zoom-out')) markUserMoved();
+  });
   fitWholeMap();
   map.once('rendercomplete', fitWholeMap);
   window.addEventListener('resize', fitWholeMap);
+
+  // Always-available manual reset, in case anything above ever fails to
+  // catch a way the view can end up moved (e.g. a future interaction we
+  // didn't think to listen for) — one click always gets back to the whole
+  // map, no guesswork.
+  var fitBtn = document.getElementById('mapFitBtn');
+  if (fitBtn) fitBtn.addEventListener('click', function () { mapUserMoved = false; fitWholeMap(); });
 
   // --- helpers ---
   function toPx(x, y) { return [(x + OFF) * SCALE + SCALE / 2, (y + OFF) * SCALE + SCALE / 2]; }
@@ -209,6 +224,7 @@
     if (!m) { input.focus(); return; }
     var x = +m[1], y = +m[2];
     if (!inRange(x, y)) { input.focus(); return; }
+    markUserMoved();
     map.getView().animate({ center: toPx(x, y), zoom: 6, duration: 450 });
     showParcel(x, y);
   }
@@ -404,6 +420,7 @@
         btn.onclick = function () {
           var x = parseInt(btn.getAttribute('data-x'), 10), y = parseInt(btn.getAttribute('data-y'), 10);
           if (isNaN(x) || isNaN(y)) return;
+          markUserMoved();
           map.getView().animate({ center: toPx(x, y), zoom: 6, duration: 450 });
           selectParcel(x, y);
           openDetailPanel(x, y);
