@@ -519,7 +519,14 @@
     var bits = ['<span>' + esc(typeLabel) + '</span>'];
     if (row.name) bits.push('<span>' + esc(row.name) + '</span>');
     if (row.owner) bits.push('<span title="' + esc(row.owner) + '">' + esc(shortAddr(row.owner)) + '</span>');
-    return '<div class="map-detail-ownership">' + bits.join(' · ') + '</div>';
+    var html = '<div class="map-detail-ownership">' + bits.join(' · ') + '</div>';
+    // has_scene reflects the Catalyst content server's current state (any
+    // active deployed scene, not just recent changes) — distinct from, and a
+    // superset of, the deployment-history list below.
+    html += row.has_scene
+      ? '<div class="map-detail-scene has-scene">Has a scene' + (row.scene_name ? ': ' + esc(row.scene_name) : '') + '</div>'
+      : '<div class="map-detail-scene">No scene currently deployed here</div>';
+    return html;
   }
 
   async function openDetailPanel(x, y) {

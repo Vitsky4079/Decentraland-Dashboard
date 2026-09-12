@@ -70,6 +70,32 @@ categories as the filter tabs on Decentraland's own map).
   and a "Jump into Decentraland" link, plus the same deployment-history link the parcel
   popup already has. Clicking a cluster zooms in to split it apart.
 
+## Scene presence — which LAND actually has something built on it
+
+Places (above) is curated and named, but far from every deployed scene is in that
+directory. To answer "does *this* parcel have anything built on it at all" comprehensively,
+`land_parcels` also carries `has_scene`/`scene_entity_id`/`scene_name`
+(`supabase/migrations/scene_presence.sql`), filled in by `supabase/functions/
+sync-scene-presence`: a full sweep of the Catalyst content server's
+`POST /content/entities/active` (up to 1000 pointers/request, confirmed live — the whole
+city takes ~93 requests), which returns the actual currently-active scene at each
+pointer. Unlike `scene_deployments` (only what our incremental Catalyst sync has
+*observed change* in roughly the last 30+ days), this reflects every scene that is
+*currently* live, no matter how long ago it was deployed — found via
+[decentraland/deployment-map](https://github.com/decentraland/deployment-map), an old
+Decentraland-Foundation repo built for exactly this ("Map showing LAND with deployed
+content"), whose own legacy endpoint (`content.decentraland.org/scenes?x1=&y1=...`) is
+retired, but the modern equivalent (`entities/active` with an explicit pointer list) still
+works.
+
+- Full-refresh sweep, same reasoning as `sync-land-parcels`/`sync-places`: resets
+  `has_scene=false` on every previously-flagged parcel first, then re-marks whatever the
+  sweep finds — so a scene that's been taken down stops showing as built.
+- `api/map/land-tile.js` renders a warm highlight over any parcel with `has_scene=true`,
+  and prefers `scene_name` over the district/estate `name` for the on-tile label —
+  real content over ownership metadata. The parcel click panel
+  (`get_parcel_info`) shows "Has a scene: `<name>`" or "No scene currently deployed here".
+
 ## Architecture
 
 ```
@@ -77,6 +103,10 @@ Vercel Cron (vercel.json)
   -> api/cron/sync-land.js   (05:00 UTC)  -> supabase/functions/sync-land-parcels
        - fetches Decentraland's official tiles/v2/latest.json (~92,598 parcels)
        - full-refresh upsert into land_parcels (no checkpoint — it's a snapshot)
+  -> api/cron/sync-scenes.js (05:15 UTC)  -> supabase/functions/sync-scene-presence
+       - sweeps Catalyst POST /content/entities/active across the whole city
+         (1000 pointers/request, ~93 requests) for every currently-active scene
+       - resets has_scene=false, then re-marks land_parcels rows found built
   -> api/cron/sync-places.js (05:30 UTC)  -> supabase/functions/sync-places
        - fetches Decentraland's official Places API (~24,400 named scenes), paginated
        - full-refresh upsert into places (no checkpoint — it's a snapshot)
@@ -172,18 +202,20 @@ scene-change history already needed.
    ```bash
    supabase functions deploy sync-map-changes --no-verify-jwt
    supabase functions deploy sync-land-parcels --no-verify-jwt
+   supabase functions deploy sync-scene-presence --no-verify-jwt
    supabase functions deploy sync-places --no-verify-jwt
    ```
-3. **Secret**: `supabase secrets set MAP_SYNC_SECRET=<a random string>` (shared by all three functions)
+3. **Secret**: `supabase secrets set MAP_SYNC_SECRET=<a random string>` (shared by all four functions)
 4. **Vercel env vars**: add `CRON_SECRET`, `SUPABASE_URL`, `MAP_SYNC_SECRET` (Project →
    Settings → Environment Variables), then redeploy so the cron functions pick them up.
 5. **Confirm Vercel Cron is enabled** for this project's plan (Project → Settings →
-   Cron Jobs) — `vercel.json` already declares all three daily jobs (land data 05:00 UTC,
-   places 05:30 UTC, scene changes 06:00 UTC).
+   Cron Jobs) — `vercel.json` already declares all four daily jobs (land data 05:00 UTC,
+   scene presence 05:15 UTC, places 05:30 UTC, scene changes 06:00 UTC).
 6. **Backfill** (optional but recommended so the map isn't empty on day one):
    ```bash
-   # Official parcel data and places — always a full refresh, no from/to needed:
+   # Official parcel data, scene presence, and places — always a full refresh, no from/to needed:
    curl -H "x-sync-secret: $MAP_SYNC_SECRET" "https://<project>.supabase.co/functions/v1/sync-land-parcels"
+   curl -H "x-sync-secret: $MAP_SYNC_SECRET" "https://<project>.supabase.co/functions/v1/sync-scene-presence"
    curl -H "x-sync-secret: $MAP_SYNC_SECRET" "https://<project>.supabase.co/functions/v1/sync-places"
    # Scene-deployment history — explicit range, chunked internally, doesn't touch
    # the incremental checkpoint:
@@ -191,6 +223,8 @@ scene-change history already needed.
      "https://<project>.supabase.co/functions/v1/sync-map-changes?from=<ms-epoch>&to=<ms-epoch>"
    ```
    With no `from`/`to`, the first incremental scene-change sync defaults to the last 30 days.
+   Run `sync-land-parcels` before `sync-scene-presence` the first time — the presence sync
+   only updates rows that already exist.
 
 ## Coordinate conversion
 

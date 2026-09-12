@@ -2,6 +2,7 @@
   "cleanUrls": true,
   "crons": [
     { "path": "/api/cron/sync-land", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/sync-scenes", "schedule": "15 5 * * *" },
     { "path": "/api/cron/sync-places", "schedule": "30 5 * * *" },
     { "path": "/api/cron/sync-map", "schedule": "0 6 * * *" }
   ]

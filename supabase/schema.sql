@@ -337,10 +337,17 @@ create table if not exists public.land_parcels (
   edge_top       boolean not null default false,
   edge_left      boolean not null default false,
   edge_top_left  boolean not null default false,
+  has_scene      boolean not null default false,
+  scene_entity_id text,
+  scene_name     text,
   updated_at     timestamptz not null default now(),
   primary key (x, y)
 );
+alter table public.land_parcels add column if not exists has_scene boolean not null default false;
+alter table public.land_parcels add column if not exists scene_entity_id text;
+alter table public.land_parcels add column if not exists scene_name text;
 create index if not exists land_parcels_type_idx on public.land_parcels (type);
+create index if not exists land_parcels_has_scene_idx on public.land_parcels (has_scene) where has_scene;
 
 alter table public.land_parcels enable row level security;
 drop policy if exists "public read" on public.land_parcels;

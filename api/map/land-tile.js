@@ -38,6 +38,7 @@ const FLAT_FILLS = {
   road: '#C9A876',
 };
 const BORDER = 'rgba(0,0,0,0.18)'; // subtle grout line between parcels
+const SCENE_TINT = 'rgba(255,214,110,0.32)'; // warm highlight over parcels with an actual deployed scene
 const DETAIL_MIN_SIZE = 8; // px/parcel below which texture+borders are skipped
 const LABEL_MIN_SIZE = 26; // px per parcel below which text wouldn't be legible
 
@@ -56,7 +57,7 @@ const DEFS = `<defs>
 
 async function fetchParcels(minX, maxX, minY, maxY) {
   const url =
-    `${SUPABASE_URL}/rest/v1/land_parcels?select=x,y,type,name,edge_top,edge_left` +
+    `${SUPABASE_URL}/rest/v1/land_parcels?select=x,y,type,name,edge_top,edge_left,has_scene,scene_name` +
     `&x=gte.${minX}&x=lte.${maxX}&y=gte.${minY}&y=lte.${maxY}&limit=${MAX_PARCELS_PER_TILE}`;
   const res = await fetch(url, { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } });
   if (!res.ok) throw new Error(`land_parcels query failed: HTTP ${res.status}`);
@@ -104,12 +105,21 @@ module.exports = async (req, res) => {
           if (!p.edge_left) rects += `<line x1="${localX.toFixed(2)}" y1="${localYTop.toFixed(2)}" x2="${localX.toFixed(2)}" y2="${(localYTop + size).toFixed(2)}" stroke="${BORDER}" stroke-width="1"/>`;
         }
 
-        // Label the top-left corner parcel of each named group (district,
-        // estate, or a single named parcel) once it's large enough to read —
-        // avoids repeating the same name across every parcel in the group.
-        if (p.name && !p.edge_top && !p.edge_left && size >= LABEL_MIN_SIZE) {
+        // A parcel with an actual deployed scene (from sync-scene-presence,
+        // the Catalyst content server's ground truth — not just ownership)
+        // gets a warm highlight, distinguishing built content from empty LAND.
+        if (p.has_scene) {
+          rects += `<rect x="${localX.toFixed(2)}" y="${localYTop.toFixed(2)}" width="${size.toFixed(2)}" height="${size.toFixed(2)}" fill="${SCENE_TINT}"/>`;
+        }
+
+        // Label the top-left corner parcel of each named group — prefer the
+        // actual scene's name (real content) over the district/estate name,
+        // once it's large enough to read. Avoids repeating the same name
+        // across every parcel in the group.
+        const labelText = p.scene_name || p.name;
+        if (labelText && !p.edge_top && !p.edge_left && size >= LABEL_MIN_SIZE) {
           const fontSize = Math.min(13, Math.max(9, size * 0.22));
-          labels += `<text x="${(localX + 4).toFixed(2)}" y="${(localYTop + fontSize + 3).toFixed(2)}" font-family="sans-serif" font-size="${fontSize.toFixed(1)}" font-weight="600" fill="#fff" stroke="#000" stroke-width="2.5" paint-order="stroke" style="pointer-events:none">${escXml(p.name)}</text>`;
+          labels += `<text x="${(localX + 4).toFixed(2)}" y="${(localYTop + fontSize + 3).toFixed(2)}" font-family="sans-serif" font-size="${fontSize.toFixed(1)}" font-weight="600" fill="#fff" stroke="#000" stroke-width="2.5" paint-order="stroke" style="pointer-events:none">${escXml(labelText)}</text>`;
         }
       }
     } catch (e) {
