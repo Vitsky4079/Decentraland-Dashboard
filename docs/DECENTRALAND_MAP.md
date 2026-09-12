@@ -49,14 +49,38 @@ ownership rather than a snapshot that can be well over a year stale.
   (unchecked by default) layered on top, for when someone wants to see actual rendered
   scene content and genesis.city happens to be up.
 
+## Named places — the actual "scenes" on the map
+
+`land_parcels` only encodes ownership/type — it can't tell you *what* (if anything) is
+built somewhere, since most owned LAND is undeveloped. What actually reads as "a scene"
+on Decentraland's own official map is its separate, curated **Places** directory
+(`https://places.decentraland.org/api/places`): ~24,400 named entries with a title,
+description, thumbnail image, and category (poi/art/game/social/shop/etc. — the same
+categories as the filter tabs on Decentraland's own map).
+
+- `supabase/functions/sync-places` — daily full-refresh sync (same reasoning as
+  `sync-land-parcels`: it's a snapshot, not a change feed) into `places` (see
+  `supabase/migrations/places.sql`). Paginates the API in batches of 100 (its own hard
+  cap) with limited concurrency; skips `disabled` and `world` (Worlds have no Genesis
+  City x/y) entries.
+- Frontend: a clustered marker layer (`ol.source.Cluster`, star icon for a single place,
+  a numbered badge for a cluster) loaded per-viewport via `get_places_in_bbox`,
+  re-fetched (debounced) on pan/zoom — same "only load what's visible" principle as the
+  changed-parcel overlay. Clicking a single marker shows its title/thumbnail/categories
+  and a "Jump into Decentraland" link, plus the same deployment-history link the parcel
+  popup already has. Clicking a cluster zooms in to split it apart.
+
 ## Architecture
 
 ```
 Vercel Cron (vercel.json)
-  -> api/cron/sync-land.js  (05:00 UTC)  -> supabase/functions/sync-land-parcels
+  -> api/cron/sync-land.js   (05:00 UTC)  -> supabase/functions/sync-land-parcels
        - fetches Decentraland's official tiles/v2/latest.json (~92,598 parcels)
        - full-refresh upsert into land_parcels (no checkpoint — it's a snapshot)
-  -> api/cron/sync-map.js   (06:00 UTC)  -> supabase/functions/sync-map-changes
+  -> api/cron/sync-places.js (05:30 UTC)  -> supabase/functions/sync-places
+       - fetches Decentraland's official Places API (~24,400 named scenes), paginated
+       - full-refresh upsert into places (no checkpoint — it's a snapshot)
+  -> api/cron/sync-map.js    (06:00 UTC)  -> supabase/functions/sync-map-changes
        - reads map_sync_state.last_successful_sync as its checkpoint
        - pages the Catalyst /content/pointer-changes feed (entityType=scene)
        - resolves each new entity's name/base parcel/full parcel list via
@@ -70,6 +94,8 @@ Function with a shared MAP_SYNC_SECRET header.
 Frontend (map.html / assets/map.js):
   - base map: api/map/land-tile.js renders SVG tiles from land_parcels (anon key,
     no secrets — that table is public read)
+  - named places: get_places_in_bbox (+ get_place for detail) — clustered markers,
+    reloaded per-viewport on pan/zoom
   - scene-change history: 3 read-only RPCs (get_map_changes, get_parcel_history,
     get_map_daily_stats) + get_parcel_info, called with plain `fetch` + the anon
     key — the same pattern assets/dcl.js already uses for get_site_content().
@@ -108,6 +134,7 @@ repo deliberately doesn't have.
 | `scene_deployment_parcels` | Every parcel a deployment touches (many rows per deployment). |
 | `map_daily_stats` | Per-UTC-day rollup: deployment/scene/parcel counts, recomputed (not incremented) whenever that day is touched. |
 | `land_parcels` (`supabase/migrations/land_parcels.sql`) | Official ownership/type/estate data for all 92,598 parcels — full-refreshed daily. Read by `api/map/land-tile.js` (the base map) and `get_parcel_info`. |
+| `places` (`supabase/migrations/places.sql`) | Official curated named-scene directory (~24,400 rows: title/description/image/categories) — full-refreshed daily. Read by `get_places_in_bbox`/`get_place`. |
 
 Read RPCs (anon key, called from the browser):
 - `get_map_changes(p_from, p_to, p_limit, p_offset)` — deployments + parcel lists in a
@@ -116,6 +143,8 @@ Read RPCs (anon key, called from the browser):
 - `get_map_daily_stats(p_from, p_to)` — daily counts, for future "browse by day" UI.
 - `get_parcel_info(p_x, p_y)` — one parcel's official type/name/owner/estate, shown at
   the top of the parcel click panel alongside its deployment history.
+- `get_places_in_bbox(p_min_x, p_max_x, p_min_y, p_max_y, p_limit)` — named-place markers
+  in the current viewport. `get_place(p_id)` — full detail for one place.
 
 Write path: only the Edge Function, using the Supabase-injected
 `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS). There is deliberately no anon/authenticated
@@ -131,29 +160,31 @@ write policy on any of these tables.
 | Supabase secret | `MAP_SYNC_SECRET` | `supabase secrets set MAP_SYNC_SECRET=<same value>` |
 | Supabase (auto) | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Injected into every Edge Function automatically — nothing to set. |
 
-`sync-land-parcels` and `api/cron/sync-land.js` reuse these exact same 3 Vercel vars and
-the same Supabase secret — nothing new to configure for the base map on top of what the
+`sync-land-parcels`/`sync-places` and their `api/cron/*.js` relays reuse these exact same
+3 Vercel vars and the same Supabase secret — nothing new to configure on top of what the
 scene-change history already needed.
 
 ## One-time setup
 
-1. **SQL**: Supabase → SQL Editor → paste `supabase/schema.sql` (or just the two
+1. **SQL**: Supabase → SQL Editor → paste `supabase/schema.sql` (or just the
    `supabase/migrations/*.sql` files if the rest of the schema is already applied) → Run.
 2. **Deploy the Edge Functions**:
    ```bash
    supabase functions deploy sync-map-changes --no-verify-jwt
    supabase functions deploy sync-land-parcels --no-verify-jwt
+   supabase functions deploy sync-places --no-verify-jwt
    ```
-3. **Secret**: `supabase secrets set MAP_SYNC_SECRET=<a random string>` (shared by both functions)
+3. **Secret**: `supabase secrets set MAP_SYNC_SECRET=<a random string>` (shared by all three functions)
 4. **Vercel env vars**: add `CRON_SECRET`, `SUPABASE_URL`, `MAP_SYNC_SECRET` (Project →
    Settings → Environment Variables), then redeploy so the cron functions pick them up.
 5. **Confirm Vercel Cron is enabled** for this project's plan (Project → Settings →
-   Cron Jobs) — `vercel.json` already declares both daily jobs (land data at 05:00 UTC,
-   scene changes at 06:00 UTC).
+   Cron Jobs) — `vercel.json` already declares all three daily jobs (land data 05:00 UTC,
+   places 05:30 UTC, scene changes 06:00 UTC).
 6. **Backfill** (optional but recommended so the map isn't empty on day one):
    ```bash
-   # Official parcel data — always a full refresh, no from/to needed:
+   # Official parcel data and places — always a full refresh, no from/to needed:
    curl -H "x-sync-secret: $MAP_SYNC_SECRET" "https://<project>.supabase.co/functions/v1/sync-land-parcels"
+   curl -H "x-sync-secret: $MAP_SYNC_SECRET" "https://<project>.supabase.co/functions/v1/sync-places"
    # Scene-deployment history — explicit range, chunked internally, doesn't touch
    # the incremental checkpoint:
    curl -H "x-sync-secret: $MAP_SYNC_SECRET" \
@@ -200,3 +231,9 @@ layer, so genesis.city's uptime doesn't affect the map's default appearance at a
   impression rather than every single parcel. Zooming in — where the feature is actually
   useful for inspecting ownership/type — always renders completely and precisely, since
   each tile then covers only a handful of parcels.
+- `get_places_in_bbox` is capped at 800 rows per call, ordered by favorite count, so a
+  very zoomed-out view showing thousands of places surfaces the most-favorited ones
+  first rather than an arbitrary subset.
+- District/estate name labels on the base map (`api/map/land-tile.js`) can get clipped
+  at a tile's edge if the group's labeled corner parcel sits right on the boundary —
+  cosmetic only, doesn't affect the coloring/data itself.

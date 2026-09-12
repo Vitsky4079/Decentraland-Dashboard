@@ -356,3 +356,55 @@ as $$
   where p.x = p_x and p.y = p_y;
 $$;
 grant execute on function public.get_parcel_info(integer, integer) to anon, authenticated;
+
+-- =============================================================
+-- Decentraland Map — named places (the "scenes" shown as markers on the map).
+-- See supabase/migrations/places.sql for the standalone version.
+-- Source of truth: Decentraland's official Places API, not genesis.city.
+-- =============================================================
+
+create table if not exists public.places (
+  id            text primary key,
+  title         text,
+  description   text,
+  image         text,
+  base_x        integer not null,
+  base_y        integer not null,
+  categories    text[] not null default '{}',
+  likes         integer,
+  favorites     integer,
+  deployed_at   timestamptz,
+  updated_at    timestamptz not null default now()
+);
+create index if not exists places_base_xy_idx on public.places (base_x, base_y);
+
+alter table public.places enable row level security;
+drop policy if exists "public read" on public.places;
+create policy "public read" on public.places for select using (true);
+
+create or replace function public.get_places_in_bbox(
+  p_min_x integer, p_max_x integer, p_min_y integer, p_max_y integer, p_limit integer default 800
+)
+returns jsonb
+language sql
+stable
+as $$
+  select coalesce(jsonb_agg(row_to_json(p)), '[]'::jsonb)
+  from (
+    select id, title, image, base_x, base_y, categories
+    from public.places
+    where base_x >= p_min_x and base_x <= p_max_x and base_y >= p_min_y and base_y <= p_max_y
+    order by favorites desc nulls last
+    limit p_limit
+  ) p;
+$$;
+grant execute on function public.get_places_in_bbox(integer, integer, integer, integer, integer) to anon, authenticated;
+
+create or replace function public.get_place(p_id text)
+returns jsonb
+language sql
+stable
+as $$
+  select to_jsonb(p) from public.places p where p.id = p_id;
+$$;
+grant execute on function public.get_place(text) to anon, authenticated;

@@ -547,6 +547,7 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .map-legend-swatch[data-type=district]{background:#7C8CF8}
 .map-legend-swatch[data-type=plaza]{background:#3FCB6E}
 .map-legend-swatch[data-type=road]{background:#78718C}
+.map-legend-star{width:11px;height:11px;display:inline-block;background:#FFA31A;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
 
 /* Ownership/type line in the parcel detail panel (official LAND data) */
 .map-detail-ownership{display:flex;flex-wrap:wrap;gap:4px 10px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);margin:2px 0 16px}

@@ -103,9 +103,50 @@
   // by default so a genesis.city outage never breaks the map (see the 2026-09
   // TLS-misconfiguration incident noted in docs/DECENTRALAND_MAP.md).
   var tileLayer = new ol.layer.Tile({ source: source, visible: false });
+
+  // Named places (the actual "scenes" — Decentraland's official Places
+  // directory: title/description/image/categories), clustered so a busy
+  // district reads as one badge instead of an unreadable pile of pins.
+  var placesSource = new ol.source.Vector();
+  var placesCluster = new ol.source.Cluster({ source: placesSource, distance: 44 });
+  var starStyleCache = {};
+  function starStyle(count) {
+    var key = count > 1 ? 'n' + Math.min(count, 99) : '1';
+    if (starStyleCache[key]) return starStyleCache[key];
+    var style;
+    if (count > 1) {
+      style = new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 12,
+          fill: new ol.style.Fill({ color: 'rgba(255,140,40,0.92)' }),
+          stroke: new ol.style.Stroke({ color: 'rgba(255,255,255,0.9)', width: 1.5 }),
+        }),
+        text: new ol.style.Text({
+          text: String(count),
+          font: '700 11px sans-serif',
+          fill: new ol.style.Fill({ color: '#1a1017' }),
+        }),
+      });
+    } else {
+      style = new ol.style.Style({
+        image: new ol.style.RegularShape({
+          points: 5, radius: 8, radius2: 3.4, angle: 0,
+          fill: new ol.style.Fill({ color: 'rgba(255,163,26,0.95)' }),
+          stroke: new ol.style.Stroke({ color: 'rgba(90,50,0,0.9)', width: 1 }),
+        }),
+      });
+    }
+    starStyleCache[key] = style;
+    return style;
+  }
+  var placesLayer = new ol.layer.Vector({
+    source: placesCluster,
+    style: function (feature) { return starStyle(feature.get('features').length); },
+  });
+
   var map = new ol.Map({
     target: target,
-    layers: [landLayer, tileLayer, changesLayer, deployLayer],
+    layers: [landLayer, tileLayer, changesLayer, deployLayer, placesLayer],
     overlays: [overlay],
     view: new ol.View({
       projection: projection,
@@ -164,6 +205,19 @@
   }
 
   map.on('singleclick', function (evt) {
+    var placeHit = map.forEachFeatureAtPixel(evt.pixel, function (f) { return f; },
+      { hitTolerance: 6, layerFilter: function (l) { return l === placesLayer; } });
+    if (placeHit) {
+      var clustered = placeHit.get('features');
+      if (clustered.length > 1) {
+        var ext = ol.extent.createEmpty();
+        clustered.forEach(function (f) { ol.extent.extend(ext, f.getGeometry().getExtent()); });
+        map.getView().fit(ext, { duration: 400, padding: [60, 60, 60, 60], maxZoom: 8 });
+      } else {
+        showPlace(clustered[0].get('place'));
+      }
+      return;
+    }
     var hit = map.forEachFeatureAtPixel(evt.pixel, function (f) { return f; },
       { hitTolerance: 5, layerFilter: function (l) { return l === deployLayer; } });
     if (hit && hit.get('data')) { showDeploy(hit.get('data')); return; }
@@ -586,5 +640,50 @@
     if (historicalLayer) historicalLayer.setOpacity(+imagerySlider.value / 100);
   });
 
+  /* ---------- Named places — the actual "scenes" on the map ----------
+     Decentraland's official Places directory (title/description/image/
+     categories) — distinct from land_parcels (raw ownership). Loaded for the
+     current viewport only (re-fetched, debounced, on pan/zoom), same pattern
+     as the changed-parcel overlay above. */
+  function showPlace(place) {
+    if (!place) return;
+    var x = place.base_x, y = place.base_y;
+    var play = 'https://play.decentraland.org/?position=' + x + '%2C' + y;
+    var cats = (place.categories || []).join(' · ');
+    popEl.innerHTML =
+      '<button class="map-pop-x" aria-label="Close">×</button>' +
+      (place.image ? '<img class="mp-thumb" src="' + esc(place.image) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+      '<div class="mp-coord">' + esc(place.title || (x + ', ' + y)) + '</div>' +
+      (cats ? '<div class="mp-sub">' + esc(cats) + '</div>' : '') +
+      '<a href="' + play + '" target="_blank" rel="noopener">Jump in-world ↗</a>' +
+      '<button type="button" class="map-pop-link" data-x="' + x + '" data-y="' + y + '">View deployment history</button>';
+    overlay.setPosition(toPx(x, y)); wireClose(); wireHistoryLink(x, y);
+  }
+
+  var placesLoadTimer = null;
+  function loadPlacesForView() {
+    if (!sb.url || !sb.anonKey) return;
+    var ext = map.getView().calculateExtent(map.getSize());
+    var c1 = toCoord(ext[0], ext[1]), c2 = toCoord(ext[2], ext[3]);
+    var minX = Math.max(-152, Math.min(c1[0], c2[0])), maxX = Math.min(152, Math.max(c1[0], c2[0]));
+    var minY = Math.max(-152, Math.min(c1[1], c2[1])), maxY = Math.min(152, Math.max(c1[1], c2[1]));
+    callRpc('get_places_in_bbox', { p_min_x: minX, p_max_x: maxX, p_min_y: minY, p_max_y: maxY, p_limit: 800 })
+      .then(function (rows) {
+        if (!rows) return;
+        var feats = rows.filter(function (p) { return inRange(p.base_x, p.base_y); }).map(function (p) {
+          var f = new ol.Feature({ geometry: new ol.geom.Point(toPx(p.base_x, p.base_y)) });
+          f.set('place', p);
+          return f;
+        });
+        placesSource.clear();
+        placesSource.addFeatures(feats);
+      });
+  }
+  map.on('moveend', function () {
+    clearTimeout(placesLoadTimer);
+    placesLoadTimer = setTimeout(loadPlacesForView, 300);
+  });
+
   loadChangesForRange();
+  loadPlacesForView();
 })();
