@@ -28,7 +28,7 @@
   var resolutions = [];
   for (var i = 0; i <= zoom; i++) resolutions.push(Math.pow(2, zoom - i));
   var viewResolutions = [];
-  for (var j = 1; j <= 12; j++) viewResolutions.push(side / Math.pow(2, 1 + j));
+  for (var j = -1; j <= 12; j++) viewResolutions.push(side / Math.pow(2, 1 + j));
 
   var projection = new ol.proj.Projection({ code: 'dcl-images', units: 'pixels', extent: extent });
 
@@ -111,9 +111,16 @@
       projection: projection,
       center: ol.extent.getCenter(extent),
       resolutions: viewResolutions,
-      zoom: 3, minZoom: 1, maxZoom: 11, extent: extent,
+      zoom: 1, minZoom: 0, maxZoom: 13, extent: extent,
     }),
   });
+
+  // Open on the whole map, fully zoomed out — no drag needed to see it all.
+  // The view's resolutions are a fixed discrete ladder (not continuous zoom),
+  // so a hardcoded initial zoom wouldn't fit every screen size; fit() picks
+  // whichever of those steps is the closest without cropping the extent,
+  // adapting to the actual #map container size (mobile vs. desktop).
+  map.getView().fit(extent, { size: map.getSize() });
 
   // --- helpers ---
   function toPx(x, y) { return [(x + OFF) * SCALE + SCALE / 2, (y + OFF) * SCALE + SCALE / 2]; }
