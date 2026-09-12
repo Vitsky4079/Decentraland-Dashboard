@@ -6,48 +6,66 @@ deployments (changed-parcel overlay over 24h/7d/30d/custom windows, a "Latest ch
 sidebar, a per-parcel history panel), and an optional genesis.city photo/historical
 imagery comparison.
 
-**We do NOT render Decentraland scenes ourselves.** The base map is rendered from
-Decentraland's own **official parcel dataset** (ownership/type/estates — see "Base map"
-below), not a 3D screenshot. genesis.city (MIT,
-[genesis-city/genesis.city](https://github.com/genesis-city/genesis.city)) provides an
-**optional** "Photo view" layer of its own periodic 3D-scene renders, off by default. The
-[Decentraland Catalyst](https://decentraland.github.io/catalyst-api-specs/) content
-servers provide scene deployment/change information; we only read from all of these, we
-don't run any of them.
+**We do NOT render Decentraland scenes ourselves.** The default base map is real,
+current, official Decentraland tile imagery — see "Base map" below for exactly where
+that comes from (it is not genesis.city). The [Decentraland
+Catalyst](https://decentraland.github.io/catalyst-api-specs/) content servers provide
+scene deployment/change information; we only read from all of these, we don't run any
+of them.
 
-## Base map — official parcel data, not genesis.city
+## Base map — the actual desktop-client satellite tiles, not genesis.city
 
-genesis.city's photo tiles depend on a single community member's Netlify hosting, whose
-custom-domain TLS certificate broke (confirmed via `openssl s_client -connect
-genesis.city:443 -servername genesis.city`, returning Netlify's generic `*.netlify.app`
-cert) — outside anyone's control from this repo. Rather than depend on that for the
-*primary* map, the base layer is rendered from **Decentraland's own official Atlas/Tile
-API** (`https://assets-cdn.decentraland.org/tiles/v2/latest.json`, run by Decentraland
-Foundation on its own CDN — the same dataset behind their marketplace map): all 92,598
-LAND parcels' `type` (district/road/plaza/owned), `owner`, `name`, and `estateId`. This
-is arguably *more* accurate than a photo render, since it reflects live on-chain
-ownership rather than a snapshot that can be well over a year stale.
+The default "Current map" view is **the same live tile set the official Decentraland
+desktop client renders**, found by reading the client's own source
+(`decentraland/unity-explorer`, `SatelliteChunkController.cs`):
 
-- `supabase/functions/sync-land-parcels` — daily full-refresh sync of that ~13–38MB
-  dataset into `land_parcels` (see `supabase/migrations/land_parcels.sql`). No
-  checkpoint/incremental logic needed — it's a snapshot, and ownership can change for
-  any parcel any day, so every run just upserts current state.
-- `api/map/land-tile.js` — a Vercel function that renders one SVG tile per
-  `(z, x, y)` OpenLayers request (`/api/map/land-tile?z={z}&x={x}&y={y}`), querying only
-  the parcels in that tile's bounding box from `land_parcels` via PostgREST **with the
-  anon key** (the table is public-read, so this endpoint needs no secrets at all).
-  Same-estate/district parcels are drawn borderless on their shared edge (using the
-  `edge_top`/`edge_left` flags from the official data) so they read as one merged shape.
-  Cached at Vercel's edge for 6h (`s-maxage=21600`) since the data only changes daily.
-  Capped at 8,000 parcels/tile as a safety valve at extreme zoomed-out levels — see
-  "Known caps" below.
-- `api/_lib/mapGrid.js` — the tile-grid math (bounding box for a given tile, and a
-  parcel's position within it), a plain-Node port of the same constants
-  `assets/map.js` already uses for genesis.city's grid (61×61 tiles, 200px, zoom 6) —
-  same coordinate system, just computed server-side instead of in the browser.
-- genesis.city's photo tiles are still available as an **opt-in "Photo view" toggle**
-  (unchecked by default) layered on top, for when someone wants to see actual rendered
-  scene content and genesis.city happens to be up.
+```
+https://media.githubusercontent.com/media/genesis-city/parcels/new-client-images/maps/lod-0/{z}/{x},{y}.jpg
+```
+
+This is **not** `genesis.city` — different host (GitHub's own media CDN, valid
+certificate), different branch (`new-client-images`, not `master`), continuously updated
+by Decentraland/genesis.city, and it happens to line up almost exactly with the tile
+grid `assets/map.js` already uses for genesis.city (`lod-0` level *N* is a `2^N × 2^N`
+grid covering the same extent as our own `resolutions[N]` — levels 1–6 map directly onto
+our existing zoom levels, tile-index for tile-index, no coordinate conversion needed).
+Verified live: fetching all 64 level-3 tiles returns 200, and the level-3 tile at index
+(3,3)/(4,4) — the geometric center of the grid — visibly contains Genesis Plaza's
+checkered floor, confirming the alignment.
+
+genesis.city's *own* domain has a broken TLS certificate (confirmed via `openssl
+s_client -connect genesis.city:443 -servername genesis.city`, returning Netlify's
+generic `*.netlify.app` cert instead of one for `genesis.city`) — that's what "Live
+photo (genesis.city, legacy)" points at, kept only as a fallback-tested legacy option
+since it predates this discovery. The satellite tiles above don't have this problem at
+all, which is why they're the default.
+
+The map view switcher (`assets/map.js`, `setMapView`) shows exactly one of these,
+never blended:
+- **Current map** (default) — the satellite tiles above.
+- **Ownership colors (official data)** — our own rendering from Decentraland's official
+  Atlas/Tile API (`https://assets-cdn.decentraland.org/tiles/v2/latest.json`): `type`
+  (district/road/plaza/owned), `owner`, `name`, `estateId` for all 92,598 parcels, plus
+  our own `has_scene`/`scene_name` (see "Scene presence" below). Useful when you want
+  ownership/type information rather than photography.
+  - `supabase/functions/sync-land-parcels` — daily full-refresh sync into `land_parcels`
+    (see `supabase/migrations/land_parcels.sql`). No checkpoint needed — it's a
+    snapshot, and ownership can change for any parcel any day.
+  - `api/map/land-tile.js` — a Vercel function rendering one SVG tile per `(z,x,y)`
+    OpenLayers request, querying only that tile's bbox from `land_parcels` via
+    PostgREST with the **anon key** (public-read table, no secrets needed). Same-estate/
+    district parcels are drawn borderless on their shared edge (`edge_top`/`edge_left`)
+    so they read as one merged shape. Edge-cached 6h. Below 8px/parcel, texture/borders
+    are skipped entirely (flat fill only) — a zoomed-out tile was measured carrying
+    900+ individually textured+bordered parcels before this, which is what made the map
+    feel laggy.
+  - `api/_lib/mapGrid.js` — the tile-grid math, a plain-Node port of the same constants
+    `assets/map.js` uses (61×61 tiles, 200px, zoom 6).
+- **Live photo (genesis.city, legacy)** — auto-falls-back to "Current map" with a note
+  if it fails to load (it currently always will, until they fix their cert).
+- **Historical dates** — genesis.city's own small hardcoded snapshot list, unaffected
+  by the live-domain cert issue since it's served from the same `media.githubusercontent.com`
+  host as the satellite tiles, just a different branch/path (see below).
 
 ## Named places — the actual "scenes" on the map
 

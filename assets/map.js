@@ -87,9 +87,26 @@
   var popEl = document.getElementById('mapPopup');
   var overlay = new ol.Overlay({ element: popEl, positioning: 'bottom-center', stopEvent: true, offset: [0, -6] });
 
-  // Our own base layer: rendered server-side from Decentraland's official LAND
-  // parcel data (ownership/type/estates), not genesis.city — always available
-  // regardless of genesis.city's uptime. See docs/DECENTRALAND_MAP.md.
+  // Live satellite imagery — the SAME tile set the official Decentraland
+  // desktop client renders (found in decentraland/unity-explorer's
+  // SatelliteChunkController.cs: media.githubusercontent.com/.../new-client-images
+  // /maps/lod-0/{z}/{x},{y}.jpg, an 8x8-at-z3 tile pyramid, 40 parcels/tile).
+  // This is NOT genesis.city — different host, different branch, and its
+  // certificate is valid, so this is always available regardless of
+  // genesis.city's uptime (see docs/DECENTRALAND_MAP.md). This is the default
+  // "Current map" view.
+  var satelliteSource = new ol.source.TileImage({
+    url: 'https://media.githubusercontent.com/media/genesis-city/parcels/new-client-images/maps/lod-0/{z}/{x},{y}.jpg',
+    wrapX: false,
+    tileGrid: new ol.tilegrid.TileGrid({
+      extent: extent, origin: origin, tileSize: [side, side],
+      resolutions: resolutions, minZoom: 1, maxZoom: 10,
+    }),
+  });
+  var satelliteLayer = new ol.layer.Tile({ source: satelliteSource });
+
+  // Our own official-data rendering (ownership/type/estates + scene
+  // presence) — an alternate "Ownership colors" view, not the default.
   var landSource = new ol.source.TileImage({
     url: '/api/map/land-tile?z={z}&x={x}&y={y}',
     wrapX: false,
@@ -98,11 +115,11 @@
       resolutions: resolutions, minZoom: 1, maxZoom: 10,
     }),
   });
-  var landLayer = new ol.layer.Tile({ source: landSource });
+  var landLayer = new ol.layer.Tile({ source: landSource, visible: false });
 
-  // genesis.city's photographic renders — optional "Photo view" overlay, off
-  // by default so a genesis.city outage never breaks the map (see the 2026-09
-  // TLS-misconfiguration incident noted in docs/DECENTRALAND_MAP.md).
+  // genesis.city's own "latest" render — kept as a legacy option, though its
+  // certificate is currently broken (see docs/DECENTRALAND_MAP.md); the
+  // satellite layer above is the reliable equivalent.
   var tileLayer = new ol.layer.Tile({ source: source, visible: false });
 
   // Named places (the actual "scenes" — Decentraland's official Places
@@ -147,7 +164,7 @@
 
   var map = new ol.Map({
     target: target,
-    layers: [landLayer, tileLayer, changesLayer, deployLayer, placesLayer],
+    layers: [satelliteLayer, landLayer, tileLayer, changesLayer, deployLayer, placesLayer],
     overlays: [overlay],
     view: new ol.View({
       projection: projection,
@@ -579,13 +596,15 @@
   }
 
   /* ---------- Map view switcher — exactly one exclusive view, never blended ----------
-     "Current map" = our own official-data base layer (landLayer, default).
-     "Live photo" = genesis.city's continuously-updated render (tileLayer) —
-     currently broken on their end (TLS misconfiguration), so this
-     auto-detects a failed load and falls back to "Current" with a note
-     rather than showing a blank map. Historical dates are genesis.city's own
-     small hardcoded snapshot list (no API for arbitrary dates), served from
-     the parcels repo's Git LFS host — see docs/DECENTRALAND_MAP.md. */
+     "current"  = live satellite imagery (satelliteLayer, default) — the same
+                  tiles the official desktop client renders.
+     "ownership" = our own official-data rendering (landLayer): type/owner/
+                  scene-presence colors instead of photography.
+     "live"     = genesis.city's own "latest" render (tileLayer) — kept as a
+                  legacy option, though its certificate is currently broken;
+                  auto-falls-back to "current" with a note if it fails to load.
+     Historical dates are genesis.city's own small hardcoded snapshot list (no
+     API for arbitrary dates) — see docs/DECENTRALAND_MAP.md. */
   var HIST_BASE = 'https://media.githubusercontent.com/media/genesis-city/parcels/master';
   var viewSelect = document.getElementById('mapViewSelect');
   var imageryNote = document.getElementById('mapImageryNote');
@@ -598,9 +617,7 @@
     if (historicalLayer) { map.removeLayer(historicalLayer); historicalLayer = null; }
   }
   function revertToCurrent(message) {
-    clearHistoricalLayer();
-    landLayer.setVisible(true);
-    tileLayer.setVisible(false);
+    setMapView('current');
     if (viewSelect) viewSelect.value = 'current';
     if (imageryNote) imageryNote.textContent = message || '';
   }
@@ -608,7 +625,8 @@
   function setMapView(value) {
     clearHistoricalLayer();
     if (imageryNote) imageryNote.textContent = '';
-    landLayer.setVisible(value === 'current');
+    satelliteLayer.setVisible(value === 'current');
+    landLayer.setVisible(value === 'ownership');
     tileLayer.setVisible(value === 'live');
 
     if (value === 'live') {
@@ -620,7 +638,7 @@
       }, 2500);
       return;
     }
-    if (value === 'current') return;
+    if (value === 'current' || value === 'ownership') return;
 
     // Anything else is one of the fixed historical snapshot dates.
     var histSource = new ol.source.TileImage({
