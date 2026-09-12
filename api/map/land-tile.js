@@ -26,7 +26,19 @@ const FILLS = {
   plaza: '#4CA754',
   road: '#C9A876',
 };
+// Same palette, flat (no pattern) — used below DETAIL_MIN_SIZE where a dot
+// texture and per-parcel borders would be sub-pixel noise, not detail anyone
+// can see, but still cost real SVG-parse/rasterize time in the browser. This
+// is what actually made the map feel laggy: a single zoomed-out tile could
+// carry 900+ individually textured+bordered parcels.
+const FLAT_FILLS = {
+  owned: '#C1443A',
+  district: '#B23A48',
+  plaza: '#4CA754',
+  road: '#C9A876',
+};
 const BORDER = 'rgba(0,0,0,0.18)'; // subtle grout line between parcels
+const DETAIL_MIN_SIZE = 8; // px/parcel below which texture+borders are skipped
 const LABEL_MIN_SIZE = 26; // px per parcel below which text wouldn't be legible
 
 const DEFS = `<defs>
@@ -72,21 +84,25 @@ module.exports = async (req, res) => {
 
   let rects = '';
   let labels = '';
+  let usedPattern = false;
   if (minX <= maxX && minY <= maxY) {
     try {
       const parcels = await fetchParcels(minX, maxX, minY, maxY);
       for (const p of parcels) {
         const { localX, localYTop, size } = parcelLocalRect(p.x, p.y, bounds);
         if (localX + size < 0 || localX > SIDE || localYTop + size < 0 || localYTop > SIDE) continue;
-        const fill = FILLS[p.type] || FILLS.owned;
-        // A border on the top/left edge only where it's NOT the same group as
-        // that neighbor (edge_top/edge_left false) — merges same-estate/
-        // district parcels into one clean outlined shape instead of a grid.
-        const strokeTop = p.edge_top ? 'none' : BORDER;
-        const strokeLeft = p.edge_left ? 'none' : BORDER;
+        const detailed = size >= DETAIL_MIN_SIZE;
+        const fill = detailed ? (FILLS[p.type] || FILLS.owned) : (FLAT_FILLS[p.type] || FLAT_FILLS.owned);
+        if (detailed && (p.type === 'owned' || p.type === 'district')) usedPattern = true;
         rects += `<rect x="${localX.toFixed(2)}" y="${localYTop.toFixed(2)}" width="${size.toFixed(2)}" height="${size.toFixed(2)}" fill="${fill}"/>`;
-        if (strokeTop !== 'none') rects += `<line x1="${localX.toFixed(2)}" y1="${localYTop.toFixed(2)}" x2="${(localX + size).toFixed(2)}" y2="${localYTop.toFixed(2)}" stroke="${strokeTop}" stroke-width="1"/>`;
-        if (strokeLeft !== 'none') rects += `<line x1="${localX.toFixed(2)}" y1="${localYTop.toFixed(2)}" x2="${localX.toFixed(2)}" y2="${(localYTop + size).toFixed(2)}" stroke="${strokeLeft}" stroke-width="1"/>`;
+
+        if (detailed) {
+          // A border on the top/left edge only where it's NOT the same group
+          // as that neighbor (edge_top/edge_left false) — merges same-estate/
+          // district parcels into one clean outlined shape instead of a grid.
+          if (!p.edge_top) rects += `<line x1="${localX.toFixed(2)}" y1="${localYTop.toFixed(2)}" x2="${(localX + size).toFixed(2)}" y2="${localYTop.toFixed(2)}" stroke="${BORDER}" stroke-width="1"/>`;
+          if (!p.edge_left) rects += `<line x1="${localX.toFixed(2)}" y1="${localYTop.toFixed(2)}" x2="${localX.toFixed(2)}" y2="${(localYTop + size).toFixed(2)}" stroke="${BORDER}" stroke-width="1"/>`;
+        }
 
         // Label the top-left corner parcel of each named group (district,
         // estate, or a single named parcel) once it's large enough to read —
@@ -105,7 +121,7 @@ module.exports = async (req, res) => {
     }
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIDE}" height="${SIDE}" viewBox="0 0 ${SIDE} ${SIDE}">${DEFS}${rects}${labels}</svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIDE}" height="${SIDE}" viewBox="0 0 ${SIDE} ${SIDE}">${usedPattern ? DEFS : ''}${rects}${labels}</svg>`;
   res.setHeader('Content-Type', 'image/svg+xml');
   res.setHeader('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
   res.status(200).send(svg);
