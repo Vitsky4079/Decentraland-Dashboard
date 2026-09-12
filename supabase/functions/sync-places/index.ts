@@ -13,7 +13,7 @@
 //
 // Deploy:  supabase functions deploy sync-places --no-verify-jwt
 
-import { parsePlace, computeOffsets, chunk, type RawPlace, type PlaceRow } from './logic.ts';
+import { parsePlace, dedupeById, computeOffsets, chunk, type RawPlace, type PlaceRow } from './logic.ts';
 
 const PLACES_URL = 'https://places.decentraland.org/api/places';
 const PAGE_SIZE = 100; // API's own hard cap, confirmed by testing live
@@ -89,14 +89,18 @@ Deno.serve(async (req: Request) => {
   const log: string[] = [];
   try {
     const raw = await fetchAllPlaces(log);
-    const rows: PlaceRow[] = [];
+    const parsed: PlaceRow[] = [];
     let skipped = 0;
     for (const r of raw) {
       const row = parsePlace(r);
-      if (row) rows.push(row);
+      if (row) parsed.push(row);
       else skipped++;
     }
-    log.push(`parsed ${rows.length} genesis-city places (${skipped} skipped: disabled/world/malformed)`);
+    // Paginating by offset over a live, reorderable dataset can hand back the
+    // same place on two different pages (confirmed live) — dedupe before
+    // batching, since a duplicate id within one upsert batch errors.
+    const rows = dedupeById(parsed);
+    log.push(`parsed ${parsed.length} genesis-city places (${skipped} skipped: disabled/world/malformed), ${rows.length} unique`);
 
     await upsertAll(rows, log);
 

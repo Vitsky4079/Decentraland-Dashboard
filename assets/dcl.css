@@ -556,15 +556,12 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .map-detail-scene.has-scene{color:var(--peach)}
 
 /* Floating "compare historical imagery" control, top-right of the map */
-.map-imagery{position:absolute;top:14px;right:14px;z-index:5;font-family:var(--mono);font-size:12.5px}
-.map-imagery-btn{background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
-.map-imagery-btn:hover{color:var(--peach)}
-.map-imagery-panel{margin-top:8px;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;padding:12px;width:230px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-.map-imagery-panel select{width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:var(--mono);font-size:12px}
-.map-imagery-slider-row{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--text-faint);font-size:11px}
-.map-imagery-slider-row[hidden],#mapMoreWrap[hidden]{display:none}
-.map-imagery-slider-row input[type=range]{flex:1;accent-color:var(--peach)}
-.map-imagery-note{margin-top:8px;color:var(--text-faint);font-size:11.5px;line-height:1.4}
+.map-imagery{position:absolute;top:14px;right:14px;z-index:5;font-family:var(--mono);font-size:12.5px;text-align:right}
+.map-imagery select{background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:12.5px;cursor:pointer}
+.map-imagery select:hover{border-color:var(--line-strong)}
+#mapMoreWrap[hidden]{display:none}
+.map-imagery-note{margin-top:6px;color:var(--warn);font-size:11.5px;line-height:1.4;background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;padding:6px 10px;max-width:230px}
+.map-imagery-note:empty{display:none}
 
 /* Parcel/deployment detail: right-hand panel on desktop, bottom sheet on mobile */
 .map-detail-panel{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;background:var(--surface);border-left:1px solid var(--line-strong);box-shadow:-10px 0 40px rgba(0,0,0,.5);z-index:50;overflow-y:auto}

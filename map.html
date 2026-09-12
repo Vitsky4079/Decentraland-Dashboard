@@ -50,7 +50,6 @@
         <input class="search" id="mapCoord" type="text" inputmode="text" placeholder="Jump to coordinates (e.g. -52,10)" aria-label="Jump to coordinates">
         <button class="report-btn" id="mapGo">Jump</button>
         <label class="map-toggle"><input type="checkbox" id="deployToggle" checked> Deployed today <span class="map-count" id="deployCount"></span></label>
-        <label class="map-toggle"><input type="checkbox" id="photoToggle"> Photo view (genesis.city)</label>
         <span class="map-hint">Click a red marker to see the scene, or any parcel to open it in-world.</span>
       </div>
 
@@ -88,18 +87,16 @@
         </div>
 
         <div class="map-imagery" id="mapImagery">
-          <button type="button" class="map-imagery-btn" id="mapImageryBtn">Compare historical imagery</button>
-          <div class="map-imagery-panel" id="mapImageryPanel" hidden>
-            <select id="mapImageryDate" aria-label="Historical snapshot">
-              <option value="">Latest only</option>
-            </select>
-            <div class="map-imagery-slider-row" id="mapImagerySliderRow" hidden>
-              <span>Latest</span>
-              <input type="range" id="mapImagerySlider" min="0" max="100" value="50" aria-label="Historical imagery blend">
-              <span>Historical</span>
-            </div>
-            <div class="map-imagery-note" id="mapImageryNote"></div>
-          </div>
+          <select id="mapViewSelect" aria-label="Map view">
+            <option value="current" selected>Current map (official data)</option>
+            <option value="live">Live photo (genesis.city)</option>
+            <option value="2023-06-11">Photo · 11 Jun 2023</option>
+            <option value="2023-07-02">Photo · 02 Jul 2023</option>
+            <option value="2023-08-07">Photo · 07 Aug 2023</option>
+            <option value="2023-09-03">Photo · 03 Sep 2023</option>
+            <option value="2024-08-20">Photo · 20 Aug 2024</option>
+          </select>
+          <div class="map-imagery-note" id="mapImageryNote"></div>
         </div>
       </div>
 

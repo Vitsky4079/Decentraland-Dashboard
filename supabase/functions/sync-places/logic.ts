@@ -50,6 +50,18 @@ export function parsePlace(raw: RawPlace): PlaceRow | null {
   };
 }
 
+/** De-duplicates by id, keeping the last occurrence. Needed because paginating
+ * by offset over a live, reorderable dataset (the Places API sorts by
+ * ranking/favorites, which can shift between page requests) can hand back the
+ * same place on two different pages — and Postgres's ON CONFLICT DO UPDATE
+ * errors ("cannot affect row a second time") if one upsert batch contains the
+ * same id twice, confirmed live. */
+export function dedupeById(rows: PlaceRow[]): PlaceRow[] {
+  const byId = new Map<string, PlaceRow>();
+  for (const r of rows) byId.set(r.id, r);
+  return [...byId.values()];
+}
+
 /** Every page offset needed to cover `total` records at `pageSize` each. */
 export function computeOffsets(total: number, pageSize: number): number[] {
   const offsets: number[] = [];

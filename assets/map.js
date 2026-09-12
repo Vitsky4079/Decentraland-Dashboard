@@ -14,6 +14,7 @@
     target.innerHTML = '<div class="map-fallback">Couldn\u2019t load the map library. Check your connection and reload.</div>';
     return;
   }
+  target.innerHTML = ''; // clear the static "Loading map\u2026" placeholder \u2014 ol.Map renders its own viewport into this element next
 
   var cfg = (typeof DCL_CONFIG !== 'undefined' && DCL_CONFIG.assetBundles) || {};
   var CONTENT = cfg.contentServer || 'https://peer.decentraland.org/content';
@@ -152,7 +153,7 @@
       projection: projection,
       center: ol.extent.getCenter(extent),
       resolutions: viewResolutions,
-      zoom: 3, minZoom: 1, maxZoom: 8, extent: extent,
+      zoom: 3, minZoom: 0, maxZoom: 8, extent: extent,
     }),
   });
 
@@ -486,13 +487,6 @@
     changesSource.changed();
   });
 
-  // "Photo view" — opt-in genesis.city photographic tiles layered over our
-  // own always-on official-data map. Off by default (see notes above).
-  var photoToggle = document.getElementById('photoToggle');
-  if (photoToggle) photoToggle.addEventListener('change', function () {
-    tileLayer.setVisible(photoToggle.checked);
-  });
-
   // Hover highlight for the changed-parcel overlay (separate listener from the
   // existing cursor-style one above, so neither has to know about the other).
   map.on('pointermove', function (e) {
@@ -584,68 +578,68 @@
     });
   }
 
-  /* ---------- Before/after historical imagery ----------
-     genesis.city's own Time Machine uses a small hardcoded list of snapshot
-     dates (there is no API for arbitrary dates) served from the parcels repo's
-     Git LFS host. Mirrored here rather than guessed — see docs/DECENTRALAND_MAP.md. */
+  /* ---------- Map view switcher — exactly one exclusive view, never blended ----------
+     "Current map" = our own official-data base layer (landLayer, default).
+     "Live photo" = genesis.city's continuously-updated render (tileLayer) —
+     currently broken on their end (TLS misconfiguration), so this
+     auto-detects a failed load and falls back to "Current" with a note
+     rather than showing a blank map. Historical dates are genesis.city's own
+     small hardcoded snapshot list (no API for arbitrary dates), served from
+     the parcels repo's Git LFS host — see docs/DECENTRALAND_MAP.md. */
   var HIST_BASE = 'https://media.githubusercontent.com/media/genesis-city/parcels/master';
-  var HISTORICAL_SNAPSHOTS = [
-    { path: '2023-06-11', label: '11 Jun 2023' },
-    { path: '2023-07-02', label: '02 Jul 2023' },
-    { path: '2023-08-07', label: '07 Aug 2023' },
-    { path: '2023-09-03', label: '03 Sep 2023' },
-    { path: '2024-08-20', label: '20 Aug 2024' },
-  ];
-
-  var imageryBtn = document.getElementById('mapImageryBtn');
-  var imageryPanel = document.getElementById('mapImageryPanel');
-  var imageryDateSel = document.getElementById('mapImageryDate');
-  var imagerySliderRow = document.getElementById('mapImagerySliderRow');
-  var imagerySlider = document.getElementById('mapImagerySlider');
+  var viewSelect = document.getElementById('mapViewSelect');
   var imageryNote = document.getElementById('mapImageryNote');
   var historicalLayer = null;
+  var liveLoaded = 0, liveErrored = 0;
+  source.on('tileloadend', function () { liveLoaded++; });
+  source.on('tileloaderror', function () { liveErrored++; });
 
-  if (imageryDateSel) {
-    HISTORICAL_SNAPSHOTS.forEach(function (s) {
-      var opt = document.createElement('option');
-      opt.value = s.path; opt.textContent = s.label;
-      imageryDateSel.appendChild(opt);
-    });
-  }
-  if (imageryBtn) imageryBtn.onclick = function () { if (imageryPanel) imageryPanel.hidden = !imageryPanel.hidden; };
-
-  function removeHistoricalLayer() {
+  function clearHistoricalLayer() {
     if (historicalLayer) { map.removeLayer(historicalLayer); historicalLayer = null; }
-    if (imagerySliderRow) imagerySliderRow.hidden = true;
+  }
+  function revertToCurrent(message) {
+    clearHistoricalLayer();
+    landLayer.setVisible(true);
+    tileLayer.setVisible(false);
+    if (viewSelect) viewSelect.value = 'current';
+    if (imageryNote) imageryNote.textContent = message || '';
   }
 
-  if (imageryDateSel) imageryDateSel.addEventListener('change', function () {
-    removeHistoricalLayer();
+  function setMapView(value) {
+    clearHistoricalLayer();
     if (imageryNote) imageryNote.textContent = '';
-    var path = imageryDateSel.value;
-    if (!path) return;
+    landLayer.setVisible(value === 'current');
+    tileLayer.setVisible(value === 'live');
+
+    if (value === 'live') {
+      liveLoaded = 0; liveErrored = 0;
+      setTimeout(function () {
+        if (viewSelect && viewSelect.value === 'live' && liveLoaded === 0 && liveErrored > 0) {
+          revertToCurrent('genesis.city’s live imagery is currently unavailable (a TLS issue on their end) — showing the current map instead.');
+        }
+      }, 2500);
+      return;
+    }
+    if (value === 'current') return;
+
+    // Anything else is one of the fixed historical snapshot dates.
     var histSource = new ol.source.TileImage({
-      url: HIST_BASE + '/maps/' + path + '/{z}/{x},{y}.jpg',
+      url: HIST_BASE + '/maps/' + value + '/{z}/{x},{y}.jpg',
       wrapX: false,
       tileGrid: new ol.tilegrid.TileGrid({ extent: extent, origin: origin, tileSize: [side, side], resolutions: resolutions, minZoom: 1, maxZoom: 10 }),
     });
     var loaded = 0, errored = 0;
     histSource.on('tileloadend', function () { loaded++; });
     histSource.on('tileloaderror', function () { errored++; });
-    historicalLayer = new ol.layer.Tile({ source: histSource, opacity: (imagerySlider ? +imagerySlider.value : 50) / 100 });
-    map.getLayers().insertAt(1, historicalLayer); // just above the base "latest" tile layer
-    if (imagerySliderRow) imagerySliderRow.hidden = false;
+    historicalLayer = new ol.layer.Tile({ source: histSource });
+    map.getLayers().insertAt(1, historicalLayer); // just above the base layers
     setTimeout(function () {
-      if (loaded === 0 && errored > 0) {
-        if (imageryNote) imageryNote.textContent = 'Historical rendered imagery unavailable for this date.';
-        removeHistoricalLayer();
-        imageryDateSel.value = '';
+      if (viewSelect && viewSelect.value === value && loaded === 0 && errored > 0) {
+        revertToCurrent('Historical rendered imagery unavailable for this date — showing the current map instead.');
       }
-    }, 1500);
-  });
-  if (imagerySlider) imagerySlider.addEventListener('input', function () {
-    if (historicalLayer) historicalLayer.setOpacity(+imagerySlider.value / 100);
-  });
+    }, 2500);
+  }
+  if (viewSelect) viewSelect.addEventListener('change', function () { setMapView(viewSelect.value); });
 
   /* ---------- Named places — the actual "scenes" on the map ----------
      Decentraland's official Places directory (title/description/image/
