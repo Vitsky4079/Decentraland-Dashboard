@@ -32,17 +32,6 @@
 
   var projection = new ol.proj.Projection({ code: 'dcl-images', units: 'pixels', extent: extent });
 
-  var source = new ol.source.TileImage({
-    url: 'https://genesis.city/map/latest/{z}/{x},{y}.jpg',
-    wrapX: false,
-    attributions:
-      'Tiles \u00A9 <a href="https://genesis.city" target="_blank" rel="noopener">genesis.city</a> \u00B7 Land \u00A9 Decentraland',
-    tileGrid: new ol.tilegrid.TileGrid({
-      extent: extent, origin: origin, tileSize: [side, side],
-      resolutions: resolutions, minZoom: 1, maxZoom: 10,
-    }),
-  });
-
   // Live "deployed today" markers
   var deploySource = new ol.source.Vector();
   var deployLayer = new ol.layer.Vector({
@@ -105,23 +94,6 @@
   });
   var satelliteLayer = new ol.layer.Tile({ source: satelliteSource });
 
-  // Our own official-data rendering (ownership/type/estates + scene
-  // presence) — an alternate "Ownership colors" view, not the default.
-  var landSource = new ol.source.TileImage({
-    url: '/api/map/land-tile?z={z}&x={x}&y={y}',
-    wrapX: false,
-    tileGrid: new ol.tilegrid.TileGrid({
-      extent: extent, origin: origin, tileSize: [side, side],
-      resolutions: resolutions, minZoom: 1, maxZoom: 10,
-    }),
-  });
-  var landLayer = new ol.layer.Tile({ source: landSource, visible: false });
-
-  // genesis.city's own "latest" render — kept as a legacy option, though its
-  // certificate is currently broken (see docs/DECENTRALAND_MAP.md); the
-  // satellite layer above is the reliable equivalent.
-  var tileLayer = new ol.layer.Tile({ source: source, visible: false });
-
   // Scroll-to-zoom requires Ctrl/Cmd — this page has content above and below
   // the map, so a plain scroll-wheel-zooms-the-map default fights a visitor
   // just trying to scroll past it. Everything else (drag pan, +/- buttons,
@@ -132,7 +104,7 @@
 
   var map = new ol.Map({
     target: target,
-    layers: [satelliteLayer, landLayer, tileLayer, changesLayer, deployLayer],
+    layers: [satelliteLayer, changesLayer, deployLayer],
     overlays: [overlay],
     interactions: mapInteractions,
     view: new ol.View({
@@ -452,7 +424,7 @@
 
   if (changesToggle) changesToggle.addEventListener('change', function () {
     var on = changesToggle.checked;
-    tileLayer.setOpacity(on ? 0.35 : 1);       // de-emphasize the base map; the overlay itself
+    satelliteLayer.setOpacity(on ? 0.35 : 1);  // de-emphasize the base map; the overlay itself
     if (heatmapWrap) heatmapWrap.hidden = !on; // is always shown for the selected range regardless
   });
   if (heatmapToggle) heatmapToggle.addEventListener('change', function () {
@@ -552,22 +524,14 @@
   }
 
   /* ---------- Map view switcher — exactly one exclusive view, never blended ----------
-     "current"  = live satellite imagery (satelliteLayer, default) — the same
-                  tiles the official desktop client renders.
-     "ownership" = our own official-data rendering (landLayer): type/owner/
-                  scene-presence colors instead of photography.
-     "live"     = genesis.city's own "latest" render (tileLayer) — kept as a
-                  legacy option, though its certificate is currently broken;
-                  auto-falls-back to "current" with a note if it fails to load.
+     "current" = live satellite imagery (satelliteLayer, default) — the same
+                 tiles the official desktop client renders.
      Historical dates are genesis.city's own small hardcoded snapshot list (no
      API for arbitrary dates) — see docs/DECENTRALAND_MAP.md. */
   var HIST_BASE = 'https://media.githubusercontent.com/media/genesis-city/parcels/master';
   var viewSelect = document.getElementById('mapViewSelect');
   var imageryNote = document.getElementById('mapImageryNote');
   var historicalLayer = null;
-  var liveLoaded = 0, liveErrored = 0;
-  source.on('tileloadend', function () { liveLoaded++; });
-  source.on('tileloaderror', function () { liveErrored++; });
 
   function clearHistoricalLayer() {
     if (historicalLayer) { map.removeLayer(historicalLayer); historicalLayer = null; }
@@ -582,19 +546,8 @@
     clearHistoricalLayer();
     if (imageryNote) imageryNote.textContent = '';
     satelliteLayer.setVisible(value === 'current');
-    landLayer.setVisible(value === 'ownership');
-    tileLayer.setVisible(value === 'live');
 
-    if (value === 'live') {
-      liveLoaded = 0; liveErrored = 0;
-      setTimeout(function () {
-        if (viewSelect && viewSelect.value === 'live' && liveLoaded === 0 && liveErrored > 0) {
-          revertToCurrent('genesis.city’s live imagery is currently unavailable (a TLS issue on their end) — showing the current map instead.');
-        }
-      }, 2500);
-      return;
-    }
-    if (value === 'current' || value === 'ownership') return;
+    if (value === 'current') return;
 
     // Anything else is one of the fixed historical snapshot dates.
     var histSource = new ol.source.TileImage({
