@@ -27,6 +27,15 @@
 
   var resolutions = [];
   for (var i = 0; i <= zoom; i++) resolutions.push(Math.pow(2, zoom - i));
+  // Our own test capture pipeline (see TEST_BASE below) ships real tiles past genesis-city's z=6
+  // ceiling, close to native per-parcel resolution -- a separate, deeper resolutions ladder just for
+  // that layer so a viewer zooming in actually gets real deeper tiles instead of OpenLayers
+  // stretching the z=6 tile past its native resolution (which blurs it and opens seam gaps between
+  // adjacent stretched tiles, an "overzoom" artifact). Left off the shared `resolutions` array above
+  // so the genesis-city-backed layers (current + historical), which have no data past z=6, are unaffected.
+  var testZoomMax = 8;
+  var testResolutions = [];
+  for (var t = 0; t <= testZoomMax; t++) testResolutions.push(Math.pow(2, zoom - t));
   var viewResolutions = [];
   for (var j = -3; j <= 12; j++) viewResolutions.push(side / Math.pow(2, 1 + j));
 
@@ -603,7 +612,9 @@
     var histSource = new ol.source.TileImage({
       url: base + '/{z}/{x},{y}.jpg',
       wrapX: false,
-      tileGrid: new ol.tilegrid.TileGrid({ extent: extent, origin: origin, tileSize: [side, side], resolutions: resolutions, minZoom: 1, maxZoom: 10 }),
+      tileGrid: isTest
+        ? new ol.tilegrid.TileGrid({ extent: extent, origin: origin, tileSize: [side, side], resolutions: testResolutions, minZoom: 1, maxZoom: testZoomMax })
+        : new ol.tilegrid.TileGrid({ extent: extent, origin: origin, tileSize: [side, side], resolutions: resolutions, minZoom: 1, maxZoom: 10 }),
     });
     var loaded = 0, errored = 0;
     histSource.on('tileloadend', function () { loaded++; });
