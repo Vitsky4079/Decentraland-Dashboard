@@ -574,6 +574,9 @@
      Historical dates are genesis.city's own small hardcoded snapshot list (no
      API for arbitrary dates) — see docs/DECENTRALAND_MAP.md. */
   var HIST_BASE = 'https://media.githubusercontent.com/media/genesis-city/parcels/master';
+  // Quality test of our own capture pipeline (unity-explorer client, not genesis.city) — currently
+  // covers only the Decentraland Game Arena district (x: -10..10, y: 72..92), not the full map.
+  var TEST_BASE = 'https://raw.githubusercontent.com/Vitsky4079/decentraland-map/main';
   var viewSelect = document.getElementById('mapViewSelect');
   var imageryNote = document.getElementById('mapImageryNote');
   var historicalLayer = null;
@@ -594,9 +597,11 @@
 
     if (value === 'current') return;
 
-    // Anything else is one of the fixed historical snapshot dates.
+    var isTest = value === 'test-day' || value === 'test-night';
+    var base = isTest ? TEST_BASE + '/maps/' + (value === 'test-day' ? 'day' : 'night') : HIST_BASE + '/maps/' + value;
+
     var histSource = new ol.source.TileImage({
-      url: HIST_BASE + '/maps/' + value + '/{z}/{x},{y}.jpg',
+      url: base + '/{z}/{x},{y}.jpg',
       wrapX: false,
       tileGrid: new ol.tilegrid.TileGrid({ extent: extent, origin: origin, tileSize: [side, side], resolutions: resolutions, minZoom: 1, maxZoom: 10 }),
     });
@@ -605,6 +610,13 @@
     histSource.on('tileloaderror', function () { errored++; });
     historicalLayer = new ol.layer.Tile({ source: histSource });
     map.getLayers().insertAt(1, historicalLayer); // just above the base layers
+
+    if (isTest && imageryNote) {
+      imageryNote.textContent = 'Quality test only — covers just the Game Arena district. Everywhere else on the map will look empty in this view.';
+      return;
+    }
+
+    // Anything else is one of the fixed historical snapshot dates.
     setTimeout(function () {
       if (viewSelect && viewSelect.value === value && loaded === 0 && errored > 0) {
         revertToCurrent('Historical rendered imagery unavailable for this date — showing the current map instead.');
