@@ -158,7 +158,7 @@ export function Dashboard({
                       <p className="text-xs" style={{ color: "var(--red)", marginTop: 4 }}>{f.error}</p>
                     ) : (
                       <div style={{ height: 4, width: "100%", borderRadius: 999, background: "var(--surface-2)", marginTop: 8 }}>
-                        <div style={{ height: 4, borderRadius: 999, width: `${f.pct}%`, background: "var(--grad)" }} />
+                        <div className="upload-bar-fill" style={{ width: `${f.pct}%` }} />
                       </div>
                     )}
                   </li>

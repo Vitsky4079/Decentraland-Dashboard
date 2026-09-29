@@ -116,6 +116,17 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
 .kind-dot.audio{background:var(--peach)}
 .kind-dot.video{background:var(--red)}
 
+/* ---------- Upload progress bar ----------
+   Staged progress values (see dashboard/upload.ts) already avoid a dead jump from
+   0 to 100, but each stage-change still lands as a discrete number -- the width
+   transition tweens between them, and the moving highlight keeps the bar looking
+   alive during the two network round-trips where the percentage doesn't move at
+   all for a moment (respects prefers-reduced-motion via the global rule in dcl.css's
+   pattern, redeclared here since this app doesn't share that stylesheet). */
+.upload-bar-fill{height:100%;border-radius:999px;background:var(--grad);background-size:200% 100%;transition:width .3s ease-out;animation:uploadFlow 1.2s linear infinite}
+@keyframes uploadFlow{0%{background-position:0% 0}100%{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.upload-bar-fill{animation:none;transition:none}}
+
 /* ---------- Site-wide 1.5x scale ----------
    See assets/dcl.css for the full rationale. .nav is excluded (hand-scaled
    above instead) because position:sticky inside a zoomed ancestor renders
