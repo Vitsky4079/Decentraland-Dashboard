@@ -10,7 +10,7 @@ export function LogoutLink() {
     window.location.href = accountUrl();
   }
   return (
-    <button onClick={handleLogout} className="text-text-dim underline hover:text-text">
+    <button onClick={handleLogout} className="btn ghost shrink-0">
       Log out
     </button>
   );

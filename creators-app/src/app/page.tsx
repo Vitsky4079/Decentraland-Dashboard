@@ -6,17 +6,11 @@ import { PageHero } from "@/components/page-hero";
 import { Lock } from "lucide-react";
 import { redirect } from "next/navigation";
 
-const SAMPLE_FILES = [
-  { name: "cyberpunk-billboard.png", kind: "image", size: "2.1 MB" },
-  { name: "lobby-ambience.mp3", kind: "audio", size: "4.8 MB" },
-  { name: "intro-cutscene.mp4", kind: "video", size: "38 MB" },
-] as const;
-
 const TABS = [
-  { label: "All", count: SAMPLE_FILES.length, active: true },
-  { label: "Photos", count: 1, active: false },
-  { label: "Audio", count: 1, active: false },
-  { label: "Videos", count: 1, active: false },
+  { label: "All", count: 0, active: true },
+  { label: "Photos", count: 0, active: false },
+  { label: "Audio", count: 0, active: false },
+  { label: "Videos", count: 0, active: false },
 ];
 
 export default async function Home() {
@@ -37,7 +31,7 @@ export default async function Home() {
             Host your scene&apos;s media, <span className="grad">get a permanent link.</span>
           </>
         }
-        sub="Upload images, audio and video, and get back a permanent, Decentraland-compatible HTTPS URL to paste straight into a scene's VideoPlayer, material texture, or AudioSource. No AWS account, no bucket policies -- just drag, drop, copy the link."
+        sub="Upload images, audio and video, and get back a permanent, Decentraland-compatible HTTPS URL to paste straight into a scene's VideoPlayer, material texture, or AudioSource. No AWS account -- just drag, drop, copy the link."
       />
 
       <main>
@@ -75,27 +69,11 @@ export default async function Home() {
                 ))}
               </div>
 
-              <div className="flex flex-col gap-3">
-                {SAMPLE_FILES.map((f) => (
-                  <div key={f.name} className="svc flex items-center gap-4 text-sm" style={{ padding: "16px 20px" }}>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate" style={{ fontWeight: 600 }}>{f.name}</p>
-                      <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
-                        <span className="kind-badge">
-                          <span className={`kind-dot ${f.kind}`} />
-                          {f.kind} · {f.size}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="empty flex items-center justify-center gap-2">
+                <Lock size={14} style={{ flexShrink: 0 }} />
+                Log in to start hosting your own scene media.
+              </p>
             </section>
-
-            <p className="flex items-center justify-center gap-2 text-sm" style={{ color: "var(--text-dim)" }}>
-              <Lock size={14} style={{ flexShrink: 0 }} />
-              Log in to start hosting your own scene media.
-            </p>
           </div>
         </section>
       </main>

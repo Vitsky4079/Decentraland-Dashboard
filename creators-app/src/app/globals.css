@@ -98,6 +98,7 @@ h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:tex
 .svc:hover{border-color:var(--line-strong);box-shadow:0 10px 30px -16px rgba(0,0,0,.8)}
 .svc-name{font-family:var(--display);font-weight:700;font-size:20px;margin-bottom:3px}
 .svc-desc{font-size:14.5px;color:var(--text-faint)}
+.empty,.loading,.error-box{padding:40px;text-align:center;color:var(--text-faint);font-size:15.5px;background:var(--surface);border:1px dashed var(--line-strong);border-radius:var(--radius)}
 
 footer{margin-top:72px;border-top:1px solid var(--line);padding:32px 0 44px;color:var(--text-faint);font-size:14px}
 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}

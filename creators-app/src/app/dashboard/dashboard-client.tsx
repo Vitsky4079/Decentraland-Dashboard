@@ -109,7 +109,7 @@ export function Dashboard({
       <main>
         <section>
           <div className="wrap wrap-narrow" style={{ paddingTop: 40, paddingBottom: 72, display: "flex", flexDirection: "column", gap: 32 }}>
-            <div className="flex items-start" style={{ gap: 24 }}>
+            <div className="svc flex items-center" style={{ gap: 24, padding: "20px 24px" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="flex justify-between text-sm" style={{ marginBottom: 4 }}>
                   <span>Storage used</span>
@@ -121,9 +121,7 @@ export function Dashboard({
                   <div style={{ height: 8, borderRadius: 999, width: `${pct}%`, background: "var(--grad)" }} />
                 </div>
               </div>
-              <div style={{ flexShrink: 0, paddingTop: 2 }}>
-                <LogoutLink />
-              </div>
+              <LogoutLink />
             </div>
 
             <section
@@ -185,7 +183,7 @@ export function Dashboard({
 
               <div className="flex flex-col gap-3">
                 {visible.length === 0 && (
-                  <p className="text-sm" style={{ color: "var(--text-dim)" }}>
+                  <p className="empty">
                     {tab === "all" ? "No files yet -- upload one above to get started." : `No ${TABS.find((t) => t.id === tab)?.label.toLowerCase()} yet.`}
                   </p>
                 )}
