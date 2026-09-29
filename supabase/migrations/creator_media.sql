@@ -29,10 +29,15 @@
 create table if not exists public.user_profiles (
   id           uuid primary key references auth.users(id) on delete cascade,
   is_admin     boolean not null default false,
-  quota_bytes  bigint not null default 5368709120, -- 5 GiB default per-user media quota
+  quota_bytes  bigint not null default 1073741824, -- 1 GiB default per-user media quota (~1000 users -> ~1TB of R2 storage)
   created_at   timestamptz not null default now()
 );
 alter table public.user_profiles add column if not exists is_admin boolean not null default false;
+-- Quota lowered from the original 5 GiB default to 1 GiB, sized so ~1000 users tops
+-- out around 1TB of R2 storage. Re-running this against a database that already has
+-- rows at an older default brings them in line with the current one too.
+alter table public.user_profiles alter column quota_bytes set default 1073741824;
+update public.user_profiles set quota_bytes = 1073741824 where quota_bytes in (5368709120, 524288000);
 
 alter table public.user_profiles enable row level security;
 drop policy if exists "read own profile" on public.user_profiles;
