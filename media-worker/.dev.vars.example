@@ -1,0 +1,2 @@
+ADMIN_SECRET=dev-admin-secret-local-only
+TOKEN_SECRET=dev-token-secret-local-only

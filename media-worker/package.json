@@ -1,0 +1,16 @@
+{
+  "name": "dcl-media-r2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 5250 --ip 127.0.0.1",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260928.1",
+    "playwright-core": "^1.63.0",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.143.0"
+  }
+}

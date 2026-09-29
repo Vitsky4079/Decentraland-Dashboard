@@ -1,0 +1,13 @@
+name = "dcl-media-r2"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# Local run: `npm run dev` simulates this bucket on disk under .wrangler/state.
+# Deploy: `npx wrangler r2 bucket create dcl-media`, then
+#         `npx wrangler secret put ADMIN_SECRET` and `... TOKEN_SECRET`.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "dcl-media"
+
+[observability]
+enabled = true
