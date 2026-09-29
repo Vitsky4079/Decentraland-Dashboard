@@ -94,7 +94,11 @@ h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:tex
 .btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:12px 22px;border-radius:99px;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s}
 .btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
 .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
-.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px 26px 22px;position:relative;overflow:hidden;transition:border-color .2s}
+/* overflow is NOT hidden here unlike the main site's dcl.css -- that version
+   clips a decorative accent-bar pseudo-element Drive doesn't use, and hiding
+   overflow clipped the "Copied!" popup on Copy URL (it needs ~46px of room
+   above the button, which this card doesn't always have on wide viewports). */
+.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px 26px 22px;position:relative;transition:border-color .2s}
 .svc:hover{border-color:var(--line-strong);box-shadow:0 10px 30px -16px rgba(0,0,0,.8)}
 .svc-name{font-family:var(--display);font-weight:700;font-size:20px;margin-bottom:3px}
 .svc-desc{font-size:14.5px;color:var(--text-faint)}
@@ -132,7 +136,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
 @media (prefers-reduced-motion:reduce){.upload-bar-fill{animation:none;transition:none}}
 
 /* ---------- "Copied!" popup on Copy URL ---------- */
-.copied-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;background:var(--ok);color:#08070C;font-size:11px;font-weight:700;letter-spacing:.03em;padding:5px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.35);animation:copiedIn .15s ease-out both}
+.copied-badge{position:absolute;z-index:5;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;background:var(--ok);color:#08070C;font-size:11px;font-weight:700;letter-spacing:.03em;padding:5px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.35);animation:copiedIn .15s ease-out both}
 .copied-badge::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ok)}
 @keyframes copiedIn{from{opacity:0;transform:translateX(-50%) translateY(4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @media (prefers-reduced-motion:reduce){.copied-badge{animation:none}}

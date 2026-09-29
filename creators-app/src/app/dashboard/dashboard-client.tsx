@@ -36,6 +36,7 @@ export function Dashboard({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   function handleFiles(list: FileList | null) {
     if (!list) return;
@@ -199,6 +200,7 @@ export function Dashboard({
                     <div className="min-w-0 flex-1">
                       {renamingId === file.id ? (
                         <input
+                          ref={renameInputRef}
                           autoFocus
                           defaultValue={file.original_name}
                           onBlur={(e) => handleRename(file, e.target.value)}
@@ -225,7 +227,13 @@ export function Dashboard({
                         {copiedId === file.id && <span className="copied-badge">Copied!</span>}
                         <button onClick={() => copyUrl(file.id, file.url)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Copy URL</button>
                       </div>
-                      <button onClick={() => setRenamingId(file.id)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Rename</button>
+                      <button
+                        onClick={() => (renamingId === file.id ? renameInputRef.current?.blur() : setRenamingId(file.id))}
+                        className="btn ghost"
+                        style={{ padding: "8px 14px", fontSize: 11 }}
+                      >
+                        {renamingId === file.id ? "Save" : "Rename"}
+                      </button>
                       <button onClick={() => handleDelete(file)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11, color: "var(--red)" }}>Delete</button>
                     </div>
                   </div>
