@@ -1,17 +1,12 @@
 @import "tailwindcss";
 
-/* Ported (verbatim where possible) from ../../assets/dcl.css so Drive is
-   structurally the same shell as the main site -- same nav, same hero pattern,
-   same footer -- with just the dashboard content swapped in. Keep these two files
-   in sync if the brand system changes; there's no shared package between the two
-   deployments to enforce it automatically.
-
-   Sizing (font-size/padding/gaps/etc, NOT the max-width container constraints) is
-   scaled 1.5x throughout vs. the main site, by request -- CSS `zoom` was tried
-   first and rejected: it broke position:sticky (torn/duplicated nav) and caused a
-   scroll-position/paint desync further down the page. Real value scaling has
-   neither problem, it just means these two stylesheets diverge more than a plain
-   copy -- worth knowing if syncing them again later. */
+/* Ported verbatim from ../../assets/dcl.css so Drive is structurally and visually
+   the same shell as the main site -- same nav, same hero pattern, same footer, same
+   sizing -- with just the dashboard content swapped in. Keep these two files in sync
+   if the brand system changes; there's no shared package between the two deployments
+   to enforce it automatically. (A 1.5x size scale was tried here and rejected by the
+   user as looking oversized/inconsistent vs. the rest of the site -- sizing should
+   match dcl.css exactly.) */
 @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/inter-400.woff2') format('woff2')}
 @font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/inter-600.woff2') format('woff2')}
 @font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/inter-700.woff2') format('woff2')}
@@ -31,7 +26,7 @@
   --ok: #3FCB6E;
   --info: #7C8CF8;
   --grad: linear-gradient(100deg,#FF2D55 0%,#FF6E4E 55%,#FFBC5B 100%);
-  --radius: 21px;
+  --radius: 14px;
   --maxw: 1480px;
   --mono: var(--font-jetbrains-mono), monospace;
   --display: 'Inter', sans-serif;
@@ -50,27 +45,26 @@
   --font-sans: 'Inter', sans-serif;
 }
 
-body{background:var(--bg);color:var(--text);font-family:var(--display);-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+body{background:var(--bg);color:var(--text);font-family:var(--display);font-size:clamp(16.5px,0.62rem + 0.42vw,19px);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
 main{flex:1}
 a{color:inherit}
 button{font-family:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--peach);outline-offset:2px;border-radius:4px}
 
-/* ---------- Nav (sized 1.5x vs. dcl.css) ---------- */
+/* ---------- Nav ---------- */
 .nav{position:sticky;top:0;z-index:50;background:rgba(13,11,18,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.nav-inner{max-width:var(--maxw);margin:0 auto;padding:0 36px;height:102px;display:flex;align-items:center;gap:36px}
-.logo{display:flex;align-items:center;gap:15px;font-family:var(--display);font-weight:700;font-size:26.25px;letter-spacing:.01em;text-decoration:none;flex:none}
-.logo-mark{width:40.5px;height:40.5px;border-radius:50%;flex:none;object-fit:contain;display:block}
-.nav-links{display:flex;gap:6px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.nav-inner{max-width:var(--maxw);margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;gap:24px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17.5px;letter-spacing:.01em;text-decoration:none;flex:none}
+.logo-mark{width:27px;height:27px;border-radius:50%;flex:none;object-fit:contain;display:block}
+.nav-links{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
 .nav-links::-webkit-scrollbar{display:none}
-.nav-links a{text-decoration:none;color:var(--text-dim);font-size:21.75px;font-weight:500;padding:10.5px 16.5px;border-radius:12px;white-space:nowrap;transition:color .15s,background .15s}
+.nav-links a{text-decoration:none;color:var(--text-dim);font-size:14.5px;font-weight:500;padding:7px 11px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
 .nav-links a:hover{color:var(--text);background:var(--surface-2)}
 .nav-links a.active{color:var(--text);background:var(--surface-2)}
-.nav-links a.nav-report{margin-left:15px;flex:none;background:var(--grad);color:#1A0710;border:none;font-weight:700;font-size:19.5px;padding:10.5px 22.5px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s}
+.nav-links a.nav-report{margin-left:10px;flex:none;background:var(--grad);color:#1A0710;border:none;font-weight:700;font-size:13px;padding:7px 15px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s}
 .nav-links a.nav-report:hover{color:#1A0710;transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,45,85,.3)}
 
-/* ---------- Hero (sized 1.5x vs. dcl.css; max-widths left alone on purpose --
-   bigger text within the same content width wraps more, same as real browser zoom) ---------- */
+/* ---------- Hero ---------- */
 .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
 .parcel-grid{position:absolute;inset:0;pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
@@ -78,40 +72,40 @@ button{font-family:inherit;cursor:pointer}
   mask-image:radial-gradient(ellipse 90% 110% at 50% 0%,#000 35%,transparent 78%);
   -webkit-mask-image:radial-gradient(ellipse 90% 110% at 50% 0%,#000 35%,transparent 78%);
 }
-.hero-inner{position:relative;max-width:var(--maxw);margin:0 auto;padding:108px 36px 84px}
-.hero-inner.compact{padding:69px 36px 57px}
-.hero-eyebrow{font-family:var(--mono);font-size:19.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--peach);margin-bottom:21px}
-h1{font-family:var(--display);font-size:clamp(54px,7.8vw,96px);font-weight:800;line-height:1.08;letter-spacing:-.015em;max-width:760px}
-.hero-inner.compact h1{font-size:clamp(45px,6vw,69px)}
+.hero-inner{position:relative;max-width:var(--maxw);margin:0 auto;padding:72px 24px 56px}
+.hero-inner.compact{padding:46px 24px 38px}
+.hero-eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--peach);margin-bottom:14px}
+h1{font-family:var(--display);font-size:clamp(36px,5.2vw,64px);font-weight:800;line-height:1.08;letter-spacing:-.015em;max-width:760px}
+.hero-inner.compact h1{font-size:clamp(30px,4vw,46px)}
 h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero-sub{color:var(--text-dim);max-width:680px;margin-top:24px;font-size:clamp(25.5px,1.35rem + 0.6vw,31.5px)}
+.hero-sub{color:var(--text-dim);max-width:680px;margin-top:16px;font-size:clamp(17px,0.9rem + 0.4vw,21px)}
 
-/* ---------- Layout / buttons / cards (sized 1.5x vs. dcl.css) ---------- */
+/* ---------- Layout / buttons / cards ---------- */
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
 .wrap-narrow{max-width:920px}
-.report-btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:21px;letter-spacing:.07em;text-transform:uppercase;padding:19.5px 39px;border-radius:99px;text-decoration:none;border:none;transition:transform .15s,box-shadow .15s}
+.report-btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:14px;letter-spacing:.07em;text-transform:uppercase;padding:13px 26px;border-radius:99px;text-decoration:none;border:none;transition:transform .15s,box-shadow .15s}
 .report-btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
 .report-btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
-.btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:19.5px;letter-spacing:.06em;text-transform:uppercase;padding:18px 33px;border-radius:99px;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:12px 22px;border-radius:99px;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s}
 .btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
 .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
-.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:39px 39px 33px;position:relative;overflow:hidden;transition:border-color .2s}
+.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px 26px 22px;position:relative;overflow:hidden;transition:border-color .2s}
 .svc:hover{border-color:var(--line-strong);box-shadow:0 10px 30px -16px rgba(0,0,0,.8)}
-.svc-name{font-family:var(--display);font-weight:700;font-size:30px;margin-bottom:4.5px}
-.svc-desc{font-size:21.75px;color:var(--text-faint)}
+.svc-name{font-family:var(--display);font-weight:700;font-size:20px;margin-bottom:3px}
+.svc-desc{font-size:14.5px;color:var(--text-faint)}
 
-footer{margin-top:108px;border-top:1px solid var(--line);padding:48px 0 66px;color:var(--text-faint);font-size:21px}
-footer .wrap{display:flex;flex-wrap:wrap;gap:12px 36px;justify-content:space-between}
+footer{margin-top:72px;border-top:1px solid var(--line);padding:32px 0 44px;color:var(--text-faint);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 
-/* ---------- Drive-specific (same pill-tab pattern as account.html/map.html, sized 1.5x) ---------- */
-.drive-tabs{display:inline-flex;border:1px solid var(--line);border-radius:15px;overflow:hidden}
-.drive-tab{background:var(--surface);color:var(--text-dim);border:0;border-right:1px solid var(--line);font-family:var(--mono);font-size:19.5px;padding:13.5px 24px;cursor:pointer;transition:background .15s,color .15s}
+/* ---------- Drive-specific (same pill-tab pattern as account.html/map.html) ---------- */
+.drive-tabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.drive-tab{background:var(--surface);color:var(--text-dim);border:0;border-right:1px solid var(--line);font-family:var(--mono);font-size:13px;padding:9px 16px;cursor:pointer;transition:background .15s,color .15s}
 .drive-tab:last-child{border-right:0}
 .drive-tab:hover{color:var(--text)}
 .drive-tab.is-active{background:var(--surface-2);color:var(--peach)}
 
-.kind-badge{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:16.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint)}
-.kind-dot{width:10.5px;height:10.5px;border-radius:50%;flex:none}
+.kind-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint)}
+.kind-dot{width:7px;height:7px;border-radius:50%;flex:none}
 .kind-dot.image{background:var(--info)}
 .kind-dot.audio{background:var(--peach)}
 .kind-dot.video{background:var(--red)}
