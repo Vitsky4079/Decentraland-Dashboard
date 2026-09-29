@@ -2,11 +2,12 @@
 
 /* Ported verbatim from ../../assets/dcl.css so Drive is structurally and visually
    the same shell as the main site -- same nav, same hero pattern, same footer, same
-   sizing -- with just the dashboard content swapped in. Keep these two files in sync
-   if the brand system changes; there's no shared package between the two deployments
-   to enforce it automatically. (A 1.5x size scale was tried here and rejected by the
-   user as looking oversized/inconsistent vs. the rest of the site -- sizing should
-   match dcl.css exactly.) */
+   sizing, same site-wide 1.5x zoom. Keep these two files in sync if the brand system
+   changes; there's no shared package between the two deployments to enforce it
+   automatically. (An earlier attempt scaled every value by hand instead of using
+   `zoom` and left max-widths untouched -- that looked oversized/inconsistent because
+   text wrapped differently than real browser zoom. `zoom` reproduces real zoom's
+   proportions exactly, see the rule at the bottom of this file.) */
 @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/inter-400.woff2') format('woff2')}
 @font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/inter-600.woff2') format('woff2')}
 @font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/inter-700.woff2') format('woff2')}
@@ -51,17 +52,21 @@ a{color:inherit}
 button{font-family:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--peach);outline-offset:2px;border-radius:4px}
 
-/* ---------- Nav ---------- */
+/* ---------- Nav ----------
+   Excluded from the site-wide 1.5x zoom below -- position:sticky inside a
+   zoomed ancestor renders torn/duplicated on scroll (confirmed by testing on
+   the main site). Sizes are hand-scaled by the same 1.5x factor instead, same
+   as assets/dcl.css's nav, so it still matches the zoomed content below it. */
 .nav{position:sticky;top:0;z-index:50;background:rgba(13,11,18,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.nav-inner{max-width:var(--maxw);margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;gap:24px}
-.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17.5px;letter-spacing:.01em;text-decoration:none;flex:none}
-.logo-mark{width:27px;height:27px;border-radius:50%;flex:none;object-fit:contain;display:block}
-.nav-links{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.nav-inner{max-width:calc(var(--maxw) * 1.5);margin:0 auto;padding:0 36px;height:102px;display:flex;align-items:center;gap:36px}
+.logo{display:flex;align-items:center;gap:15px;font-family:var(--display);font-weight:700;font-size:26.25px;letter-spacing:.01em;text-decoration:none;flex:none}
+.logo-mark{width:40.5px;height:40.5px;border-radius:50%;flex:none;object-fit:contain;display:block}
+.nav-links{display:flex;gap:6px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
 .nav-links::-webkit-scrollbar{display:none}
-.nav-links a{text-decoration:none;color:var(--text-dim);font-size:14.5px;font-weight:500;padding:7px 11px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
+.nav-links a{text-decoration:none;color:var(--text-dim);font-size:21.75px;font-weight:500;padding:10.5px 16.5px;border-radius:12px;white-space:nowrap;transition:color .15s,background .15s}
 .nav-links a:hover{color:var(--text);background:var(--surface-2)}
 .nav-links a.active{color:var(--text);background:var(--surface-2)}
-.nav-links a.nav-report{margin-left:10px;flex:none;background:var(--grad);color:#1A0710;border:none;font-weight:700;font-size:13px;padding:7px 15px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s}
+.nav-links a.nav-report{margin-left:15px;flex:none;background:var(--grad);color:#1A0710;border:none;font-weight:700;font-size:19.5px;padding:10.5px 22.5px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s}
 .nav-links a.nav-report:hover{color:#1A0710;transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,45,85,.3)}
 
 /* ---------- Hero ---------- */
@@ -109,3 +114,9 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
 .kind-dot.image{background:var(--info)}
 .kind-dot.audio{background:var(--peach)}
 .kind-dot.video{background:var(--red)}
+
+/* ---------- Site-wide 1.5x scale ----------
+   See assets/dcl.css for the full rationale. .nav is excluded (hand-scaled
+   above instead) because position:sticky inside a zoomed ancestor renders
+   torn/duplicated on scroll. */
+.hero,main,footer{zoom:1.5}
