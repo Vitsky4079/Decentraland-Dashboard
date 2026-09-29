@@ -104,7 +104,11 @@ footer{margin-top:72px;border-top:1px solid var(--line);padding:32px 0 44px;colo
 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 
 /* ---------- Drive-specific (same pill-tab pattern as account.html/map.html) ---------- */
-.drive-tabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+/* align-self is needed because .drive-tabs sits directly in a column flex
+   container (<section className="flex flex-col">) -- without it, the default
+   align-items:stretch stretches this box to the container's full width, leaving
+   a wide empty bordered box trailing the actual pill buttons. */
+.drive-tabs{display:inline-flex;align-self:flex-start;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .drive-tab{background:var(--surface);color:var(--text-dim);border:0;border-right:1px solid var(--line);font-family:var(--mono);font-size:13px;padding:9px 16px;cursor:pointer;transition:background .15s,color .15s}
 .drive-tab:last-child{border-right:0}
 .drive-tab:hover{color:var(--text)}
@@ -126,6 +130,12 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
 .upload-bar-fill{height:100%;border-radius:999px;background:var(--grad);background-size:200% 100%;transition:width .3s ease-out;animation:uploadFlow 1.2s linear infinite}
 @keyframes uploadFlow{0%{background-position:0% 0}100%{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.upload-bar-fill{animation:none;transition:none}}
+
+/* ---------- "Copied!" popup on Copy URL ---------- */
+.copied-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;background:var(--ok);color:#08070C;font-size:11px;font-weight:700;letter-spacing:.03em;padding:5px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.35);animation:copiedIn .15s ease-out both}
+.copied-badge::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ok)}
+@keyframes copiedIn{from{opacity:0;transform:translateX(-50%) translateY(4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@media (prefers-reduced-motion:reduce){.copied-badge{animation:none}}
 
 /* ---------- Site-wide 1.5x scale ----------
    See assets/dcl.css for the full rationale. .nav is excluded (hand-scaled

@@ -33,6 +33,7 @@ export function Dashboard({
   const [used, setUsed] = useState(usedBytes);
   const [inFlight, setInFlight] = useState<InFlight[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,8 +81,14 @@ export function Dashboard({
     setFiles((prev) => prev.map((f) => (f.id === file.id ? updated : f)));
   }
 
-  function copyUrl(url: string) {
-    navigator.clipboard.writeText(url).catch(() => {});
+  function copyUrl(id: string, url: string) {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setCopiedId(id);
+        setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1500);
+      })
+      .catch(() => {});
   }
 
   const pct = quotaBytes > 0 ? Math.min(100, Math.round((used / quotaBytes) * 100)) : 0;
@@ -214,7 +221,10 @@ export function Dashboard({
                       <p className="truncate text-xs" style={{ color: "var(--text-faint)", marginTop: 4 }}>{file.url}</p>
                     </div>
                     <div className="flex shrink-0 gap-2">
-                      <button onClick={() => copyUrl(file.url)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Copy URL</button>
+                      <div style={{ position: "relative" }}>
+                        {copiedId === file.id && <span className="copied-badge">Copied!</span>}
+                        <button onClick={() => copyUrl(file.id, file.url)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Copy URL</button>
+                      </div>
                       <button onClick={() => setRenamingId(file.id)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Rename</button>
                       <button onClick={() => handleDelete(file)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11, color: "var(--red)" }}>Delete</button>
                     </div>
