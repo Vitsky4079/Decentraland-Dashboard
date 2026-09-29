@@ -11,6 +11,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Decentraland Drive",
   description: "Upload media to use in your Decentraland scenes.",
+  icons: { icon: "/brand/icon-color.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

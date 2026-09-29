@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ACCEPT_ATTR, formatBytes } from "@/lib/media-types";
+import { useMemo, useRef, useState } from "react";
+import { ACCEPT_ATTR, formatBytes, type MediaKind } from "@/lib/media-types";
 import type { MediaFile } from "@/lib/types";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -10,6 +10,13 @@ import { LogoutLink } from "@/components/logout-link";
 import { uploadFile } from "./upload";
 
 type InFlight = { id: string; name: string; pct: number; error?: string };
+type Tab = "all" | MediaKind;
+const TABS: { id: Tab; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "image", label: "Photos" },
+  { id: "audio", label: "Audio" },
+  { id: "video", label: "Videos" },
+];
 
 export function Dashboard({
   email,
@@ -26,6 +33,7 @@ export function Dashboard({
   const [used, setUsed] = useState(usedBytes);
   const [inFlight, setInFlight] = useState<InFlight[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFiles(list: FileList | null) {
@@ -77,6 +85,12 @@ export function Dashboard({
   }
 
   const pct = quotaBytes > 0 ? Math.min(100, Math.round((used / quotaBytes) * 100)) : 0;
+  const counts = useMemo(() => {
+    const c: Record<Tab, number> = { all: files.length, image: 0, audio: 0, video: 0 };
+    for (const f of files) c[f.kind]++;
+    return c;
+  }, [files]);
+  const visible = tab === "all" ? files : files.filter((f) => f.kind === tab);
 
   return (
     <>
@@ -95,21 +109,22 @@ export function Dashboard({
       <main>
         <section>
           <div className="wrap wrap-narrow" style={{ paddingTop: 40, paddingBottom: 72, display: "flex", flexDirection: "column", gap: 32 }}>
-            <div className="flex justify-end">
-              <LogoutLink />
+            <div className="flex items-start" style={{ gap: 24 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="flex justify-between text-sm" style={{ marginBottom: 4 }}>
+                  <span>Storage used</span>
+                  <span style={{ color: "var(--text-dim)" }}>
+                    {formatBytes(used)} / {formatBytes(quotaBytes)}
+                  </span>
+                </div>
+                <div style={{ height: 8, width: "100%", borderRadius: 999, background: "var(--surface-2)" }}>
+                  <div style={{ height: 8, borderRadius: 999, width: `${pct}%`, background: "var(--grad)" }} />
+                </div>
+              </div>
+              <div style={{ flexShrink: 0, paddingTop: 2 }}>
+                <LogoutLink />
+              </div>
             </div>
-
-            <section>
-              <div className="flex justify-between text-sm" style={{ marginBottom: 4 }}>
-                <span>Storage used</span>
-                <span style={{ color: "var(--text-dim)" }}>
-                  {formatBytes(used)} / {formatBytes(quotaBytes)}
-                </span>
-              </div>
-              <div style={{ height: 8, width: "100%", borderRadius: 999, background: "var(--surface-2)" }}>
-                <div style={{ height: 8, borderRadius: 999, width: `${pct}%`, background: "var(--grad)" }} />
-              </div>
-            </section>
 
             <section
               onDragOver={(e) => e.preventDefault()}
@@ -119,10 +134,10 @@ export function Dashboard({
               }}
               onClick={() => fileInputRef.current?.click()}
               className="flex cursor-pointer flex-col items-center justify-center gap-2 text-center text-sm"
-              style={{ border: "2px dashed var(--line-strong)", borderRadius: "var(--radius)", padding: "40px 24px", color: "var(--text-dim)" }}
+              style={{ border: "2px dashed var(--line-strong)", borderRadius: "var(--radius)", padding: "48px 24px", color: "var(--text-dim)", transition: "border-color .15s" }}
             >
-              <p>Drag a file here, or click to choose one.</p>
-              <p className="text-xs" style={{ color: "var(--text-faint)" }}>JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
+              <p style={{ color: "var(--text)", fontWeight: 600 }}>Drag a file here, or click to choose one.</p>
+              <p className="text-xs" style={{ color: "var(--text-faint)" }}>JPG, PNG, WebP · MP3, OGG, WAV · MP4, WebM</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -136,15 +151,15 @@ export function Dashboard({
             {inFlight.length > 0 && (
               <ul className="flex flex-col gap-2">
                 {inFlight.map((f) => (
-                  <li key={f.id} className="text-sm">
+                  <li key={f.id} className="svc text-sm" style={{ padding: "12px 16px" }}>
                     <div className="flex justify-between">
                       <span className="truncate">{f.name}</span>
-                      <span style={{ color: "var(--text-dim)" }}>{f.error ? "failed" : `${f.pct}%`}</span>
+                      <span style={{ color: f.error ? "var(--red)" : "var(--text-dim)" }}>{f.error ? "Failed" : `${f.pct}%`}</span>
                     </div>
                     {f.error ? (
-                      <p style={{ color: "var(--red)" }}>{f.error}</p>
+                      <p className="text-xs" style={{ color: "var(--red)", marginTop: 4 }}>{f.error}</p>
                     ) : (
-                      <div style={{ height: 4, width: "100%", borderRadius: 999, background: "var(--surface-2)" }}>
+                      <div style={{ height: 4, width: "100%", borderRadius: 999, background: "var(--surface-2)", marginTop: 8 }}>
                         <div style={{ height: 4, borderRadius: 999, width: `${f.pct}%`, background: "var(--grad)" }} />
                       </div>
                     )}
@@ -153,42 +168,61 @@ export function Dashboard({
               </ul>
             )}
 
-            <section className="flex flex-col gap-3">
-              {files.length === 0 && <p className="text-sm" style={{ color: "var(--text-dim)" }}>No files yet.</p>}
-              {files.map((file) => (
-                <div
-                  key={file.id}
-                  className="svc flex items-center gap-4 text-sm"
-                  style={{ padding: "14px 18px" }}
-                >
-                  <div className="min-w-0 flex-1">
-                    {renamingId === file.id ? (
-                      <input
-                        autoFocus
-                        defaultValue={file.original_name}
-                        onBlur={(e) => handleRename(file, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                          if (e.key === "Escape") setRenamingId(null);
-                        }}
-                        className="w-full"
-                        style={{ borderRadius: 8, border: "1px solid var(--line-strong)", background: "var(--surface-2)", padding: "6px 10px" }}
-                      />
-                    ) : (
-                      <p className="truncate font-medium">{file.original_name}</p>
-                    )}
-                    <p className="text-xs" style={{ color: "var(--text-dim)" }}>
-                      {file.kind} · {formatBytes(file.size_bytes)}
-                    </p>
-                    <p className="truncate text-xs" style={{ color: "var(--text-faint)" }}>{file.url}</p>
+            <section className="flex flex-col gap-4">
+              <div className="drive-tabs" role="tablist">
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    aria-selected={tab === t.id}
+                    className={`drive-tab${tab === t.id ? " is-active" : ""}`}
+                    onClick={() => setTab(t.id)}
+                  >
+                    {t.label} ({counts[t.id]})
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {visible.length === 0 && (
+                  <p className="text-sm" style={{ color: "var(--text-dim)" }}>
+                    {tab === "all" ? "No files yet -- upload one above to get started." : `No ${TABS.find((t) => t.id === tab)?.label.toLowerCase()} yet.`}
+                  </p>
+                )}
+                {visible.map((file) => (
+                  <div key={file.id} className="svc flex items-center gap-4 text-sm" style={{ padding: "16px 20px" }}>
+                    <div className="min-w-0 flex-1">
+                      {renamingId === file.id ? (
+                        <input
+                          autoFocus
+                          defaultValue={file.original_name}
+                          onBlur={(e) => handleRename(file, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
+                          className="w-full"
+                          style={{ borderRadius: 8, border: "1px solid var(--line-strong)", background: "var(--surface-2)", padding: "6px 10px" }}
+                        />
+                      ) : (
+                        <p className="truncate" style={{ fontWeight: 600 }}>{file.original_name}</p>
+                      )}
+                      <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
+                        <span className="kind-badge">
+                          <span className={`kind-dot ${file.kind}`} />
+                          {file.kind} · {formatBytes(file.size_bytes)}
+                        </span>
+                      </div>
+                      <p className="truncate text-xs" style={{ color: "var(--text-faint)", marginTop: 4 }}>{file.url}</p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button onClick={() => copyUrl(file.url)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Copy URL</button>
+                      <button onClick={() => setRenamingId(file.id)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Rename</button>
+                      <button onClick={() => handleDelete(file)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11, color: "var(--red)" }}>Delete</button>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button onClick={() => copyUrl(file.url)} className="btn ghost">Copy URL</button>
-                    <button onClick={() => setRenamingId(file.id)} className="btn ghost">Rename</button>
-                    <button onClick={() => handleDelete(file)} className="btn ghost" style={{ color: "var(--red)" }}>Delete</button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </section>
           </div>
         </section>

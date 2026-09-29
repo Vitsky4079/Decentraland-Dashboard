@@ -19,7 +19,10 @@
   --text: #EDEAF4;
   --text-dim: #A39DB3;
   --text-faint: #6E6880;
+  --red: #FF2D55;
   --peach: #FFBC5B;
+  --ok: #3FCB6E;
+  --info: #7C8CF8;
   --grad: linear-gradient(100deg,#FF2D55 0%,#FF6E4E 55%,#FFBC5B 100%);
   --radius: 14px;
   --maxw: 1480px;
@@ -91,3 +94,16 @@ h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:tex
 
 footer{margin-top:72px;border-top:1px solid var(--line);padding:32px 0 44px;color:var(--text-faint);font-size:14px}
 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+
+/* ---------- Drive-specific (same pill-tab pattern as account.html/map.html) ---------- */
+.drive-tabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.drive-tab{background:var(--surface);color:var(--text-dim);border:0;border-right:1px solid var(--line);font-family:var(--mono);font-size:13px;padding:9px 16px;cursor:pointer;transition:background .15s,color .15s}
+.drive-tab:last-child{border-right:0}
+.drive-tab:hover{color:var(--text)}
+.drive-tab.is-active{background:var(--surface-2);color:var(--peach)}
+
+.kind-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint)}
+.kind-dot{width:7px;height:7px;border-radius:50%;flex:none}
+.kind-dot.image{background:var(--info)}
+.kind-dot.audio{background:var(--peach)}
+.kind-dot.video{background:var(--red)}
