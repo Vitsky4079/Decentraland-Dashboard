@@ -429,3 +429,78 @@ as $$
   select to_jsonb(p) from public.places p where p.id = p_id;
 $$;
 grant execute on function public.get_place(text) to anon, authenticated;
+
+-- =============================================================
+-- Unified site accounts + creator media hosting.
+-- See supabase/migrations/creator_media.sql for the standalone version.
+-- One account works across the main site and drive.decentraland-dashboard.org
+-- (shared session cookie on .decentraland-dashboard.org). Files themselves live on
+-- Cloudflare R2 (media-worker/); this is metadata only.
+-- =============================================================
+
+-- is_admin: see supabase/migrations/creator_media.sql for why this exists (dcl.js's
+-- applyAdminUI() used to treat any logged-in session as an admin, which broke once
+-- regular users could sign up) and the manual step needed for existing admin account(s).
+create table if not exists public.user_profiles (
+  id           uuid primary key references auth.users(id) on delete cascade,
+  is_admin     boolean not null default false,
+  quota_bytes  bigint not null default 5368709120, -- 5 GiB default per-user media quota
+  created_at   timestamptz not null default now()
+);
+alter table public.user_profiles add column if not exists is_admin boolean not null default false;
+
+alter table public.user_profiles enable row level security;
+drop policy if exists "read own profile" on public.user_profiles;
+create policy "read own profile" on public.user_profiles for select using (auth.uid() = id);
+
+create or replace function public.handle_new_user_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.user_profiles (id) values (new.id)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_creator_profile on auth.users;
+drop trigger if exists on_auth_user_created_profile on auth.users;
+create trigger on_auth_user_created_profile
+  after insert on auth.users
+  for each row execute function public.handle_new_user_profile();
+
+insert into public.user_profiles (id)
+select id from auth.users
+where id not in (select id from public.user_profiles)
+on conflict (id) do nothing;
+
+create table if not exists public.media_files (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  storage_key    text not null unique,
+  original_name  text not null,
+  mime_type      text not null,
+  kind           text not null check (kind in ('image', 'audio', 'video')),
+  size_bytes     bigint not null check (size_bytes > 0),
+  url            text not null,
+  created_at     timestamptz not null default now()
+);
+create index if not exists media_files_user_id_idx on public.media_files (user_id);
+
+alter table public.media_files enable row level security;
+drop policy if exists "read own files" on public.media_files;
+create policy "read own files" on public.media_files for select using (auth.uid() = user_id);
+
+create or replace function public.get_storage_usage(p_user_id uuid)
+returns bigint
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(sum(size_bytes), 0) from public.media_files where user_id = p_user_id;
+$$;
+grant execute on function public.get_storage_usage(uuid) to authenticated;

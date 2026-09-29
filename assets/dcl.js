@@ -1844,27 +1844,40 @@ document.addEventListener('DOMContentLoaded', initPresence);
 
 /* ---------- Admin-only UI gating ---------- */
 // "Copy for Discord" buttons are a moderator tool, not for regular visitors.
-// They're hidden by CSS and revealed (via body.is-admin) for any signed-in
-// admin — anyone with a Supabase Auth login, not just the owner. Reuses the
-// same session as /admin, which is persisted per-origin, so logging in there
-// carries over to the public pages here.
+// They're hidden by CSS and revealed (via body.is-admin) only for accounts with
+// user_profiles.is_admin = true. Reuses the same (localStorage, per-origin) session
+// as /admin, which is deliberately a *separate* login from the regular-account
+// system in assets/auth.js (that one's cookie-based and shared across
+// *.decentraland-dashboard.org for creators-app SSO) -- these are two different
+// account systems that happen to share the same Supabase project.
+//
+// Before is_admin existed, this treated *any* logged-in, non-anonymous session as
+// an admin, which was fine when admin.html was the only login on the site. Once
+// regular users can sign up (assets/auth.js), that shortcut would wrongly grant
+// admin UI to every one of them, so this now checks the real flag instead.
 let _authClient = null;
 function authClient() {
   const sb = C.supabase || {};
   if (!window.supabase || !sb.url || !sb.anonKey) return null;
   return (_authClient = _authClient || window.supabase.createClient(sb.url, sb.anonKey));
 }
+async function checkIsAdmin(client, session) {
+  if (!session || !session.user || session.user.is_anonymous) return false;
+  try {
+    const { data } = await client.from('user_profiles').select('is_admin').eq('id', session.user.id).single();
+    return !!(data && data.is_admin);
+  } catch (e) { return false; }
+}
 async function applyAdminUI() {
   try {
     const client = authClient();
     if (!client) return;
-    // An admin is any authenticated (non-anonymous) session. Regular visitors
-    // only ever use the anon API key, so they have no session.user here.
-    const isAdmin = s => !!(s && s.user && !s.user.is_anonymous);
     const { data: { session } } = await client.auth.getSession();
-    if (isAdmin(session)) document.body.classList.add('is-admin');
+    document.body.classList.toggle('is-admin', await checkIsAdmin(client, session));
     // Stay in sync if an admin signs in/out without a full page reload.
-    client.auth.onAuthStateChange((_e, s) => document.body.classList.toggle('is-admin', isAdmin(s)));
+    client.auth.onAuthStateChange(async (_e, s) => {
+      document.body.classList.toggle('is-admin', await checkIsAdmin(client, s));
+    });
   } catch (e) { /* not signed in / library missing → stay a normal visitor */ }
 }
 document.addEventListener('DOMContentLoaded', applyAdminUI);

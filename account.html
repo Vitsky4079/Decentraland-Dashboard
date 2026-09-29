@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account · Decentraland Community Status</title>
+<meta name="description" content="Sign up or log in to manage your Decentraland creator media and account.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="assets/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/inter-800.woff2" as="font" type="font/woff2" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/brand/icon-color.svg">
+<meta name="theme-color" content="#08070C">
+<link rel="stylesheet" href="assets/dcl.css">
+</head>
+<body data-page="account">
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="/"><img class="logo-mark" src="assets/brand/icon-color.svg" alt="" width="27" height="27">Decentraland · Status</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="announcements" data-nav="announcements">Announcements</a>
+      <a href="issues" data-nav="issues">Known issues</a>
+      <a href="features" data-nav="features">Feature requests</a>
+      <a href="fixed" data-nav="fixed">Recently fixed</a>
+      <a href="workarounds" data-nav="workarounds">Workarounds</a>
+      <a href="bundles" data-nav="bundles">Asset bundles</a>
+      <a href="map" data-nav="map">Map</a>
+      <a href="https://drive.decentraland-dashboard.org" data-nav="drive" target="_blank" rel="noopener">Drive</a>
+      <a href="account" data-nav="account">Account</a>
+      <a class="nav-report" href="report">Report a bug</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
+  <div class="hero-inner compact">
+    <div class="hero-eyebrow">Your account</div>
+    <h1>One account, <span class="grad">everywhere.</span></h1>
+    <p class="hero-sub">Log in once to manage your creator media storage. The same account will later carry over to a personalized ticket view too.</p>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap wrap-narrow">
+
+      <div id="loading" class="loading">Checking your session…</div>
+
+      <!-- ---------- Logged out: login / sign up ---------- -->
+      <div id="loggedOutView" class="hidden">
+        <div class="account-tabs" role="tablist">
+          <button type="button" class="account-tab is-active" id="tabLogin" role="tab" aria-selected="true">Log in</button>
+          <button type="button" class="account-tab" id="tabSignup" role="tab" aria-selected="false">Sign up</button>
+        </div>
+
+        <form id="loginForm" class="report-form">
+          <div class="rf-field">
+            <label for="loginEmail">Email <span class="req">*</span></label>
+            <input type="email" id="loginEmail" required autocomplete="email">
+          </div>
+          <div class="rf-field">
+            <label for="loginPassword">Password <span class="req">*</span></label>
+            <input type="password" id="loginPassword" required autocomplete="current-password">
+          </div>
+          <div class="rf-actions">
+            <button class="report-btn" type="submit">Log in</button>
+            <span class="rf-status" id="loginStatus"></span>
+          </div>
+        </form>
+
+        <form id="signupForm" class="report-form hidden">
+          <div class="rf-field">
+            <label for="signupEmail">Email <span class="req">*</span></label>
+            <input type="email" id="signupEmail" required autocomplete="email">
+          </div>
+          <div class="rf-field">
+            <label for="signupPassword">Password <span class="req">*</span></label>
+            <p class="rf-help">At least 8 characters.</p>
+            <input type="password" id="signupPassword" required minlength="8" autocomplete="new-password">
+          </div>
+          <div class="rf-actions">
+            <button class="report-btn" type="submit">Sign up</button>
+            <span class="rf-status" id="signupStatus"></span>
+          </div>
+        </form>
+
+        <div id="signupDone" class="report-done hidden">
+          <div class="report-done-mark">✓</div>
+          <h2>Check your email</h2>
+          <p id="signupDoneText">We sent a confirmation link. Click it, then come back here and log in.</p>
+        </div>
+      </div>
+
+      <!-- ---------- Logged in ---------- -->
+      <div id="loggedInView" class="hidden">
+        <div class="guide">
+          <h3>Signed in as <span id="accountEmail"></span></h3>
+          <p>Your account works across this site and the creator tools below.</p>
+        </div>
+        <div class="rf-actions" style="margin-top:20px">
+          <a class="report-btn" href="https://drive.decentraland-dashboard.org" target="_blank" rel="noopener">Go to your Drive</a>
+          <button class="btn ghost" id="logoutBtn" type="button">Log out</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Community-run status board · Not an official Decentraland Foundation service</span>
+    <span id="footSync"></span>
+  </div>
+</footer>
+
+<script defer src="assets/config.js"></script>
+<script defer src="assets/dcl.js"></script>
+<script type="module" src="assets/account.js"></script>
+</body>
+</html>
