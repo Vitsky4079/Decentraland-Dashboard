@@ -52,6 +52,13 @@
 
       <!-- ---------- Logged out: login / sign up ---------- -->
       <div id="loggedOutView" class="hidden">
+        <div class="rf-actions" style="flex-wrap:wrap;margin-bottom:14px">
+          <button type="button" class="btn ghost" id="googleBtn">Continue with Google</button>
+          <button type="button" class="btn ghost" id="ethBtn">Continue with Ethereum wallet</button>
+        </div>
+        <p class="rf-status" id="web3Status"></p>
+        <p class="rf-help" style="margin-bottom:16px">or use email and password</p>
+
         <div class="account-tabs" role="tablist">
           <button type="button" class="account-tab is-active" id="tabLogin" role="tab" aria-selected="true">Log in</button>
           <button type="button" class="account-tab" id="tabSignup" role="tab" aria-selected="false">Sign up</button>

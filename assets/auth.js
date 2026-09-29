@@ -13,7 +13,13 @@
 //
 // This is a module script (see account.html) specifically so this CDN import works
 // without a build step -- classic <script> tags can't import npm packages this way.
-import { createBrowserClient } from 'https://esm.sh/@supabase/ssr@0.12.7';
+// `?deps=` pins the transitive @supabase/supabase-js version esm.sh bundles for this
+// import -- without it, esm.sh resolves peer deps to whatever's currently latest,
+// which is how a page can silently start using an auth-js version that doesn't have
+// a method this file relies on (signInWithWeb3, added relatively recently). Pinned to
+// the exact version installed in creators-app so both sides of this app run the same
+// auth-js build.
+import { createBrowserClient } from 'https://esm.sh/@supabase/ssr@0.12.7?deps=@supabase/supabase-js@2.117.2';
 
 // Match dcl.js's defensive lookup: a classic <script> (config.js) and a module
 // script don't necessarily share top-level `const` bindings the same way, so go
@@ -54,4 +60,31 @@ export async function signInWithPassword(email, password) {
 
 export async function signOut() {
   return supabase.auth.signOut();
+}
+
+// Redirects the browser to Google, then back to `redirectTo` with the session
+// already established -- there's no in-page result to handle on success.
+export async function signInWithGoogle() {
+  return supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${location.origin}/account` },
+  });
+}
+
+// Unlike OAuth, this never navigates away: it calls into window.ethereum directly
+// (connect + a personal_sign of a Supabase-issued SIWE message) and resolves with a
+// session in-page, or an error if there's no wallet / the user rejects either step.
+export async function signInWithEthereum() {
+  // supabase-js rejects (rather than resolving with {error}) for some failure paths
+  // here -- no wallet installed, in particular -- so this always needs a catch, or a
+  // caller doing `const { error } = await signInWithEthereum()` never gets a chance
+  // to see it and the UI hangs on whatever "connecting…" state it was in.
+  try {
+    return await supabase.auth.signInWithWeb3({
+      chain: 'ethereum',
+      statement: 'Sign in to Decentraland · Status to manage your Drive.',
+    });
+  } catch (err) {
+    return { data: { session: null, user: null }, error: err };
+  }
 }

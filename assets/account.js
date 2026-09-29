@@ -1,4 +1,4 @@
-import { getSession, signUp, signInWithPassword, signOut } from './auth.js';
+import { getSession, signUp, signInWithPassword, signOut, signInWithGoogle, signInWithEthereum } from './auth.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -59,6 +59,40 @@ $('signupForm').addEventListener('submit', async (e) => {
 
 $('logoutBtn').addEventListener('click', async () => {
   await signOut();
+  render();
+});
+
+$('googleBtn').addEventListener('click', async () => {
+  const status = $('web3Status');
+  status.className = 'rf-status';
+  status.textContent = '';
+  const { error } = await signInWithGoogle();
+  // Success navigates away to Google -- there's nothing else to do here on success.
+  if (error) {
+    status.classList.add('err');
+    status.textContent = error.message;
+  }
+});
+
+$('ethBtn').addEventListener('click', async () => {
+  const btn = $('ethBtn');
+  const status = $('web3Status');
+  status.className = 'rf-status';
+  status.textContent = 'Check your wallet to connect and sign…';
+  btn.disabled = true;
+  const { error } = await signInWithEthereum();
+  btn.disabled = false;
+  if (error) {
+    status.classList.add('err');
+    // supabase-js's own message here is a developer-facing hint (mentions passing a
+    // `wallet` option programmatically), not something to show an end user -- swap
+    // in plain copy for that one specific, common case.
+    status.textContent = /No compatible Ethereum wallet/i.test(error.message || '')
+      ? 'No Ethereum wallet found. Install a wallet extension like MetaMask and try again.'
+      : error.message || 'Could not sign in with your wallet.';
+    return;
+  }
+  status.textContent = '';
   render();
 });
 
