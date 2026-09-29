@@ -189,6 +189,11 @@ section{padding:48px 0 8px;scroll-margin-top:72px}
 .btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
 .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
 .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+/* Google/Ethereum sign-in buttons: brand icon + label side by side, letter-spacing
+   dialed back from the all-caps .btn default since it reads worse on "Ethereum" than
+   on short verbs like "Log in". */
+.oauth-btn{display:inline-flex;align-items:center;gap:10px;letter-spacing:.02em;text-transform:none}
+.oauth-btn svg{flex:none}
 /* Custom themed dropdown (replaces native select popup) */
 .cdd-native{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .cdd{position:relative;width:100%}

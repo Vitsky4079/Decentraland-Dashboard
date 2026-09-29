@@ -2,6 +2,20 @@ import { getSession, signUp, signInWithPassword, signOut, signInWithGoogle, sign
 
 const $ = (id) => document.getElementById(id);
 
+// supabase-js's own messages here are developer-facing hints (mention passing a
+// `wallet` option programmatically, or a raw method name), not something to show an
+// end user -- swap in plain copy for the two common cases.
+function ethErrorMessage(error) {
+  const msg = error.message || '';
+  if (/No compatible Ethereum wallet/i.test(msg)) {
+    return 'No Ethereum wallet found. Install a wallet extension like MetaMask and try again.';
+  }
+  if (/eth_requestAccounts is missing or invalid/i.test(msg)) {
+    return 'Wallet connection was cancelled or interrupted. Try again and approve the request in your wallet.';
+  }
+  return msg || 'Could not sign in with your wallet.';
+}
+
 async function render() {
   const session = await getSession();
   $('loading').classList.add('hidden');
@@ -84,12 +98,7 @@ $('ethBtn').addEventListener('click', async () => {
   btn.disabled = false;
   if (error) {
     status.classList.add('err');
-    // supabase-js's own message here is a developer-facing hint (mentions passing a
-    // `wallet` option programmatically), not something to show an end user -- swap
-    // in plain copy for that one specific, common case.
-    status.textContent = /No compatible Ethereum wallet/i.test(error.message || '')
-      ? 'No Ethereum wallet found. Install a wallet extension like MetaMask and try again.'
-      : error.message || 'Could not sign in with your wallet.';
+    status.textContent = ethErrorMessage(error);
     return;
   }
   status.textContent = '';
