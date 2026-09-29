@@ -1,34 +1,30 @@
-import { accountUrl } from "@/lib/main-site";
-import { LogoutLink } from "./logout-link";
+import Link from "next/link";
 
-// Visually matches ../../assets/dcl.css's .nav -- same logo, same "pill CTA" idea --
-// so Drive reads as part of the same product, not a separate app bolted on.
-export function SiteHeader({ email }: { email?: string }) {
+// Same markup/classes as ../../assets dcl.js's nav (see account.html) so Drive's
+// header is pixel-identical to the main site's, not just similarly colored.
+// "Drive" is marked active since this header only ever renders on this app.
+export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-[rgba(13,11,18,.82)] backdrop-blur-md">
-      <div className="mx-auto flex h-[68px] max-w-5xl items-center gap-6 px-6">
-        <a href="https://decentraland-dashboard.org" className="flex items-center gap-2.5 text-[17.5px] font-bold">
+    <nav className="nav">
+      <div className="nav-inner">
+        <a className="logo" href="https://decentraland-dashboard.org">
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG, next/image's optimizer adds nothing here and needs an SVG opt-in flag */}
-          <img src="/brand/icon-color.svg" alt="" width={27} height={27} className="rounded-full" />
-          Decentraland · Drive
+          <img className="logo-mark" src="/brand/icon-color.svg" alt="" width={27} height={27} />
+          Decentraland · Status
         </a>
-        <div className="ml-auto flex items-center gap-4 text-sm">
-          {email ? (
-            <>
-              <span className="text-text-dim">{email}</span>
-              <LogoutLink />
-            </>
-          ) : (
-            <a
-              href={accountUrl()}
-              className="rounded-full px-4 py-1.5 text-[13px] font-bold text-[#1A0710]"
-              style={{ background: "var(--grad)" }}
-            >
-              Log in
-            </a>
-          )}
+        <div className="nav-links">
+          <a href="https://decentraland-dashboard.org/announcements">Announcements</a>
+          <a href="https://decentraland-dashboard.org/issues">Known issues</a>
+          <a href="https://decentraland-dashboard.org/features">Feature requests</a>
+          <a href="https://decentraland-dashboard.org/fixed">Recently fixed</a>
+          <a href="https://decentraland-dashboard.org/workarounds">Workarounds</a>
+          <a href="https://decentraland-dashboard.org/bundles">Asset bundles</a>
+          <a href="https://decentraland-dashboard.org/map">Map</a>
+          <Link href="/" className="active">Drive</Link>
+          <a href="https://decentraland-dashboard.org/account">Account</a>
+          <a className="nav-report" href="https://decentraland-dashboard.org/report">Report a bug</a>
         </div>
       </div>
-    </header>
+    </nav>
   );
 }

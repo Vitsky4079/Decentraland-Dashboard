@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
-/* Ported from ../../assets/dcl.css so Drive looks like one product with the main
-   site, not a bolted-on separate app. Keep these two in sync if the brand palette
-   ever changes -- there's no shared package between the two deployments. */
+/* Ported (verbatim where possible) from ../../assets/dcl.css so Drive is
+   structurally the same shell as the main site -- same nav, same hero pattern,
+   same footer -- with just the dashboard content swapped in. Keep these two files
+   in sync if the brand system changes; there's no shared package between the two
+   deployments to enforce it automatically. */
 @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/inter-400.woff2') format('woff2')}
 @font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/inter-600.woff2') format('woff2')}
 @font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/inter-700.woff2') format('woff2')}
@@ -17,10 +19,12 @@
   --text: #EDEAF4;
   --text-dim: #A39DB3;
   --text-faint: #6E6880;
-  --red: #FF2D55;
   --peach: #FFBC5B;
   --grad: linear-gradient(100deg,#FF2D55 0%,#FF6E4E 55%,#FFBC5B 100%);
   --radius: 14px;
+  --maxw: 1480px;
+  --mono: var(--font-jetbrains-mono), monospace;
+  --display: 'Inter', sans-serif;
 }
 
 @theme inline {
@@ -36,11 +40,54 @@
   --font-sans: 'Inter', sans-serif;
 }
 
-/* Drive is dark-only, same as the main site -- no light-mode variant to keep in sync. */
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
+body{background:var(--bg);color:var(--text);font-family:var(--display);-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+main{flex:1}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--peach);outline-offset:2px;border-radius:4px}
+
+/* ---------- Nav (verbatim from dcl.css) ---------- */
+.nav{position:sticky;top:0;z-index:50;background:rgba(13,11,18,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-inner{max-width:var(--maxw);margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;gap:24px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17.5px;letter-spacing:.01em;text-decoration:none;flex:none}
+.logo-mark{width:27px;height:27px;border-radius:50%;flex:none;object-fit:contain;display:block}
+.nav-links{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links a{text-decoration:none;color:var(--text-dim);font-size:14.5px;font-weight:500;padding:7px 11px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
+.nav-links a:hover{color:var(--text);background:var(--surface-2)}
+.nav-links a.active{color:var(--text);background:var(--surface-2)}
+.nav-links a.nav-report{margin-left:10px;flex:none;background:var(--grad);color:#1A0710;border:none;font-weight:700;font-size:13px;padding:7px 15px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s}
+.nav-links a.nav-report:hover{color:#1A0710;transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,45,85,.3)}
+
+/* ---------- Hero (verbatim from dcl.css) ---------- */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.parcel-grid{position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse 90% 110% at 50% 0%,#000 35%,transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse 90% 110% at 50% 0%,#000 35%,transparent 78%);
 }
-:focus-visible { outline: 2px solid var(--peach); outline-offset: 2px; border-radius: 4px; }
+.hero-inner{position:relative;max-width:var(--maxw);margin:0 auto;padding:72px 24px 56px}
+.hero-inner.compact{padding:46px 24px 38px}
+.hero-eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--peach);margin-bottom:14px}
+h1{font-family:var(--display);font-size:clamp(36px,5.2vw,64px);font-weight:800;line-height:1.08;letter-spacing:-.015em;max-width:760px}
+.hero-inner.compact h1{font-size:clamp(30px,4vw,46px)}
+h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-sub{color:var(--text-dim);max-width:680px;margin-top:16px;font-size:clamp(17px,0.9rem + 0.4vw,21px)}
+
+/* ---------- Layout / buttons / cards (verbatim from dcl.css) ---------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.wrap-narrow{max-width:920px}
+.report-btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:14px;letter-spacing:.07em;text-transform:uppercase;padding:13px 26px;border-radius:99px;text-decoration:none;border:none;transition:transform .15s,box-shadow .15s}
+.report-btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
+.report-btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
+.btn{display:inline-block;background:var(--grad);color:#1A0710;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:12px 22px;border-radius:99px;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,45,85,.35)}
+.btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong)}
+.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px 26px 22px;position:relative;overflow:hidden;transition:border-color .2s}
+.svc:hover{border-color:var(--line-strong);box-shadow:0 10px 30px -16px rgba(0,0,0,.8)}
+.svc-name{font-family:var(--display);font-weight:700;font-size:20px;margin-bottom:3px}
+.svc-desc{font-size:14.5px;color:var(--text-faint)}
+
+footer{margin-top:72px;border-top:1px solid var(--line);padding:32px 0 44px;color:var(--text-faint);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}

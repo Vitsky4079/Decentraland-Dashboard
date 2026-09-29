@@ -4,6 +4,9 @@ import { useRef, useState } from "react";
 import { ACCEPT_ATTR, formatBytes } from "@/lib/media-types";
 import type { MediaFile } from "@/lib/types";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { PageHero } from "@/components/page-hero";
+import { LogoutLink } from "@/components/logout-link";
 import { uploadFile } from "./upload";
 
 type InFlight = { id: string; name: string; pct: number; error?: string };
@@ -77,102 +80,121 @@ export function Dashboard({
 
   return (
     <>
-      <SiteHeader email={email} />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
-        <h1 className="text-2xl font-bold">Your Drive</h1>
+      <SiteHeader />
+      <PageHero
+        eyebrow="Your Drive"
+        title={
+          <>
+            Files ready for <span className="grad">Decentraland.</span>
+          </>
+        }
+        sub={`Signed in as ${email}.`}
+        compact
+      />
 
+      <main>
         <section>
-          <div className="mb-1 flex justify-between text-sm">
-            <span>Storage used</span>
-            <span className="text-text-dim">
-              {formatBytes(used)} / {formatBytes(quotaBytes)}
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-surface-2">
-            <div className="h-2 rounded-full" style={{ width: `${pct}%`, background: "var(--grad)" }} />
-          </div>
-        </section>
-
-        <section
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            handleFiles(e.dataTransfer.files);
-          }}
-          onClick={() => fileInputRef.current?.click()}
-          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius)] border-2 border-dashed border-line-strong px-6 py-10 text-center text-sm text-text-dim transition-colors hover:border-peach hover:text-text"
-        >
-          <p>Drag a file here, or click to choose one.</p>
-          <p className="text-xs text-text-faint">JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT_ATTR}
-            multiple
-            className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-        </section>
-
-        {inFlight.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {inFlight.map((f) => (
-              <li key={f.id} className="text-sm">
-                <div className="flex justify-between">
-                  <span className="truncate">{f.name}</span>
-                  <span className="text-text-dim">{f.error ? "failed" : `${f.pct}%`}</span>
-                </div>
-                {f.error ? (
-                  <p className="text-red-400">{f.error}</p>
-                ) : (
-                  <div className="h-1 w-full rounded-full bg-surface-2">
-                    <div className="h-1 rounded-full" style={{ width: `${f.pct}%`, background: "var(--grad)" }} />
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <section className="flex flex-col gap-3">
-          {files.length === 0 && <p className="text-sm text-text-dim">No files yet.</p>}
-          {files.map((file) => (
-            <div key={file.id} className="flex items-center gap-4 rounded-[var(--radius)] border border-line bg-surface p-3 text-sm">
-              <div className="min-w-0 flex-1">
-                {renamingId === file.id ? (
-                  <input
-                    autoFocus
-                    defaultValue={file.original_name}
-                    onBlur={(e) => handleRename(file, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                      if (e.key === "Escape") setRenamingId(null);
-                    }}
-                    className="w-full rounded border border-line-strong bg-surface-2 px-2 py-1"
-                  />
-                ) : (
-                  <p className="truncate font-medium">{file.original_name}</p>
-                )}
-                <p className="text-xs text-text-dim">
-                  {file.kind} · {formatBytes(file.size_bytes)}
-                </p>
-                <p className="truncate text-xs text-text-faint">{file.url}</p>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <button onClick={() => copyUrl(file.url)} className="rounded border border-line-strong px-2 py-1 hover:bg-surface-2">
-                  Copy URL
-                </button>
-                <button onClick={() => setRenamingId(file.id)} className="rounded border border-line-strong px-2 py-1 hover:bg-surface-2">
-                  Rename
-                </button>
-                <button onClick={() => handleDelete(file)} className="rounded border border-red-900 px-2 py-1 text-red-400 hover:bg-red-950">
-                  Delete
-                </button>
-              </div>
+          <div className="wrap wrap-narrow" style={{ paddingTop: 40, paddingBottom: 72, display: "flex", flexDirection: "column", gap: 32 }}>
+            <div className="flex justify-end">
+              <LogoutLink />
             </div>
-          ))}
+
+            <section>
+              <div className="flex justify-between text-sm" style={{ marginBottom: 4 }}>
+                <span>Storage used</span>
+                <span style={{ color: "var(--text-dim)" }}>
+                  {formatBytes(used)} / {formatBytes(quotaBytes)}
+                </span>
+              </div>
+              <div style={{ height: 8, width: "100%", borderRadius: 999, background: "var(--surface-2)" }}>
+                <div style={{ height: 8, borderRadius: 999, width: `${pct}%`, background: "var(--grad)" }} />
+              </div>
+            </section>
+
+            <section
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleFiles(e.dataTransfer.files);
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              className="flex cursor-pointer flex-col items-center justify-center gap-2 text-center text-sm"
+              style={{ border: "2px dashed var(--line-strong)", borderRadius: "var(--radius)", padding: "40px 24px", color: "var(--text-dim)" }}
+            >
+              <p>Drag a file here, or click to choose one.</p>
+              <p className="text-xs" style={{ color: "var(--text-faint)" }}>JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPT_ATTR}
+                multiple
+                className="hidden"
+                onChange={(e) => handleFiles(e.target.files)}
+              />
+            </section>
+
+            {inFlight.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {inFlight.map((f) => (
+                  <li key={f.id} className="text-sm">
+                    <div className="flex justify-between">
+                      <span className="truncate">{f.name}</span>
+                      <span style={{ color: "var(--text-dim)" }}>{f.error ? "failed" : `${f.pct}%`}</span>
+                    </div>
+                    {f.error ? (
+                      <p style={{ color: "var(--red)" }}>{f.error}</p>
+                    ) : (
+                      <div style={{ height: 4, width: "100%", borderRadius: 999, background: "var(--surface-2)" }}>
+                        <div style={{ height: 4, borderRadius: 999, width: `${f.pct}%`, background: "var(--grad)" }} />
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <section className="flex flex-col gap-3">
+              {files.length === 0 && <p className="text-sm" style={{ color: "var(--text-dim)" }}>No files yet.</p>}
+              {files.map((file) => (
+                <div
+                  key={file.id}
+                  className="svc flex items-center gap-4 text-sm"
+                  style={{ padding: "14px 18px" }}
+                >
+                  <div className="min-w-0 flex-1">
+                    {renamingId === file.id ? (
+                      <input
+                        autoFocus
+                        defaultValue={file.original_name}
+                        onBlur={(e) => handleRename(file, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                          if (e.key === "Escape") setRenamingId(null);
+                        }}
+                        className="w-full"
+                        style={{ borderRadius: 8, border: "1px solid var(--line-strong)", background: "var(--surface-2)", padding: "6px 10px" }}
+                      />
+                    ) : (
+                      <p className="truncate font-medium">{file.original_name}</p>
+                    )}
+                    <p className="text-xs" style={{ color: "var(--text-dim)" }}>
+                      {file.kind} · {formatBytes(file.size_bytes)}
+                    </p>
+                    <p className="truncate text-xs" style={{ color: "var(--text-faint)" }}>{file.url}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button onClick={() => copyUrl(file.url)} className="btn ghost">Copy URL</button>
+                    <button onClick={() => setRenamingId(file.id)} className="btn ghost">Rename</button>
+                    <button onClick={() => handleDelete(file)} className="btn ghost" style={{ color: "var(--red)" }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </section>
+          </div>
         </section>
       </main>
+
+      <SiteFooter />
     </>
   );
 }
