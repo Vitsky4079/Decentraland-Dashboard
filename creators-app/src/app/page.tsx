@@ -3,7 +3,21 @@ import { accountUrl } from "@/lib/main-site";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHero } from "@/components/page-hero";
+import { Lock } from "lucide-react";
 import { redirect } from "next/navigation";
+
+const SAMPLE_FILES = [
+  { name: "cyberpunk-billboard.png", kind: "image", size: "2.1 MB" },
+  { name: "lobby-ambience.mp3", kind: "audio", size: "4.8 MB" },
+  { name: "intro-cutscene.mp4", kind: "video", size: "38 MB" },
+] as const;
+
+const TABS = [
+  { label: "All", count: SAMPLE_FILES.length, active: true },
+  { label: "Photos", count: 1, active: false },
+  { label: "Audio", count: 1, active: false },
+  { label: "Videos", count: 1, active: false },
+];
 
 export default async function Home() {
   const supabase = await createClient();
@@ -28,49 +42,60 @@ export default async function Home() {
 
       <main>
         <section>
-          <div className="wrap wrap-narrow">
-            <a href={accountUrl()} className="report-btn">
+          {/* Same layout/classes as the real dashboard (dashboard-client.tsx) so a
+              logged-out visitor sees exactly what they'll get -- just gated behind
+              login instead of a separate "preview" mockup. */}
+          <div className="wrap wrap-narrow" style={{ paddingTop: 40, paddingBottom: 72, display: "flex", flexDirection: "column", gap: 32 }}>
+            <a href={accountUrl()} className="report-btn" style={{ alignSelf: "flex-start" }}>
               Get started — it&apos;s free
             </a>
 
-            {/* Static preview of the real dashboard -- not interactive, just gives a
-                logged-out visitor a sense of what they'll get before signing up. */}
-            <div className="svc" style={{ marginTop: 48, padding: 24 }}>
-              <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-faint)", marginBottom: 16 }}>
-                <span>Preview</span>
-                <span>you@example.com</span>
+            <a
+              href={accountUrl()}
+              className="flex flex-col items-center justify-center gap-2 text-center text-sm"
+              style={{
+                border: "2px dashed var(--line-strong)",
+                borderRadius: "var(--radius)",
+                padding: "48px 24px",
+                color: "var(--text-dim)",
+                textDecoration: "none",
+              }}
+            >
+              <Lock size={18} style={{ color: "var(--text-faint)", marginBottom: 4 }} />
+              <p style={{ color: "var(--text)", fontWeight: 600 }}>Log in to upload your files</p>
+              <p className="text-xs" style={{ color: "var(--text-faint)" }}>JPG, PNG, WebP · MP3, OGG, WAV · MP4, WebM</p>
+            </a>
+
+            <section className="flex flex-col gap-4">
+              <div className="drive-tabs" aria-hidden="true">
+                {TABS.map((t) => (
+                  <span key={t.label} className={`drive-tab${t.active ? " is-active" : ""}`}>
+                    {t.label} ({t.count})
+                  </span>
+                ))}
               </div>
-              <div className="flex justify-between text-sm" style={{ marginBottom: 4 }}>
-                <span>Storage used</span>
-                <span style={{ color: "var(--text-dim)" }}>1.2 GB / 5.0 GB</span>
-              </div>
-              <div style={{ height: 8, width: "100%", borderRadius: 999, background: "var(--surface-2)", marginBottom: 24 }}>
-                <div style={{ height: 8, width: "24%", borderRadius: 999, background: "var(--grad)" }} />
-              </div>
-              <div className="flex flex-col gap-2">
-                {[
-                  { name: "cyberpunk-billboard.png", kind: "image", size: "2.1 MB" },
-                  { name: "lobby-ambience.mp3", kind: "audio", size: "4.8 MB" },
-                  { name: "intro-cutscene.mp4", kind: "video", size: "38 MB" },
-                ].map((f) => (
-                  <div
-                    key={f.name}
-                    className="flex items-center justify-between text-sm"
-                    style={{ borderRadius: 10, border: "1px solid var(--line)", padding: "10px 14px" }}
-                  >
-                    <span>{f.name}</span>
-                    <span style={{ color: "var(--text-faint)" }}>
-                      {f.kind} · {f.size}
-                    </span>
+
+              <div className="flex flex-col gap-3">
+                {SAMPLE_FILES.map((f) => (
+                  <div key={f.name} className="svc flex items-center gap-4 text-sm" style={{ padding: "16px 20px" }}>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate" style={{ fontWeight: 600 }}>{f.name}</p>
+                      <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
+                        <span className="kind-badge">
+                          <span className={`kind-dot ${f.kind}`} />
+                          {f.kind} · {f.size}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            <div style={{ marginTop: 48 }}>
-              <div className="svc-name" style={{ fontSize: 16 }}>Formats</div>
-              <p className="svc-desc">JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
-            </div>
+            <p className="flex items-center justify-center gap-2 text-sm" style={{ color: "var(--text-dim)" }}>
+              <Lock size={14} style={{ flexShrink: 0 }} />
+              Log in to start hosting your own scene media.
+            </p>
           </div>
         </section>
       </main>
