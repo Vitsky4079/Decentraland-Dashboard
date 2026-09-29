@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy · Decentraland Community Status</title>
+<meta name="description" content="What data this site and Drive collect, why, and how to request its deletion.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="assets/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/inter-800.woff2" as="font" type="font/woff2" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/brand/icon-color.svg">
+<meta name="theme-color" content="#08070C">
+<link rel="stylesheet" href="assets/dcl.css">
+</head>
+<body data-page="privacy">
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="/"><img class="logo-mark" src="assets/brand/icon-color.svg" alt="" width="27" height="27">Decentraland · Status</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="announcements" data-nav="announcements">Announcements</a>
+      <a href="issues" data-nav="issues">Known issues</a>
+      <a href="features" data-nav="features">Feature requests</a>
+      <a href="fixed" data-nav="fixed">Recently fixed</a>
+      <a href="workarounds" data-nav="workarounds">Workarounds</a>
+      <a href="bundles" data-nav="bundles">Asset bundles</a>
+      <a href="map" data-nav="map">Map</a>
+      <a href="https://drive.decentraland-dashboard.org" data-nav="drive" target="_blank" rel="noopener">Drive</a>
+      <a href="account" data-nav="account">Account</a>
+      <a class="nav-report" href="report">Report a bug</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="parcel-grid" id="parcelGrid" aria-hidden="true"></div>
+  <div class="hero-inner compact">
+    <div class="hero-eyebrow">Legal</div>
+    <h1>Privacy <span class="grad">Policy</span></h1>
+    <p class="hero-sub">What this site and Drive collect, why, and how to have it removed.</p>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap wrap-narrow">
+      <div class="blog-post">
+        <div class="blog-body">
+          <p><em>Last updated: September 2026.</em></p>
+
+          <h3>Who this covers</h3>
+          <p>This policy covers decentraland-dashboard.org and its Drive subdomain (drive.decentraland-dashboard.org). This is a community-run project, not an official Decentraland Foundation service.</p>
+
+          <h3>What we collect</h3>
+          <ul>
+            <li><strong>Account info.</strong> An email address and password (if you sign up directly), or the basic profile info a provider gives us if you use "Continue with Google" (your email and name) or "Continue with Ethereum wallet" (your public wallet address). We never see your Google password or your wallet's private key -- those never leave Google or your wallet.</li>
+            <li><strong>Files you upload to Drive.</strong> The file itself, its name, size, type, and upload date, tied to your account.</li>
+            <li><strong>A session cookie.</strong> Used to keep you signed in across this site and Drive. It doesn't track you anywhere else.</li>
+          </ul>
+          <p>We don't run analytics or advertising trackers on this site, and we don't log IP addresses on uploads today.</p>
+
+          <h3>What we use it for</h3>
+          <p>Signing you in, storing and serving the files you upload, enforcing per-account storage limits, and responding to abuse or legal requests (like a copyright takedown) involving something uploaded to Drive.</p>
+
+          <h3>Who else sees it</h3>
+          <p>We use a small number of infrastructure providers to run this site -- they process data on our behalf, not for their own purposes:</p>
+          <ul>
+            <li><strong>Supabase</strong> hosts our database and handles authentication (including the Google and Ethereum sign-in flows).</li>
+            <li><strong>Cloudflare</strong> stores uploaded files and serves them over HTTPS.</li>
+            <li><strong>Google</strong> only sees the sign-in request if you choose "Continue with Google" -- that's between you and Google.</li>
+            <li><strong>Vercel</strong> hosts this website and Drive's application code.</li>
+          </ul>
+          <p>We don't sell or share your data with anyone else.</p>
+
+          <h3>How long we keep it</h3>
+          <p>For as long as your account exists. Deleting a file in Drive removes it immediately. To delete your account and all associated data, contact us using the method below.</p>
+
+          <h3>Uploaded content</h3>
+          <p>By uploading to Drive, you agree not to upload illegal or infringing content, per the notice shown at signup. We can remove content or suspend accounts that violate this without notice, and we cooperate with valid legal requests (copyright takedowns, law enforcement requests) involving uploaded content.</p>
+
+          <h3>Your rights</h3>
+          <p>You can ask us what data we hold about you, correct it, or have it deleted. Since this is a small community project rather than a company with a dedicated privacy team, the fastest way to reach us is to <a href="report">open a report</a> or file an issue on our GitHub repository.</p>
+
+          <h3>Changes to this policy</h3>
+          <p>If this policy changes in a meaningful way, we'll update the date at the top of this page.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Community-run status board · Not an official Decentraland Foundation service</span>
+    <span><a href="privacy">Privacy</a> · <a href="terms">Terms</a></span>
+  </div>
+</footer>
+
+<script defer src="assets/config.js"></script>
+<script defer src="assets/dcl.js"></script>
+</body>
+</html>
