@@ -67,19 +67,9 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3" style={{ marginTop: 48 }}>
-              <div>
-                <div className="svc-name" style={{ fontSize: 16 }}>Formats</div>
-                <p className="svc-desc">JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
-              </div>
-              <div>
-                <div className="svc-name" style={{ fontSize: 16 }}>Free tier</div>
-                <p className="svc-desc">5 GB of storage per account to start</p>
-              </div>
-              <div>
-                <div className="svc-name" style={{ fontSize: 16 }}>One account</div>
-                <p className="svc-desc">Same login as decentraland-dashboard.org</p>
-              </div>
+            <div style={{ marginTop: 48 }}>
+              <div className="svc-name" style={{ fontSize: 16 }}>Formats</div>
+              <p className="svc-desc">JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
             </div>
           </div>
         </section>

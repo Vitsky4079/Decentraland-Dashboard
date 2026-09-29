@@ -9,7 +9,7 @@ export function SiteHeader() {
       <div className="nav-inner">
         <a className="logo" href="https://decentraland-dashboard.org">
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG, next/image's optimizer adds nothing here and needs an SVG opt-in flag */}
-          <img className="logo-mark" src="/brand/icon-color.svg" alt="" width={27} height={27} />
+          <img className="logo-mark" src="/brand/icon-color.svg" alt="" width={41} height={41} />
           Decentraland · Status
         </a>
         <div className="nav-links">
