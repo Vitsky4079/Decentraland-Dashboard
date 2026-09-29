@@ -115,3 +115,16 @@ as $$
   select coalesce(sum(size_bytes), 0) from public.media_files where user_id = p_user_id;
 $$;
 grant execute on function public.get_storage_usage(uuid) to authenticated;
+
+-- Total storage across every user, for the upload API's site-wide cap (independent
+-- of each user's own 1 GiB quota -- see SITE_STORAGE_CAP_BYTES in media-types.ts).
+create or replace function public.get_total_storage_usage()
+returns bigint
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(sum(size_bytes), 0) from public.media_files;
+$$;
+grant execute on function public.get_total_storage_usage() to authenticated;

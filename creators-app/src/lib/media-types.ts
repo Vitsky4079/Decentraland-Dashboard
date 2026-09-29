@@ -10,6 +10,12 @@ export const MAX_SIZE_BYTES: Record<MediaKind, number> = {
   video: 500 * 1024 * 1024, // 500 MB
 };
 
+// Independent of each user's own 1 GiB quota (supabase/migrations/creator_media.sql):
+// a hard ceiling on total storage across every account combined, so the R2 bill can
+// never run away even if far more than the ~1000 users the per-user quota was sized
+// around end up signing up.
+export const SITE_STORAGE_CAP_BYTES = 1024 * 1024 * 1024 * 1024; // 1 TiB
+
 // Magic-byte signatures checked server-side (see api/upload/request) -- never trust
 // a client-declared extension or Content-Type alone.
 export const ALLOWED_TYPES: Record<string, { kind: MediaKind; ext: string }> = {

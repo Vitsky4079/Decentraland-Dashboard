@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ALLOWED_TYPES, MAX_SIZE_BYTES } from "@/lib/media-types";
+import { ALLOWED_TYPES, MAX_SIZE_BYTES, SITE_STORAGE_CAP_BYTES } from "@/lib/media-types";
 import { sniffMime } from "@/lib/sniff-mime";
 
 // Step 1 of the upload flow: the client sends metadata + a small byte sample (not
@@ -37,9 +37,10 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
-  const [{ data: profile }, { data: usedBytes }, { count: recentUploads }] = await Promise.all([
+  const [{ data: profile }, { data: usedBytes }, { data: totalUsedBytes }, { count: recentUploads }] = await Promise.all([
     admin.from("user_profiles").select("quota_bytes").eq("id", user.id).single(),
     admin.rpc("get_storage_usage", { p_user_id: user.id }),
+    admin.rpc("get_total_storage_usage"),
     admin
       .from("media_files")
       .select("id", { count: "exact", head: true })
@@ -58,6 +59,13 @@ export async function POST(req: Request) {
   const used = typeof usedBytes === "number" ? usedBytes : Number(usedBytes ?? 0);
   if (used + size > quotaBytes) {
     return NextResponse.json({ error: "storage quota exceeded" }, { status: 413 });
+  }
+
+  // Independent of the per-user quota above: a hard site-wide ceiling so total R2
+  // usage can't run away regardless of how many accounts exist.
+  const totalUsed = typeof totalUsedBytes === "number" ? totalUsedBytes : Number(totalUsedBytes ?? 0);
+  if (totalUsed + size > SITE_STORAGE_CAP_BYTES) {
+    return NextResponse.json({ error: "Drive has reached its total storage limit -- please try again later" }, { status: 413 });
   }
 
   const key = `${user.id}/${randomUUID()}.${match.ext}`;
