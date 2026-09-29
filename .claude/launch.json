@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "5173"],
       "port": 5173
+    },
+    {
+      "name": "drive-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "creators-app", "run", "dev", "--", "-p", "3100"],
+      "port": 3100
     }
   ]
 }

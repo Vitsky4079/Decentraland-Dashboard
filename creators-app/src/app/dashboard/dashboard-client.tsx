@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { ACCEPT_ATTR, formatBytes } from "@/lib/media-types";
-import { accountUrl } from "@/lib/main-site";
 import type { MediaFile } from "@/lib/types";
+import { SiteHeader } from "@/components/site-header";
 import { uploadFile } from "./upload";
 
 type InFlight = { id: string; name: string; pct: number; error?: string };
@@ -25,12 +24,6 @@ export function Dashboard({
   const [inFlight, setInFlight] = useState<InFlight[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  async function handleLogout() {
-    await createClient().auth.signOut();
-    // Cross-origin (main site), not a route in this app -- can't use next/navigation for this.
-    window.location.href = accountUrl();
-  }
 
   function handleFiles(list: FileList | null) {
     if (!list) return;
@@ -83,108 +76,103 @@ export function Dashboard({
   const pct = quotaBytes > 0 ? Math.min(100, Math.round((used / quotaBytes) * 100)) : 0;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-6 py-10">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Your Drive</h1>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-black/60 dark:text-white/60">{email}</span>
-          <button onClick={handleLogout} className="underline">
-            Log out
-          </button>
-        </div>
-      </header>
+    <>
+      <SiteHeader email={email} />
+      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
+        <h1 className="text-2xl font-bold">Your Drive</h1>
 
-      <section>
-        <div className="mb-1 flex justify-between text-sm">
-          <span>Storage used</span>
-          <span>
-            {formatBytes(used)} / {formatBytes(quotaBytes)}
-          </span>
-        </div>
-        <div className="h-2 w-full rounded-full bg-black/10 dark:bg-white/10">
-          <div className="h-2 rounded-full bg-foreground" style={{ width: `${pct}%` }} />
-        </div>
-      </section>
-
-      <section
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          handleFiles(e.dataTransfer.files);
-        }}
-        onClick={() => fileInputRef.current?.click()}
-        className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-black/20 px-6 py-10 text-center text-sm text-black/60 hover:border-black/40 dark:border-white/20 dark:text-white/60 dark:hover:border-white/40"
-      >
-        <p>Drag a file here, or click to choose one.</p>
-        <p className="text-xs">JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPT_ATTR}
-          multiple
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-      </section>
-
-      {inFlight.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {inFlight.map((f) => (
-            <li key={f.id} className="text-sm">
-              <div className="flex justify-between">
-                <span className="truncate">{f.name}</span>
-                <span>{f.error ? "failed" : `${f.pct}%`}</span>
-              </div>
-              {f.error ? (
-                <p className="text-red-600">{f.error}</p>
-              ) : (
-                <div className="h-1 w-full rounded-full bg-black/10 dark:bg-white/10">
-                  <div className="h-1 rounded-full bg-foreground" style={{ width: `${f.pct}%` }} />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <section className="flex flex-col gap-3">
-        {files.length === 0 && <p className="text-sm text-black/60 dark:text-white/60">No files yet.</p>}
-        {files.map((file) => (
-          <div key={file.id} className="flex items-center gap-4 rounded border border-black/10 p-3 text-sm dark:border-white/10">
-            <div className="min-w-0 flex-1">
-              {renamingId === file.id ? (
-                <input
-                  autoFocus
-                  defaultValue={file.original_name}
-                  onBlur={(e) => handleRename(file, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                    if (e.key === "Escape") setRenamingId(null);
-                  }}
-                  className="w-full rounded border border-black/20 px-2 py-1 dark:border-white/20"
-                />
-              ) : (
-                <p className="truncate font-medium">{file.original_name}</p>
-              )}
-              <p className="text-xs text-black/50 dark:text-white/50">
-                {file.kind} · {formatBytes(file.size_bytes)}
-              </p>
-              <p className="truncate text-xs text-black/40 dark:text-white/40">{file.url}</p>
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <button onClick={() => copyUrl(file.url)} className="rounded border border-black/15 px-2 py-1 dark:border-white/20">
-                Copy URL
-              </button>
-              <button onClick={() => setRenamingId(file.id)} className="rounded border border-black/15 px-2 py-1 dark:border-white/20">
-                Rename
-              </button>
-              <button onClick={() => handleDelete(file)} className="rounded border border-red-300 px-2 py-1 text-red-600">
-                Delete
-              </button>
-            </div>
+        <section>
+          <div className="mb-1 flex justify-between text-sm">
+            <span>Storage used</span>
+            <span className="text-text-dim">
+              {formatBytes(used)} / {formatBytes(quotaBytes)}
+            </span>
           </div>
-        ))}
-      </section>
-    </main>
+          <div className="h-2 w-full rounded-full bg-surface-2">
+            <div className="h-2 rounded-full" style={{ width: `${pct}%`, background: "var(--grad)" }} />
+          </div>
+        </section>
+
+        <section
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleFiles(e.dataTransfer.files);
+          }}
+          onClick={() => fileInputRef.current?.click()}
+          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius)] border-2 border-dashed border-line-strong px-6 py-10 text-center text-sm text-text-dim transition-colors hover:border-peach hover:text-text"
+        >
+          <p>Drag a file here, or click to choose one.</p>
+          <p className="text-xs text-text-faint">JPG, PNG, WebP, MP3, OGG, WAV, MP4, WebM</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT_ATTR}
+            multiple
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+        </section>
+
+        {inFlight.length > 0 && (
+          <ul className="flex flex-col gap-2">
+            {inFlight.map((f) => (
+              <li key={f.id} className="text-sm">
+                <div className="flex justify-between">
+                  <span className="truncate">{f.name}</span>
+                  <span className="text-text-dim">{f.error ? "failed" : `${f.pct}%`}</span>
+                </div>
+                {f.error ? (
+                  <p className="text-red-400">{f.error}</p>
+                ) : (
+                  <div className="h-1 w-full rounded-full bg-surface-2">
+                    <div className="h-1 rounded-full" style={{ width: `${f.pct}%`, background: "var(--grad)" }} />
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <section className="flex flex-col gap-3">
+          {files.length === 0 && <p className="text-sm text-text-dim">No files yet.</p>}
+          {files.map((file) => (
+            <div key={file.id} className="flex items-center gap-4 rounded-[var(--radius)] border border-line bg-surface p-3 text-sm">
+              <div className="min-w-0 flex-1">
+                {renamingId === file.id ? (
+                  <input
+                    autoFocus
+                    defaultValue={file.original_name}
+                    onBlur={(e) => handleRename(file, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      if (e.key === "Escape") setRenamingId(null);
+                    }}
+                    className="w-full rounded border border-line-strong bg-surface-2 px-2 py-1"
+                  />
+                ) : (
+                  <p className="truncate font-medium">{file.original_name}</p>
+                )}
+                <p className="text-xs text-text-dim">
+                  {file.kind} · {formatBytes(file.size_bytes)}
+                </p>
+                <p className="truncate text-xs text-text-faint">{file.url}</p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button onClick={() => copyUrl(file.url)} className="rounded border border-line-strong px-2 py-1 hover:bg-surface-2">
+                  Copy URL
+                </button>
+                <button onClick={() => setRenamingId(file.id)} className="rounded border border-line-strong px-2 py-1 hover:bg-surface-2">
+                  Rename
+                </button>
+                <button onClick={() => handleDelete(file)} className="rounded border border-red-900 px-2 py-1 text-red-400 hover:bg-red-950">
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </section>
+      </main>
+    </>
   );
 }

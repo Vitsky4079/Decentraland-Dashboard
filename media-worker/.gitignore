@@ -2,3 +2,4 @@
 node_modules
 .wrangler
 out
+wrangler-dev.log
