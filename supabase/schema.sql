@@ -444,7 +444,7 @@ grant execute on function public.get_place(text) to anon, authenticated;
 create table if not exists public.user_profiles (
   id           uuid primary key references auth.users(id) on delete cascade,
   is_admin     boolean not null default false,
-  quota_bytes  bigint not null default 1073741824, -- 1 GiB default per-user media quota (~1000 users -> ~1TB of R2 storage)
+  quota_bytes  bigint not null default 5368709120, -- 5 GiB default per-user media quota (~200 users -> ~1TB of R2 storage)
   created_at   timestamptz not null default now()
 );
 alter table public.user_profiles add column if not exists is_admin boolean not null default false;
