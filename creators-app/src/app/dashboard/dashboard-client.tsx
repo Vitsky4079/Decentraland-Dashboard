@@ -228,6 +228,16 @@ export function Dashboard({
                         <button onClick={() => copyUrl(file.id, file.url)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>Copy URL</button>
                       </div>
                       <button
+                        onMouseDown={(e) => {
+                          // Clicking this button while it's in "Save" mode would
+                          // otherwise blur the rename input via the browser's default
+                          // focus-shift-on-mousedown -- that commits the rename (see
+                          // the input's onBlur) *before* this button's own onClick
+                          // runs, so onClick would then read renamingId as already
+                          // null and immediately reopen rename mode. Suppressing the
+                          // default here keeps focus stable until onClick decides.
+                          if (renamingId === file.id) e.preventDefault();
+                        }}
                         onClick={() => (renamingId === file.id ? renameInputRef.current?.blur() : setRenamingId(file.id))}
                         className="btn ghost"
                         style={{ padding: "8px 14px", fontSize: 11 }}
