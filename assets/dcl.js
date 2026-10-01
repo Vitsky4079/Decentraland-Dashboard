@@ -1249,7 +1249,16 @@ function renderPatchNotes() {
         <div class="pn-collapse"><div class="pn-inner"><div class="pn-body">${patchNotesToHtml(n.body || '')}</div></div></div>
       </div>`;
       }).join('');
-      cards = latestCard + (prev ? `<div class="pn-prev-label">Previous releases</div>${prev}` : '');
+      const prevCount = list.length - 1;
+      cards = latestCard + (prev ? `
+      <div class="pn-prev-group">
+        <button class="pn-toggle pn-prev-toggle" type="button" aria-expanded="false">
+          <span class="pn-chev" aria-hidden="true"></span>
+          <span class="pn-prev-label">Previous releases</span>
+          <span class="pn-count">${prevCount} release${prevCount > 1 ? 's' : ''}</span>
+        </button>
+        <div class="pn-collapse"><div class="pn-inner"><div class="pn-prev-list">${prev}</div></div></div>
+      </div>` : '');
     }
     return `
       <div class="pn-col">
@@ -1263,7 +1272,7 @@ function renderPatchNotes() {
 
   wrap.querySelectorAll('.pn-toggle').forEach(btn => {
     btn.onclick = () => {
-      const card = btn.closest('.pn-card');
+      const card = btn.closest('.pn-card, .pn-prev-group');
       const open = card.classList.toggle('open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     };

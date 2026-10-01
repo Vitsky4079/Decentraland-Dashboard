@@ -417,7 +417,15 @@ button.card-title:hover{text-decoration:underline;text-underline-offset:3px}
 .pn-list li{position:relative;padding-left:18px;margin:4px 0}
 .pn-list li::before{content:"";position:absolute;left:2px;top:9px;width:5px;height:5px;border-radius:50%;background:var(--peach)}
 .pn-body a{color:var(--peach)}
-.pn-prev-label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-top:4px;padding-top:14px;border-top:1px solid var(--line)}
+.pn-prev-group{margin-top:4px;padding-top:14px;border-top:1px solid var(--line)}
+.pn-prev-toggle{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;cursor:pointer;padding:0;color:var(--text-faint);font-family:inherit;text-align:left}
+.pn-prev-toggle:hover{color:var(--text-dim)}
+.pn-prev-toggle:hover .pn-chev{border-color:var(--text-dim)}
+.pn-prev-label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.pn-prev-toggle .pn-count{margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;color:var(--text-faint)}
+.pn-prev-list{display:flex;flex-direction:column;gap:14px;padding-top:14px}
+.pn-prev-group.open .pn-chev{transform:rotate(45deg)}
+.pn-prev-group.open .pn-collapse{grid-template-rows:1fr}
 .pn-card.prev{padding:0;background:var(--surface)}
 .pn-toggle{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;cursor:pointer;padding:13px 16px;color:var(--text);font-family:inherit;text-align:left}
 .pn-toggle:hover{background:var(--surface-2)}
