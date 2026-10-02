@@ -7,7 +7,7 @@ export type MediaKind = "image" | "audio" | "video";
 export const MAX_SIZE_BYTES: Record<MediaKind, number> = {
   image: 15 * 1024 * 1024, // 15 MB
   audio: 50 * 1024 * 1024, // 50 MB
-  video: 500 * 1024 * 1024, // 500 MB
+  video: 2 * 1024 * 1024 * 1024, // 2 GiB -- uploads go straight to R2 in 32 MiB parts, see lib/r2.ts
 };
 
 // Independent of each user's own 1 GiB quota (supabase/migrations/creator_media.sql):

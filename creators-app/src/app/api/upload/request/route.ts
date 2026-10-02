@@ -4,13 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ALLOWED_TYPES, MAX_SIZE_BYTES, SITE_STORAGE_CAP_BYTES } from "@/lib/media-types";
 import { sniffMime } from "@/lib/sniff-mime";
+import { PART_SIZE, PART_URL_TTL_SECONDS, R2_BUCKET, r2Client } from "@/lib/r2";
+import { CreateMultipartUploadCommand, UploadPartCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Step 1 of the upload flow: the client sends metadata + a small byte sample (not
-// the whole file -- videos can be hundreds of MB, and this route runs on Vercel,
-// which has request-size limits the actual upload deliberately avoids). This route
-// decides whether the upload is allowed at all, then mints a short-lived, one-object
-// upload token from the media worker. The actual file bytes go straight from the
-// browser to the worker next, never through this server.
+// the whole file -- videos can be gigabytes, and this route runs on Vercel, which
+// has request-size limits the actual upload deliberately avoids). This route
+// decides whether the upload is allowed at all, then starts an R2 multipart upload
+// and returns a presigned URL per part. The actual file bytes go straight from the
+// browser to R2, never through this server or the media worker.
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -69,19 +72,39 @@ export async function POST(req: Request) {
   }
 
   const key = `${user.id}/${randomUUID()}.${match.ext}`;
-  const workerRes = await fetch(`${process.env.MEDIA_WORKER_URL}/admin/upload-token`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.MEDIA_WORKER_ADMIN_SECRET}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ key, maxSize, ttl: 600 }),
-  });
-  if (!workerRes.ok) {
+  const partCount = Math.ceil(size / PART_SIZE);
+
+  let uploadId: string;
+  let parts: { partNumber: number; url: string }[];
+  try {
+    const r2 = r2Client();
+    const created = await r2.send(new CreateMultipartUploadCommand({ Bucket: R2_BUCKET, Key: key, ContentType: sniffed! }));
+    if (!created.UploadId) throw new Error("no upload id");
+    uploadId = created.UploadId;
+
+    // Each part URL signs its exact Content-Length, so a client can't push more
+    // bytes than the size it declared (and that we checked against quota above).
+    parts = await Promise.all(
+      Array.from({ length: partCount }, async (_, i) => {
+        const partNumber = i + 1;
+        const contentLength = partNumber < partCount ? PART_SIZE : size - PART_SIZE * (partCount - 1);
+        const url = await getSignedUrl(
+          r2,
+          new UploadPartCommand({ Bucket: R2_BUCKET, Key: key, UploadId: uploadId, PartNumber: partNumber, ContentLength: contentLength }),
+          { expiresIn: PART_URL_TTL_SECONDS },
+        );
+        return { partNumber, url };
+      }),
+    );
+  } catch {
     return NextResponse.json({ error: "could not prepare upload" }, { status: 502 });
   }
-  const { url: uploadUrl } = (await workerRes.json()) as { url: string };
 
   return NextResponse.json({
-    uploadUrl,
     key,
+    uploadId,
+    partSize: PART_SIZE,
+    parts,
     kind: match.kind,
     mimeType: sniffed,
     publicUrl: `${process.env.MEDIA_WORKER_URL}/v/${key}`,

@@ -1,0 +1,13 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": ["https://drive.decentraland-dashboard.org", "http://localhost:3100"],
+        "methods": ["PUT"],
+        "headers": ["content-type", "content-length"]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}
