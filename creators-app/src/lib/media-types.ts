@@ -4,16 +4,13 @@
 
 export type MediaKind = "image" | "audio" | "video";
 
-export const MAX_SIZE_BYTES: Record<MediaKind, number> = {
-  image: 15 * 1024 * 1024, // 15 MB
-  audio: 50 * 1024 * 1024, // 50 MB
-  video: 2 * 1024 * 1024 * 1024, // 2 GiB -- uploads go straight to R2 in 32 MiB parts, see lib/r2.ts
-};
+// There is deliberately no per-file size cap: a single file can be as large as the
+// uploader's remaining quota (5 GiB by default, supabase/migrations/creator_media.sql).
+// Uploads go straight to R2 in 32 MiB parts, see lib/r2.ts.
 
-// Independent of each user's own 1 GiB quota (supabase/migrations/creator_media.sql):
-// a hard ceiling on total storage across every account combined, so the R2 bill can
-// never run away even if far more than the ~1000 users the per-user quota was sized
-// around end up signing up.
+// Independent of each user's own quota: a hard ceiling on total storage across every
+// account combined, so the R2 bill can never run away even if far more users than the
+// per-user quota was sized around end up signing up.
 export const SITE_STORAGE_CAP_BYTES = 1024 * 1024 * 1024 * 1024; // 1 TiB
 
 // Magic-byte signatures checked server-side (see api/upload/request) -- never trust

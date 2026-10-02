@@ -3,7 +3,7 @@ import { S3Client } from "@aws-sdk/client-s3";
 // 32 MiB parts: well above R2's 5 MiB minimum, small enough that a dropped
 // connection only costs one part, and 2 GiB of video is just 64 parts.
 export const PART_SIZE = 32 * 1024 * 1024;
-export const PART_URL_TTL_SECONDS = 3 * 60 * 60;
+export const PART_URL_TTL_SECONDS = 12 * 60 * 60; // a 5 GiB file on a slow connection can take hours
 
 export const R2_BUCKET = process.env.R2_BUCKET || "dcl-media";
 

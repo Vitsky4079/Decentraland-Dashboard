@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { CompleteMultipartUploadCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { MAX_SIZE_BYTES, SITE_STORAGE_CAP_BYTES, type MediaKind } from "@/lib/media-types";
+import { SITE_STORAGE_CAP_BYTES, type MediaKind } from "@/lib/media-types";
 import { R2_BUCKET, r2Client } from "@/lib/r2";
 
 // Step 2: the client has uploaded every part straight to R2 using the presigned URLs
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   const totalUsed = typeof totalUsedBytes === "number" ? totalUsedBytes : Number(totalUsedBytes ?? 0);
 
   const rejection =
-    sizeBytes <= 0 || sizeBytes > MAX_SIZE_BYTES[kind]
+    sizeBytes <= 0
       ? "file size is not allowed"
       : used + sizeBytes > (profile?.quota_bytes ?? 0)
         ? "storage quota exceeded"

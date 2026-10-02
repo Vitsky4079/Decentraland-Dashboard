@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ALLOWED_TYPES, MAX_SIZE_BYTES, SITE_STORAGE_CAP_BYTES } from "@/lib/media-types";
+import { ALLOWED_TYPES, SITE_STORAGE_CAP_BYTES } from "@/lib/media-types";
 import { sniffMime } from "@/lib/sniff-mime";
 import { PART_SIZE, PART_URL_TTL_SECONDS, R2_BUCKET, r2Client } from "@/lib/r2";
 import { CreateMultipartUploadCommand, UploadPartCommand } from "@aws-sdk/client-s3";
@@ -34,9 +34,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unsupported or unrecognized file type" }, { status: 415 });
   }
 
-  const maxSize = MAX_SIZE_BYTES[match.kind];
-  if (size > maxSize) {
-    return NextResponse.json({ error: `${match.kind} files are limited to ${Math.round(maxSize / 1024 / 1024)} MB` }, { status: 413 });
+  if (!Number.isFinite(size) || size <= 0) {
+    return NextResponse.json({ error: "invalid file size" }, { status: 400 });
   }
 
   const admin = createAdminClient();
