@@ -21,7 +21,7 @@ const UINT32_MAX = 0xffffffff;
 const ACCEPTABLE_SKEW_SEC = 1.5;
 const IGNORABLE_BOXES = new Set(["free", "skip", "wide"]);
 
-type Box = { type: string; start: number; size: number };
+export type Box = { type: string; start: number; size: number };
 
 type Chunk = { track: number; index: number; start: number; length: number; time: number };
 
@@ -31,7 +31,7 @@ type TrackTables = {
   chunkCount: number;
 };
 
-function fourcc(view: DataView, offset: number): string {
+export function fourcc(view: DataView, offset: number): string {
   return String.fromCharCode(
     view.getUint8(offset),
     view.getUint8(offset + 1),
@@ -40,7 +40,7 @@ function fourcc(view: DataView, offset: number): string {
   );
 }
 
-async function readTopLevelBoxes(file: Blob): Promise<Box[] | null> {
+export async function readTopLevelBoxes(file: Blob): Promise<Box[] | null> {
   const boxes: Box[] = [];
   let offset = 0;
   while (offset < file.size) {
@@ -65,7 +65,7 @@ async function readTopLevelBoxes(file: Blob): Promise<Box[] | null> {
 }
 
 // Child box positions of type `type` inside [start, end).
-function children(view: DataView, start: number, end: number, type: string): number[] {
+export function children(view: DataView, start: number, end: number, type: string): number[] {
   const out: number[] = [];
   let pos = start;
   while (pos + 8 <= end) {
@@ -77,13 +77,13 @@ function children(view: DataView, start: number, end: number, type: string): num
   return out;
 }
 
-function child(view: DataView, start: number, end: number, type: string): number {
+export function child(view: DataView, start: number, end: number, type: string): number {
   const found = children(view, start, end, type);
   if (found.length !== 1) throw new Error(`expected one ${type}`);
   return found[0];
 }
 
-function boxEnd(view: DataView, pos: number): number {
+export function boxEnd(view: DataView, pos: number): number {
   return pos + view.getUint32(pos);
 }
 

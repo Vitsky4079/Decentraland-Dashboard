@@ -8,8 +8,16 @@ import { SiteFooter } from "@/components/site-footer";
 import { PageHero } from "@/components/page-hero";
 import { LogoutLink } from "@/components/logout-link";
 import { uploadFile } from "./upload";
+import { readVideoInfo } from "@/lib/video-info";
 
 type InFlight = { id: string; name: string; pct: number; error?: string };
+type Notice = { id: string; fileName: string; detail: string };
+
+// 10-bit video uploads fine but the Explorer's player can't play it (8-bit H.264 and HEVC both do).
+function convertCommand(fileName: string) {
+  const input = fileName.replace(/["\\]/g, "");
+  return `ffmpeg -i "${input}" -c:v libx264 -pix_fmt yuv420p -crf 20 -c:a aac -b:a 192k -movflags +faststart converted.mp4`;
+}
 type Tab = "all" | MediaKind;
 const TABS: { id: Tab; label: string }[] = [
   { id: "all", label: "All" },
@@ -34,6 +42,8 @@ export function Dashboard({
   const [inFlight, setInFlight] = useState<InFlight[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [copiedNoticeId, setCopiedNoticeId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +53,11 @@ export function Dashboard({
     Array.from(list).forEach((file) => {
       const id = crypto.randomUUID();
       setInFlight((prev) => [...prev, { id, name: file.name, pct: 0 }]);
+      readVideoInfo(file).then((info) => {
+        if (info && info.bitDepth > 8) {
+          setNotices((prev) => [...prev, { id, fileName: file.name, detail: `${info.codec.toUpperCase()} ${info.bitDepth}-bit` }]);
+        }
+      });
       uploadFile(file, (pct) => setInFlight((prev) => prev.map((f) => (f.id === id ? { ...f, pct } : f))))
         .then((record) => {
           setFiles((prev) => [record, ...prev]);
@@ -88,6 +103,16 @@ export function Dashboard({
       .then(() => {
         setCopiedId(id);
         setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1500);
+      })
+      .catch(() => {});
+  }
+
+  function copyCommand(notice: Notice) {
+    navigator.clipboard
+      .writeText(convertCommand(notice.fileName))
+      .then(() => {
+        setCopiedNoticeId(notice.id);
+        setTimeout(() => setCopiedNoticeId((prev) => (prev === notice.id ? null : prev)), 1500);
       })
       .catch(() => {});
   }
@@ -153,6 +178,32 @@ export function Dashboard({
                 onChange={(e) => handleFiles(e.target.files)}
               />
             </section>
+
+            {notices.map((n) => (
+              <div key={n.id} className="svc text-sm" role="alert" style={{ padding: "14px 18px", borderColor: "var(--peach)" }}>
+                <p style={{ fontWeight: 600 }}>
+                  {n.fileName} is {n.detail} video -- it may not play in the Decentraland Explorer.
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-dim)", marginTop: 4 }}>
+                  The upload still works and the link is valid, but the Explorer can&apos;t play 10-bit video (8-bit H.264 and HEVC both
+                  play fine). Convert it to 8-bit H.264 and upload that version:
+                </p>
+                <code
+                  className="text-xs"
+                  style={{ display: "block", marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "var(--surface-2)", color: "var(--text)", overflowX: "auto", whiteSpace: "nowrap", fontFamily: "var(--mono)" }}
+                >
+                  {convertCommand(n.fileName)}
+                </code>
+                <div className="flex gap-2" style={{ marginTop: 10 }}>
+                  <button onClick={() => copyCommand(n)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>
+                    {copiedNoticeId === n.id ? "Copied!" : "Copy command"}
+                  </button>
+                  <button onClick={() => setNotices((prev) => prev.filter((x) => x.id !== n.id))} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
 
             {inFlight.length > 0 && (
               <ul className="flex flex-col gap-2">
