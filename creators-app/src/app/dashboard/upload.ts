@@ -1,5 +1,5 @@
 import type { MediaFile } from "@/lib/types";
-import { ensureFaststart } from "@/lib/faststart";
+import { prepareVideoForStreaming } from "@/lib/faststart";
 
 const PART_CONCURRENCY = 4;
 const PART_ATTEMPTS = 4;
@@ -58,9 +58,10 @@ async function putPartWithRetry(url: string, blob: Blob, onBytes: (loaded: numbe
 // round-trips around it.
 export async function uploadFile(selectedFile: File, onProgress: (pct: number) => void): Promise<MediaFile> {
   onProgress(3);
-  // MP4/MOV files with the index at the end stall in the Explorer's video player; move it to
-  // the front (lossless, no re-encode, no extra upload time). Other files pass through as-is.
-  const file = await ensureFaststart(selectedFile);
+  // MP4/MOV files whose index is at the end, or whose audio/video are stored far apart, stall
+  // in the Explorer's video player. Re-order them losslessly (no re-encode, no extra upload
+  // time); anything else passes through untouched.
+  const file = await prepareVideoForStreaming(selectedFile);
   const sampleBase64 = await readSampleBase64(file);
 
   onProgress(8);
