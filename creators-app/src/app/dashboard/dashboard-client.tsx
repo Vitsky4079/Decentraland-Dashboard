@@ -9,14 +9,19 @@ import { PageHero } from "@/components/page-hero";
 import { LogoutLink } from "@/components/logout-link";
 import { uploadFile } from "./upload";
 import { readVideoInfo } from "@/lib/video-info";
+import { Copy, Check, TriangleAlert, X } from "lucide-react";
 
 type InFlight = { id: string; name: string; pct: number; error?: string };
 type Notice = { id: string; fileName: string; detail: string };
 
 // 10-bit video uploads fine but the Explorer's player can't play it (8-bit H.264 and HEVC both do).
+function convertedName(fileName: string) {
+  const base = fileName.replace(/\.[^.]*$/, "").replace(/["\\]/g, "");
+  return `${base}_8bit.mp4`;
+}
 function convertCommand(fileName: string) {
   const input = fileName.replace(/["\\]/g, "");
-  return `ffmpeg -i "${input}" -c:v libx264 -pix_fmt yuv420p -crf 20 -c:a aac -b:a 192k -movflags +faststart converted.mp4`;
+  return `ffmpeg -i "${input}" -c:v libx264 -pix_fmt yuv420p -crf 20 -c:a aac -b:a 192k -movflags +faststart "${convertedName(fileName)}"`;
 }
 type Tab = "all" | MediaKind;
 const TABS: { id: Tab; label: string }[] = [
@@ -180,26 +185,58 @@ export function Dashboard({
             </section>
 
             {notices.map((n) => (
-              <div key={n.id} className="svc text-sm" role="alert" style={{ padding: "14px 18px", borderColor: "var(--peach)" }}>
-                <p style={{ fontWeight: 600 }}>
-                  {n.fileName} is {n.detail} video -- it may not play in the Decentraland Explorer.
-                </p>
-                <p className="text-xs" style={{ color: "var(--text-dim)", marginTop: 4 }}>
-                  The upload still works and the link is valid, but the Explorer can&apos;t play 10-bit video (8-bit H.264 and HEVC both
-                  play fine). Convert it to 8-bit H.264 and upload that version:
-                </p>
-                <code
-                  className="text-xs"
-                  style={{ display: "block", marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "var(--surface-2)", color: "var(--text)", overflowX: "auto", whiteSpace: "nowrap", fontFamily: "var(--mono)" }}
-                >
-                  {convertCommand(n.fileName)}
-                </code>
-                <div className="flex gap-2" style={{ marginTop: 10 }}>
-                  <button onClick={() => copyCommand(n)} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>
-                    {copiedNoticeId === n.id ? "Copied!" : "Copy command"}
-                  </button>
-                  <button onClick={() => setNotices((prev) => prev.filter((x) => x.id !== n.id))} className="btn ghost" style={{ padding: "8px 14px", fontSize: 11 }}>
-                    Dismiss
+              <div key={n.id} className="svc text-sm" role="alert" style={{ padding: "18px 20px", borderColor: "var(--peach)" }}>
+                <div className="flex items-start gap-3">
+                  <TriangleAlert size={20} strokeWidth={2} aria-hidden="true" style={{ color: "var(--peach)", flex: "none", marginTop: 2 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 600 }}>
+                      {n.fileName} is {n.detail} video -- it may not play in the Decentraland Explorer.
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-dim)", marginTop: 4, lineHeight: 1.5 }}>
+                      Your upload is going through and the link is valid, but the Explorer can&apos;t play 10-bit video (8-bit H.264 and
+                      HEVC both play fine). To fix it, convert the video to 8-bit H.264 and upload that version instead.
+                    </p>
+
+                    <ol className="text-xs" style={{ color: "var(--text-dim)", marginTop: 12, paddingLeft: 18, listStyle: "decimal", lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 4 }}>
+                      <li>
+                        Install <strong style={{ color: "var(--text)" }}>ffmpeg</strong>, a free video tool. On Windows open a terminal and run{" "}
+                        <code style={{ fontFamily: "var(--mono)", color: "var(--text)" }}>winget install ffmpeg</code>; on macOS run{" "}
+                        <code style={{ fontFamily: "var(--mono)", color: "var(--text)" }}>brew install ffmpeg</code>. Then reopen the terminal.
+                      </li>
+                      <li>
+                        Open a terminal in the folder that contains the video. On Windows: open the folder, click its address bar, type{" "}
+                        <code style={{ fontFamily: "var(--mono)", color: "var(--text)" }}>cmd</code> and press Enter.
+                      </li>
+                      <li>Paste the command below and press Enter. It can take a few minutes. Your original file isn&apos;t changed.</li>
+                      <li>
+                        Upload the new file, <strong style={{ color: "var(--text)" }}>{convertedName(n.fileName)}</strong>, here.
+                      </li>
+                    </ol>
+
+                    <div style={{ position: "relative", marginTop: 12 }}>
+                      <pre
+                        className="text-xs"
+                        style={{ margin: 0, padding: "12px 96px 12px 12px", borderRadius: 10, border: "1px solid var(--line-strong)", background: "var(--surface-2)", color: "var(--text)", fontFamily: "var(--mono)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", lineHeight: 1.6 }}
+                      >
+                        {convertCommand(n.fileName)}
+                      </pre>
+                      <button
+                        onClick={() => copyCommand(n)}
+                        className="btn ghost"
+                        aria-label="Copy command"
+                        style={{ position: "absolute", top: 8, right: 8, padding: "6px 10px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 6 }}
+                      >
+                        {copiedNoticeId === n.id ? <Check size={13} strokeWidth={2.5} aria-hidden="true" /> : <Copy size={13} strokeWidth={2} aria-hidden="true" />}
+                        {copiedNoticeId === n.id ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setNotices((prev) => prev.filter((x) => x.id !== n.id))}
+                    aria-label="Dismiss warning"
+                    style={{ flex: "none", padding: 4, color: "var(--text-faint)", cursor: "pointer", background: "none", border: 0 }}
+                  >
+                    <X size={18} strokeWidth={2} aria-hidden="true" />
                   </button>
                 </div>
               </div>
