@@ -1,8 +1,11 @@
 // Supabase Edge Function: github-issues
 //
 // Two jobs, selected by ?action=:
-//   (default)        -> fetch issues from the Decentraland repos (token-backed,
-//                       cached 10 min). Avoids GitHub's 60/hour browser limit.
+//   (default)        -> PAUSED: returns a tiny `{ repos: [], paused: true }` and logs who
+//                       called. The full issue list is ~1.8 MB per call and caused the
+//                       Supabase egress overage; the site now reads a static snapshot
+//                       (assets/data/github-issues.json). To serve live issues again:
+//                       supabase secrets set ISSUES_LIVE=1 (token-backed, cached 10 min).
 //   ?action=resolve  -> POST { ids: [...] } resolves asset-bundle entity CIDs to
 //                       scene names + parcels (catalyst) or World names (worlds
 //                       server). Done server-side to bypass browser CORS, and
@@ -65,7 +68,7 @@ async function fetchRepo(repo: string, token: string) {
   return { repo, items, capped };
 }
 
-async function handleIssues(): Promise<Response> {
+async function handleIssuesLive(): Promise<Response> {
   if (CACHE && Date.now() - CACHE.at < CACHE_TTL_MS) {
     return json(CACHE.payload, 200, { 'X-Cache': 'HIT' });
   }
@@ -87,6 +90,19 @@ async function handleIssues(): Promise<Response> {
     if (CACHE) return json({ ...(CACHE.payload as object), stale: true }, 200, { 'X-Cache': 'STALE' });
     return json({ error: 'network' }, 502);
   }
+}
+
+// Paused by default (see header). Logs the caller so a bot or script hitting the public URL can be identified.
+async function handleIssues(req: Request): Promise<Response> {
+  if (Deno.env.get('ISSUES_LIVE') === '1') return await handleIssuesLive();
+  console.log(JSON.stringify({
+    evt: 'github-issues-paused',
+    ua: req.headers.get('user-agent'),
+    origin: req.headers.get('origin'),
+    referer: req.headers.get('referer'),
+    ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || null,
+  }));
+  return json({ repos: [], paused: true, syncedAt: Date.now() }, 200, { 'Cache-Control': 'public, max-age=3600', 'X-Cache': 'PAUSED' });
 }
 
 /* ---------------- Scene resolution ---------------- */
@@ -162,5 +178,5 @@ Deno.serve(async (req: Request) => {
   if (url.searchParams.get('action') === 'resolve' || req.method === 'POST') {
     return await handleResolve(req);
   }
-  return await handleIssues();
+  return await handleIssues(req);
 });
