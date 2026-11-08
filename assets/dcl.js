@@ -196,8 +196,8 @@ function cacheGet() {
   if (memCache && Date.now() - memCache.t < C.cacheMinutes * 60000) return memCache;
   return null;
 }
-function cacheSet(data, partial, capped) {
-  const c = { t: Date.now(), data, partial, capped };
+function cacheSet(data, partial, capped, syncedAt, frozen) {
+  const c = { t: Date.now(), data, partial, capped, syncedAt, frozen };
   memCache = c;
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (e) { /* ignore */ }
 }
@@ -266,6 +266,19 @@ function processIssue(it, area) {
 // Try the Supabase edge function (server-side token, shared cache, 5000/hr).
 // Returns null if not configured or unreachable, so callers fall back to direct GitHub.
 async function loadViaProxy() {
+  // Frozen mode: read a static snapshot (assets/data/github-issues.json) instead of calling Supabase or
+  // GitHub. Built by scripts/freeze-github-issues.mjs; remove github.snapshotUrl in config.js to go live again.
+  if (C.github && C.github.snapshotUrl) {
+    try {
+      const res = await fetch(C.github.snapshotUrl);
+      if (!res.ok) throw new Error('snapshot');
+      const data = await res.json();
+      if (!data || !Array.isArray(data.repos)) throw new Error('snapshot');
+      const issues = data.repos.flatMap(r => r.items || []);
+      if (!issues.length) throw new Error('snapshot');
+      return { issues, partial: !!data.partial, capped: data.repos.some(r => r.capped), syncedAt: data.syncedAt, frozen: true };
+    } catch (e) { /* snapshot unreadable: fall through to the live proxy */ }
+  }
   const sb = C.supabase || {};
   if (!sb.url || !sb.anonKey || !(C.github && C.github.useProxy)) return null;
   try {
@@ -292,13 +305,14 @@ async function loadViaProxy() {
 async function loadData(force = false) {
   if (!force) {
     const c = cacheGet();
-    if (c) return { issues: c.data, partial: c.partial, capped: c.capped, fromCache: true, syncedAt: c.t };
+    if (c) return { issues: c.data, partial: c.partial, capped: c.capped, fromCache: true, syncedAt: c.syncedAt || c.t, frozen: !!c.frozen };
   }
   // Preferred path: server-side proxy (avoids the 60/hour unauthenticated limit).
   const viaProxy = await loadViaProxy();
   if (viaProxy) {
-    cacheSet(viaProxy.issues, viaProxy.partial, viaProxy.capped);
-    return { ...viaProxy, fromCache: false, syncedAt: Date.now() };
+    const syncedAt = viaProxy.syncedAt || Date.now();
+    cacheSet(viaProxy.issues, viaProxy.partial, viaProxy.capped, syncedAt, !!viaProxy.frozen);
+    return { ...viaProxy, fromCache: false, syncedAt };
   }
   // Fallback: fetch GitHub directly from the browser (works, but rate-limited).
   const results = await Promise.allSettled(C.repos.map(fetchRepo));
@@ -591,10 +605,12 @@ function errorBox(kind) {
   return `<div class="error-box">${esc(msg)}<br><button onclick="location.reload()">Retry</button></div>`;
 }
 
-function setSync(syncedAt, fromCache, partial) {
+function setSync(syncedAt, fromCache, partial, frozen) {
   const el = $('syncNote'), foot = $('footSync');
   const t = new Date(syncedAt).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
-  const txt = `Synced from GitHub · ${t}${fromCache ? ' (cached)' : ''}${partial ? ' · partial data' : ''}`;
+  const txt = frozen
+    ? `Issue data paused · last synced from GitHub ${t}`
+    : `Synced from GitHub · ${t}${fromCache ? ' (cached)' : ''}${partial ? ' · partial data' : ''}`;
   if (el) el.textContent = txt;
   if (foot) foot.textContent = `Last sync ${t}`;
 }
@@ -1772,9 +1788,9 @@ async function boot() {
   if (page === 'announcements') { await loadContent(); initBanners(null); PAGES.announcements(); return; }
 
   try {
-    const [{ issues, partial, fromCache, syncedAt }, official] = await Promise.all([loadData(), loadOfficial(), loadContent()]);
+    const [{ issues, partial, fromCache, syncedAt, frozen }, official] = await Promise.all([loadData(), loadOfficial(), loadContent()]);
     const data = classify(issues);
-    setSync(syncedAt, fromCache, partial);
+    setSync(syncedAt, fromCache, partial, frozen);
     initBanners(official);
     PAGES[page](data, { partial, official });
   } catch (e) {

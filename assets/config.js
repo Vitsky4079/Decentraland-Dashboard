@@ -14,6 +14,11 @@ const DCL_CONFIG = {
   // to direct GitHub fetching, so this is safe to leave on.
   github: {
     useProxy: true,
+    // PAUSED: the site reads this frozen snapshot instead of calling the 'github-issues' function
+    // (which returns ~1.8 MB per call and pushed Supabase egress over the free plan).
+    // Refresh it by hand:  node scripts/freeze-github-issues.mjs
+    // Go live again: delete the snapshotUrl line.
+    snapshotUrl: '/assets/data/github-issues.json',
   },
 
   supabase: {
